@@ -5,6 +5,17 @@
   const reader = document.querySelector('.rules-list');
   if (!rules.length || !index || !reader) return;
 
+  const topNav = document.querySelector('.sub-nav');
+  if (topNav && !topNav.querySelector('[data-home-link]')) {
+    const homeLink = document.createElement('a');
+    homeLink.href = '../';
+    homeLink.dataset.homeLink = '';
+    homeLink.className = 'home-link';
+    homeLink.setAttribute('aria-label', 'Ir para a página inicial do Portal Giro');
+    homeLink.innerHTML = '<span aria-hidden="true">⌂</span> Início';
+    topNav.insertBefore(homeLink, topNav.firstChild);
+  }
+
   let current = -1;
 
   const closeDetails = (rule) => {
