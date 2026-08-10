@@ -45,18 +45,17 @@
     citySelect.appendChild(option);
   });
 
-  const getTemporalStatus = (date) => {
-    const now = new Date();
-    const eventYear = date.getFullYear();
-    const eventMonth = date.getMonth();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+  const atStartOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-    if (eventYear === currentYear && eventMonth === currentMonth) {
-      return { key: 'current', label: 'Mês atual' };
+  const getTemporalStatus = (date) => {
+    const today = atStartOfDay(new Date());
+    const eventDay = atStartOfDay(date);
+
+    if (eventDay.getTime() === today.getTime()) {
+      return { key: 'today', label: 'Hoje' };
     }
 
-    if (eventYear < currentYear || (eventYear === currentYear && eventMonth < currentMonth)) {
+    if (eventDay < today) {
       return { key: 'past', label: 'Passado' };
     }
 
