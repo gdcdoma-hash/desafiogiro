@@ -1,4 +1,4 @@
-/* Ajustes de navegação da Home V1. */
+/* Ajustes de navegação da Home V1 e páginas internas. */
 
 #desafio-giro,
 #como-funciona,
@@ -18,6 +18,26 @@
   right: 0;
 }
 
+.internal-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.internal-nav a {
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.internal-nav .internal-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 @media (max-width: 1060px) {
   #desafio-giro,
   #como-funciona,
@@ -31,5 +51,56 @@
 
   .main-nav a[aria-current="location"] {
     color: var(--accent);
+  }
+}
+
+@media (max-width: 560px) {
+  .header-inner:has(.internal-nav) {
+    width: min(calc(100% - 24px), var(--max));
+    gap: 10px;
+  }
+
+  .header-inner:has(.internal-nav) .brand {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .header-inner:has(.internal-nav) .brand-mark {
+    width: 38px;
+    height: 38px;
+    font-size: 19px;
+  }
+
+  .header-inner:has(.internal-nav) .brand-text strong {
+    font-size: 15px;
+  }
+
+  .header-inner:has(.internal-nav) .brand-text small {
+    display: none;
+  }
+
+  .internal-nav {
+    margin-left: auto;
+    gap: 7px;
+  }
+
+  .internal-nav a {
+    font-size: 12px;
+  }
+
+  .internal-nav .internal-home {
+    padding: 10px 8px;
+    border: 1px solid #333;
+    border-radius: 999px;
+  }
+
+  .internal-nav .nav-cta {
+    padding: 10px 11px;
+  }
+}
+
+@media (max-width: 390px) {
+  .header-inner:has(.internal-nav) .brand-text {
+    display: none;
   }
 }
