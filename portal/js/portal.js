@@ -5,13 +5,14 @@
   const internalNav = document.querySelector('.sub-nav');
   if (internalNav) {
     internalNav.classList.add('internal-nav');
-    if (!internalNav.querySelector('.internal-home')) {
-      const homeLink = document.createElement('a');
-      homeLink.className = 'internal-home';
+    let homeLink = internalNav.querySelector('.internal-home');
+    if (!homeLink) {
+      homeLink = document.createElement('a');
       homeLink.href = '../';
       homeLink.innerHTML = '<span aria-hidden="true">⌂</span> Início';
       internalNav.prepend(homeLink);
     }
+    homeLink.classList.add('internal-home', 'home-link');
   }
 
   const toggle = document.querySelector('[data-menu-toggle]');
