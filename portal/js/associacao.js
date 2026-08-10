@@ -31,6 +31,8 @@
   const description = document.querySelector('#association-result-description');
   if (!monthSelect || !citySelect || !list) return;
 
+  let initialPositionApplied = false;
+
   months.forEach((month, index) => {
     const option = document.createElement('option');
     option.value = String(index);
@@ -60,6 +62,18 @@
     }
 
     return { key: 'future', label: 'Futuro' };
+  };
+
+  const positionAtFirstActiveEvent = () => {
+    if (initialPositionApplied) return;
+    initialPositionApplied = true;
+
+    const firstActive = list.querySelector('.status-today, .status-future');
+    if (!firstActive) return;
+
+    requestAnimationFrame(() => {
+      firstActive.scrollIntoView({ behavior: 'auto', block: 'center' });
+    });
   };
 
   const render = () => {
@@ -105,6 +119,10 @@
       });
       list.appendChild(group);
     });
+
+    if (selectedMonth === 'todos' && selectedCity === 'todas') {
+      positionAtFirstActiveEvent();
+    }
   };
 
   monthSelect.addEventListener('change', render);
