@@ -45,6 +45,24 @@
     citySelect.appendChild(option);
   });
 
+  const getTemporalStatus = (date) => {
+    const now = new Date();
+    const eventYear = date.getFullYear();
+    const eventMonth = date.getMonth();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    if (eventYear === currentYear && eventMonth === currentMonth) {
+      return { key: 'current', label: 'Mês atual' };
+    }
+
+    if (eventYear < currentYear || (eventYear === currentYear && eventMonth < currentMonth)) {
+      return { key: 'past', label: 'Passado' };
+    }
+
+    return { key: 'future', label: 'Futuro' };
+  };
+
   const render = () => {
     const selectedMonth = monthSelect.value;
     const selectedCity = citySelect.value;
@@ -80,9 +98,10 @@
       const container = group.querySelector('.association-month-events');
       monthEvents.forEach((event) => {
         const date = new Date(`${event.date}T12:00:00`);
+        const status = getTemporalStatus(date);
         const card = document.createElement('article');
-        card.className = 'association-event-card';
-        card.innerHTML = `<div class="association-event-date"><strong>${String(date.getDate()).padStart(2,'0')}</strong><span>${months[date.getMonth()].slice(0,3).toUpperCase()}</span></div><div class="association-event-info"><span class="origin">Calendário da associação</span><h4>${event.name}</h4><p>${event.city} — MA</p></div>`;
+        card.className = `association-event-card status-${status.key}`;
+        card.innerHTML = `<div class="association-event-date"><strong>${String(date.getDate()).padStart(2,'0')}</strong><span>${months[date.getMonth()].slice(0,3).toUpperCase()}</span></div><div class="association-event-info"><div class="event-badges"><span class="origin">Calendário da associação</span><span class="temporal-status ${status.key}">${status.label}</span></div><h4>${event.name}</h4><p>${event.city} — MA</p></div>`;
         container.appendChild(card);
       });
       list.appendChild(group);
