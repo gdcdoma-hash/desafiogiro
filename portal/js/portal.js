@@ -1,6 +1,19 @@
 // Portal Giro V1 — JavaScript isolado de desenvolvimento.
 
 (() => {
+  // Padroniza a navegação das páginas internas: sempre oferece um caminho explícito para a Home.
+  const internalNav = document.querySelector('.sub-nav');
+  if (internalNav) {
+    internalNav.classList.add('internal-nav');
+    if (!internalNav.querySelector('.internal-home')) {
+      const homeLink = document.createElement('a');
+      homeLink.className = 'internal-home';
+      homeLink.href = '../';
+      homeLink.innerHTML = '<span aria-hidden="true">⌂</span> Início';
+      internalNav.prepend(homeLink);
+    }
+  }
+
   const toggle = document.querySelector('[data-menu-toggle]');
   const menu = document.querySelector('[data-menu]');
 
@@ -56,7 +69,6 @@
   });
 
   // O destaque principal do cabeçalho pertence sempre ao Desafio Giro.
-  // Outros itens podem indicar a seção em leitura sem assumir o CTA amarelo.
   const sectionLinks = [...document.querySelectorAll('.main-nav a[href^="#"]')];
   const sections = sectionLinks.map((link) => document.querySelector(link.getAttribute('href'))).filter(Boolean);
 
