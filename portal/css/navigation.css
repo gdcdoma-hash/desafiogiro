@@ -1,0 +1,35 @@
+/* Ajustes de navegação da Home V1. */
+
+#desafio-giro,
+#como-funciona,
+#agenda,
+#eventos,
+#grupos,
+#loja,
+#meu-giro {
+  scroll-margin-top: 96px;
+}
+
+.main-nav a[aria-current="location"] {
+  color: #fff;
+}
+
+.main-nav a[aria-current="location"]:not(.nav-cta)::after {
+  right: 0;
+}
+
+@media (max-width: 1060px) {
+  #desafio-giro,
+  #como-funciona,
+  #agenda,
+  #eventos,
+  #grupos,
+  #loja,
+  #meu-giro {
+    scroll-margin-top: 82px;
+  }
+
+  .main-nav a[aria-current="location"] {
+    color: var(--accent);
+  }
+}
