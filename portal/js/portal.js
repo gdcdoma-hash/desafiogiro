@@ -60,4 +60,32 @@
 
     link.href = target.href;
   });
+
+  // Destaca no menu a área da Home que está em leitura.
+  const sectionLinks = [...document.querySelectorAll('.main-nav a[href^="#"]')];
+  const sections = sectionLinks
+    .map((link) => document.querySelector(link.getAttribute('href')))
+    .filter(Boolean);
+
+  if ('IntersectionObserver' in window && sections.length) {
+    const setCurrent = (id) => {
+      sectionLinks.forEach((link) => {
+        if (link.getAttribute('href') === `#${id}`) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+      if (visible[0]) setCurrent(visible[0].target.id);
+    }, {
+      rootMargin: '-96px 0px -58% 0px',
+      threshold: [0.08, 0.2, 0.4]
+    });
+
+    sections.forEach((section) => observer.observe(section));
+  }
 })();
