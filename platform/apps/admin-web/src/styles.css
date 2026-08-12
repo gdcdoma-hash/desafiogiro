@@ -59,6 +59,10 @@ h1 {
   font-size: clamp(1.7rem, 5vw, 2.3rem);
   line-height: 1.1;
 }
+h2 {
+  margin: 0.25rem 0 0;
+  font-size: 1.35rem;
+}
 form {
   display: grid;
   gap: 1rem;
@@ -104,6 +108,11 @@ button.secondary {
 }
 button.secondary.spaced {
   margin-top: 0.75rem;
+}
+button.compact {
+  min-height: 2.5rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.85rem;
 }
 button.link-button {
   min-height: auto;
@@ -165,6 +174,63 @@ dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
+.audit-panel {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #dbe6de;
+}
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.section-description {
+  margin: 0.7rem 0 0;
+  color: #4b5f52;
+}
+.audit-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+.audit-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem;
+  border: 1px solid #e0e9e2;
+  border-radius: 0.7rem;
+  background: #f8faf8;
+}
+.audit-item strong,
+.audit-item span,
+.audit-item time {
+  display: block;
+}
+.audit-item strong {
+  overflow-wrap: anywhere;
+}
+.audit-item span,
+.audit-item time {
+  color: #647168;
+  font-size: 0.78rem;
+}
+.audit-meta {
+  flex: none;
+  text-align: right;
+}
+.audit-meta .outcome {
+  margin-bottom: 0.25rem;
+  font-weight: 800;
+}
+.audit-meta .outcome.success {
+  color: #176b36;
+}
+.audit-meta .outcome.failure,
+.audit-meta .outcome.denied {
+  color: #9a3d25;
+}
 @media (max-width: 30rem) {
   dl {
     grid-template-columns: 1fr;
@@ -172,5 +238,16 @@ dd {
   }
   dd:not(:last-child) {
     margin-bottom: 0.7rem;
+  }
+  .section-heading,
+  .audit-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .section-heading button {
+    width: 100%;
+  }
+  .audit-meta {
+    text-align: left;
   }
 }
