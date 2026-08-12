@@ -31,6 +31,13 @@ Esta pasta contém a interface pública do Portal Giro em desenvolvimento isolad
 
 Agenda, Eventos, Grupos e página pública de regras/regulamento permanecem sem destino definitivo enquanto não houver especificação aprovada para essas páginas.
 
+## Fundação técnica isolada
+
+O primeiro ciclo da nova plataforma foi iniciado em `../platform/`. Essa pasta
+não substitui esta interface pública e não altera o redirecionador da raiz.
+Autenticação administrativa, banco, permissões, auditoria e testes permanecem
+isolados até validação e publicação controlada.
+
 ## Regras de desenvolvimento
 
 - Não criar APIs ou autenticação unificada sem aprovação.

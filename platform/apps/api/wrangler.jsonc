@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portal-giro-api-local",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "PORTAL_GIRO_ENV": "local",
+    "ADMIN_WEB_ORIGIN": "http://localhost:5173",
+    "SUPABASE_URL": "http://127.0.0.1:54321",
+  },
+  "env": {
+    "staging": {
+      "name": "portal-giro-api-staging",
+      "vars": { "PORTAL_GIRO_ENV": "staging" },
+    },
+    "production": {
+      "name": "portal-giro-api-production",
+      "vars": { "PORTAL_GIRO_ENV": "production" },
+    },
+  },
+}
