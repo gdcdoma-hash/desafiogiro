@@ -78,6 +78,11 @@ h2 {
   font-size: 1.35rem;
 }
 
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
 form {
   display: grid;
   gap: 1rem;
@@ -268,6 +273,23 @@ dd {
   background: #f8faf8;
 }
 
+.challenge-select {
+  width: 100%;
+  min-height: 0;
+  color: inherit;
+  text-align: left;
+}
+
+.challenge-select:hover,
+.challenge-select.selected {
+  border-color: #7fb08c;
+  background: #eff7f1;
+}
+
+.challenge-select.selected {
+  box-shadow: inset 0 0 0 1px #7fb08c;
+}
+
 .challenge-main,
 .challenge-side {
   display: grid;
@@ -324,6 +346,104 @@ dd {
   color: #59645d !important;
 }
 
+.challenge-detail {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #dbe6de;
+}
+
+.compact-heading {
+  margin-bottom: 1rem;
+}
+
+.challenge-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 1rem;
+}
+
+.config-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #dbe6de;
+  border-radius: 0.9rem;
+  background: #fbfcfb;
+}
+
+.mini-description,
+.empty-note {
+  margin: 0.25rem 0 0;
+  color: #647168;
+  font-size: 0.82rem;
+}
+
+.compact-form {
+  margin: 1rem 0;
+  padding: 0.9rem;
+  border-radius: 0.75rem;
+  background: #f3f7f4;
+}
+
+.simple-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.simple-row,
+.offer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e1e9e3;
+  border-radius: 0.65rem;
+  background: white;
+}
+
+.simple-row span,
+.offer-row span {
+  color: #647168;
+  font-size: 0.78rem;
+}
+
+.offer-row > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.offer-side {
+  flex: none;
+  text-align: right;
+}
+
+.goal-picker {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid #ccd9cf;
+  border-radius: 0.65rem;
+}
+
+.goal-picker legend {
+  padding: 0 0.25rem;
+  font-weight: 800;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 650;
+}
+
+.check-row input {
+  width: 1.1rem;
+  min-height: 1.1rem;
+  margin: 0;
+}
+
 .audit-item strong,
 .audit-item span,
 .audit-item time {
@@ -371,16 +491,25 @@ dd {
   color: #174a2a;
 }
 
+@media (max-width: 52rem) {
+  .challenge-config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 42rem) {
   .form-grid.two {
     grid-template-columns: 1fr;
   }
 
-  .challenge-item {
+  .challenge-item,
+  .simple-row,
+  .offer-row {
     flex-direction: column;
   }
 
-  .challenge-side {
+  .challenge-side,
+  .offer-side {
     text-align: left;
   }
 }
