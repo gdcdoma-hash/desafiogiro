@@ -6,6 +6,7 @@ import { ParticipantsPanel } from "./ParticipantsPanel";
 import { RegistrationsPanel } from "./RegistrationsPanel";
 import { PaymentsPanel } from "./PaymentsPanel";
 import { InventoryPanel } from "./InventoryPanel";
+import { OperationsPanel } from "./OperationsPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 
@@ -396,6 +397,10 @@ function App() {
             supabase={supabase}
             canManage={context.permissions.includes("payments.manage")}
           />
+        ) : null}
+
+        {context?.permissions.includes("operations.read") ? (
+          <OperationsPanel supabase={supabase} />
         ) : null}
 
         {context?.permissions.includes("audit.read") ? (

@@ -76,12 +76,18 @@ export function OperationsPanel({ supabase }: Props) {
           <p className="eyebrow">Operação</p>
           <h2 id="operations-title">Visão operacional</h2>
         </div>
-        <button type="button" className="compact" disabled={busy} onClick={() => void load()}>
+        <button
+          type="button"
+          className="compact"
+          disabled={busy}
+          onClick={() => void load()}
+        >
           {busy ? "Carregando…" : "Atualizar"}
         </button>
       </div>
       <p className="section-description">
-        Leitura consolidada de inscrição e pagamento. Esta tela não altera estados nem movimenta estoque.
+        Leitura consolidada de inscrição e pagamento. Esta tela não altera
+        estados nem movimenta estoque.
       </p>
       <label>
         Buscar
@@ -92,7 +98,9 @@ export function OperationsPanel({ supabase }: Props) {
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
 
       {filteredRows.length > 0 ? (
         <div className="audit-list">
@@ -106,10 +114,12 @@ export function OperationsPanel({ supabase }: Props) {
               </div>
               <div className="audit-meta">
                 <span>{row.registration_status}</span>
-                <span>{paymentLabels[row.payment_summary] ?? row.payment_summary}</span>
                 <span>
-                  R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")} / R${" "}
-                  {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
+                  {paymentLabels[row.payment_summary] ?? row.payment_summary}
+                </span>
+                <span>
+                  R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")}{" "}
+                  / R$ {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
                 </span>
               </div>
             </article>
