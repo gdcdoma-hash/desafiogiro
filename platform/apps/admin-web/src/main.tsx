@@ -1,34 +1,24 @@
 import { createClient, type Session } from "@supabase/supabase-js";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { ChallengesPanel } from "./ChallengesPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
-  string | undefined;
-const environment =
-  (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ?? "development";
-const applicationVersion =
-  (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "cycle-2";
+const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const environment = (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ?? "development";
+const applicationVersion = (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "cycle-3";
 
 if (!supabaseUrl || !publishableKey) {
-  throw new Error(
-    "VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY são obrigatórias.",
-  );
+  throw new Error("VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY são obrigatórias.");
 }
 
 const supabase = createClient(supabaseUrl, publishableKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 
-type ViewState =
-  "checking" | "login" | "password-update" | "authorized" | "denied";
-
+type ViewState = "checking" | "login" | "password-update" | "authorized" | "denied";
 type AuditEvent = {
   id: string;
   occurred_at: string;
@@ -37,11 +27,7 @@ type AuditEvent = {
   outcome: "success" | "failure" | "denied";
 };
 
-async function writeAudit(
-  action: string,
-  outcome: "success" | "failure" | "denied",
-  reason?: string,
-) {
+async function writeAudit(action: string, outcome: "success" | "failure" | "denied", reason?: string) {
   await supabase.rpc("write_audit_event", {
     event_action: action,
     event_application_version: applicationVersion,
@@ -98,17 +84,12 @@ function App() {
     let active = true;
     setView("checking");
     setMessage("Validando permissões…");
-
     void supabase.rpc("current_admin_context").then(async ({ data, error }) => {
       if (!active) return;
       if (error || !isAdminContext(data)) {
         setView("denied");
         setMessage("Este usuário não possui acesso administrativo.");
-        await writeAudit(
-          "admin.login.denied",
-          "denied",
-          "Usuário autenticado sem permissão administrativa.",
-        );
+        await writeAudit("admin.login.denied", "denied", "Usuário autenticado sem permissão administrativa.");
         return;
       }
       setContext(data);
@@ -116,20 +97,14 @@ function App() {
       setMessage("Acesso administrativo confirmado.");
       await writeAudit("admin.login.success", "success");
     });
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [passwordUpdateMode, session]);
 
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     setMessage("Verificando e-mail e senha…");
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setPassword("");
     if (error) {
       setMessage("E-mail ou senha inválidos.");
@@ -152,14 +127,8 @@ function App() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
-    });
-    setMessage(
-      error
-        ? "Não foi possível solicitar a recuperação agora."
-        : "Se o e-mail estiver cadastrado, você receberá as orientações.",
-    );
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    setMessage(error ? "Não foi possível solicitar a recuperação agora." : "Se o e-mail estiver cadastrado, você receberá as orientações.");
     setBusy(false);
   }
 
@@ -173,19 +142,16 @@ function App() {
       setMessage("As senhas informadas não são iguais.");
       return;
     }
-
     setBusy(true);
     setMessage("Salvando a nova senha…");
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setNewPassword("");
     setPasswordConfirmation("");
-
     if (error) {
       setMessage("Não foi possível atualizar a senha. Solicite um novo link.");
       setBusy(false);
       return;
     }
-
     await writeAudit("admin.password.updated", "success");
     await supabase.auth.signOut();
     setPasswordUpdateMode(false);
@@ -197,256 +163,85 @@ function App() {
   async function loadAuditEvents() {
     setAuditBusy(true);
     setAuditMessage("Carregando registros…");
-    const { data, error } = await supabase
-      .from("audit_events")
-      .select("id,occurred_at,action,resource_type,outcome")
-      .order("occurred_at", { ascending: false })
-      .limit(25);
-
+    const { data, error } = await supabase.from("audit_events").select("id,occurred_at,action,resource_type,outcome").order("occurred_at", { ascending: false }).limit(25);
     if (error) {
       setAuditEvents([]);
       setAuditMessage("Não foi possível carregar a auditoria agora.");
     } else {
       setAuditEvents((data ?? []) as AuditEvent[]);
-      setAuditMessage(
-        data?.length
-          ? `${data.length} registros mais recentes.`
-          : "Nenhum registro de auditoria encontrado.",
-      );
+      setAuditMessage(data?.length ? `${data.length} registros mais recentes.` : "Nenhum registro de auditoria encontrado.");
     }
     setAuditBusy(false);
   }
 
   function formatAuditDate(value: string) {
-    return new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(new Date(value));
+    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
   }
 
   if (view === "checking") {
-    return (
-      <main className="shell">
-        <section className="card" aria-busy="true">
-          <p className="eyebrow">Portal Giro</p>
-          <h1>Área administrativa</h1>
-          <p role="status" className="status">
-            {message}
-          </p>
-        </section>
-      </main>
-    );
+    return <main className="shell"><section className="card" aria-busy="true"><p className="eyebrow">Portal Giro</p><h1>Área administrativa</h1><p role="status" className="status">{message}</p></section></main>;
   }
 
   if (view === "login") {
     return (
-      <main className="shell">
-        <section className="card">
-          <p className="eyebrow">Portal Giro</p>
-          <h1>Área administrativa</h1>
-          <p>Acesso exclusivo para integrantes autorizados da equipe.</p>
-          <form onSubmit={signIn}>
-            <label>
-              E-mail
-              <input
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Senha
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </label>
-            <button type="submit" disabled={busy}>
-              {busy ? "Entrando…" : "Entrar"}
-            </button>
-          </form>
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => void requestPasswordReset()}
-            disabled={busy}
-          >
-            Esqueci minha senha
-          </button>
-          <p role="status" className="status">
-            {message}
-          </p>
-          <p className="environment">Ambiente: desenvolvimento</p>
-        </section>
-      </main>
+      <main className="shell"><section className="card">
+        <p className="eyebrow">Portal Giro</p><h1>Área administrativa</h1><p>Acesso exclusivo para integrantes autorizados da equipe.</p>
+        <form onSubmit={signIn}>
+          <label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+          <label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+          <button type="submit" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
+        </form>
+        <button type="button" className="link-button" onClick={() => void requestPasswordReset()} disabled={busy}>Esqueci minha senha</button>
+        <p role="status" className="status">{message}</p><p className="environment">Ambiente: desenvolvimento</p>
+      </section></main>
     );
   }
 
   if (view === "password-update") {
     return (
-      <main className="shell">
-        <section className="card">
-          <p className="eyebrow">Portal Giro</p>
-          <h1>Criar nova senha</h1>
-          <p>Use pelo menos 8 caracteres e não reutilize uma senha antiga.</p>
-          <form onSubmit={updatePassword}>
-            <label>
-              Nova senha
-              <input
-                type="password"
-                autoComplete="new-password"
-                minLength={8}
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Confirmar nova senha
-              <input
-                type="password"
-                autoComplete="new-password"
-                minLength={8}
-                value={passwordConfirmation}
-                onChange={(event) =>
-                  setPasswordConfirmation(event.target.value)
-                }
-                required
-              />
-            </label>
-            <button type="submit" disabled={busy}>
-              {busy ? "Salvando…" : "Salvar nova senha"}
-            </button>
-          </form>
-          <p role="status" className="status">
-            {message}
-          </p>
-        </section>
-      </main>
+      <main className="shell"><section className="card">
+        <p className="eyebrow">Portal Giro</p><h1>Criar nova senha</h1><p>Use pelo menos 8 caracteres e não reutilize uma senha antiga.</p>
+        <form onSubmit={updatePassword}>
+          <label>Nova senha<input type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
+          <label>Confirmar nova senha<input type="password" autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required /></label>
+          <button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar nova senha"}</button>
+        </form>
+        <p role="status" className="status">{message}</p>
+      </section></main>
     );
   }
 
   if (view === "denied") {
-    return (
-      <main className="shell">
-        <section className="card">
-          <p className="eyebrow warning">Acesso restrito</p>
-          <h1>Permissão necessária</h1>
-          <p>{message}</p>
-          <button disabled={busy} onClick={() => void signOut()}>
-            Voltar para o login
-          </button>
-        </section>
-      </main>
-    );
+    return <main className="shell"><section className="card"><p className="eyebrow warning">Acesso restrito</p><h1>Permissão necessária</h1><p>{message}</p><button disabled={busy} onClick={() => void signOut()}>Voltar para o login</button></section></main>;
   }
 
   return (
-    <main className="shell">
+    <main className="shell dashboard-shell">
       <section className="card dashboard">
-        <div className="status-row">
-          <span className="dot" aria-hidden="true" />
-          <span>Ambiente de desenvolvimento conectado</span>
-        </div>
-        <p className="eyebrow">Fundação técnica</p>
-        <h1>Painel administrativo</h1>
-        <p>Autenticação, autorização e banco estão funcionando.</p>
-        <dl>
-          <dt>Usuário conectado</dt>
-          <dd>{session?.user.email ?? "E-mail não disponível"}</dd>
-          <dt>Papel</dt>
-          <dd>{context?.roles.join(", ")}</dd>
-          <dt>Permissões ativas</dt>
-          <dd>{context?.permissions.length}</dd>
-          <dt>Versão</dt>
-          <dd>{applicationVersion}</dd>
-        </dl>
-        <p role="status" className="status success">
-          {message}
-        </p>
-        <button
-          className="secondary"
-          disabled={busy}
-          onClick={() => {
-            setPasswordUpdateMode(true);
-            setView("password-update");
-            setMessage("Crie uma nova senha para continuar.");
-          }}
-        >
-          Criar ou alterar senha
-        </button>
-        <button
-          className="secondary spaced"
-          disabled={busy}
-          onClick={() => void signOut()}
-        >
-          {busy ? "Saindo…" : "Sair com segurança"}
-        </button>
+        <div className="status-row"><span className="dot" aria-hidden="true" /><span>Ambiente de desenvolvimento conectado</span></div>
+        <p className="eyebrow">Portal Giro</p><h1>Painel administrativo</h1>
+        <p role="status" className="status success">{message}</p>
+
+        {context?.permissions.includes("challenges.read") ? (
+          <ChallengesPanel supabase={supabase} canManage={context.permissions.includes("challenges.manage")} />
+        ) : null}
+
         {context?.permissions.includes("audit.read") ? (
           <section className="audit-panel" aria-labelledby="audit-title">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Segurança</p>
-                <h2 id="audit-title">Auditoria recente</h2>
-              </div>
-              <button
-                type="button"
-                className="compact"
-                disabled={auditBusy}
-                onClick={() => void loadAuditEvents()}
-              >
-                {auditBusy
-                  ? "Carregando…"
-                  : auditEvents.length
-                    ? "Atualizar"
-                    : "Carregar registros"}
-              </button>
-            </div>
-            <p className="section-description">
-              Consulta somente leitura das 25 ações administrativas mais
-              recentes.
-            </p>
-            <p role="status" className="status">
-              {auditMessage}
-            </p>
-            {auditEvents.length > 0 ? (
-              <div className="audit-list">
-                {auditEvents.map((event) => (
-                  <article className="audit-item" key={event.id}>
-                    <div>
-                      <strong>{event.action}</strong>
-                      <span>{event.resource_type}</span>
-                    </div>
-                    <div className="audit-meta">
-                      <span className={`outcome ${event.outcome}`}>
-                        {event.outcome === "success"
-                          ? "Sucesso"
-                          : event.outcome === "denied"
-                            ? "Negado"
-                            : "Falha"}
-                      </span>
-                      <time dateTime={event.occurred_at}>
-                        {formatAuditDate(event.occurred_at)}
-                      </time>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : null}
+            <div className="section-heading"><div><p className="eyebrow">Segurança</p><h2 id="audit-title">Auditoria recente</h2></div><button type="button" className="compact" disabled={auditBusy} onClick={() => void loadAuditEvents()}>{auditBusy ? "Carregando…" : auditEvents.length ? "Atualizar" : "Carregar registros"}</button></div>
+            <p className="section-description">Consulta somente leitura das 25 ações administrativas mais recentes.</p><p role="status" className="status">{auditMessage}</p>
+            {auditEvents.length > 0 ? <div className="audit-list">{auditEvents.map((event) => <article className="audit-item" key={event.id}><div><strong>{event.action}</strong><span>{event.resource_type}</span></div><div className="audit-meta"><span className={`outcome ${event.outcome}`}>{event.outcome === "success" ? "Sucesso" : event.outcome === "denied" ? "Negado" : "Falha"}</span><time dateTime={event.occurred_at}>{formatAuditDate(event.occurred_at)}</time></div></article>)}</div> : null}
           </section>
         ) : null}
+
+        <section className="account-panel">
+          <details><summary>Conta e acesso</summary><dl><dt>Usuário conectado</dt><dd>{session?.user.email ?? "E-mail não disponível"}</dd><dt>Papel</dt><dd>{context?.roles.join(", ")}</dd><dt>Permissões ativas</dt><dd>{context?.permissions.length}</dd><dt>Versão</dt><dd>{applicationVersion}</dd></dl>
+          <button className="secondary" disabled={busy} onClick={() => { setPasswordUpdateMode(true); setView("password-update"); setMessage("Crie uma nova senha para continuar."); }}>Criar ou alterar senha</button>
+          <button className="secondary spaced" disabled={busy} onClick={() => void signOut()}>{busy ? "Saindo…" : "Sair com segurança"}</button></details>
+        </section>
       </section>
     </main>
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
