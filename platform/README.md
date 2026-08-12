@@ -1,10 +1,10 @@
-# Fundação técnica do Portal Giro
+# Plataforma Portal Giro
 
 Esta pasta contém o primeiro ciclo técnico da nova plataforma. Ela foi criada de
 forma isolada para não interferir no Portal público existente em `../portal/` nem
 no redirecionador de produção em `../index.html`.
 
-## Limites deste ciclo
+## Limites atuais
 
 - não conecta com GAS ou Google Sheets;
 - não contém dados reais;
@@ -44,8 +44,9 @@ Para o Vite, crie `apps/admin-web/.env.local` com:
 
 ```dotenv
 VITE_SUPABASE_URL=http://127.0.0.1:54321
-VITE_SUPABASE_ANON_KEY=<chave anon local exibida pelo Supabase CLI>
-VITE_API_URL=http://localhost:8787
+VITE_SUPABASE_PUBLISHABLE_KEY=<chave pública local exibida pelo Supabase CLI>
+VITE_PORTAL_GIRO_ENV=local
+VITE_APP_VERSION=local
 ```
 
 Para o Worker local, use `.dev.vars` dentro de `apps/api/`:
@@ -67,6 +68,17 @@ where code = 'platform_admin';
 ```
 
 Nunca reutilize e-mail, senha, CPF, telefone ou outro dado de uma pessoa real.
+
+## Prévia administrativa isolada
+
+A aplicação em `apps/admin-web` é publicada separadamente do Portal visual. A
+chave `VITE_SUPABASE_PUBLISHABLE_KEY` é pública por definição; chaves secretas e
+`service_role` são proibidas no frontend. A autorização permanece no PostgreSQL
+por meio de RLS e da função `current_admin_context`.
+
+O usuário autenticado sem o papel `platform_admin` recebe acesso negado. Login,
+negação de acesso e logout são registrados pela auditoria sem senha, token, CPF
+ou outros dados sensíveis.
 
 ## Comandos de qualidade
 
