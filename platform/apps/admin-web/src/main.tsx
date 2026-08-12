@@ -26,7 +26,8 @@ const supabase = createClient(supabaseUrl, publishableKey, {
   },
 });
 
-type ViewState = "checking" | "login" | "authorized" | "denied";
+type ViewState =
+  "checking" | "login" | "password-update" | "authorized" | "denied";
 
 async function writeAudit(
   action: string,
@@ -50,6 +51,9 @@ function App() {
   const [view, setView] = useState<ViewState>("checking");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [passwordUpdateMode, setPasswordUpdateMode] = useState(false);
   const [message, setMessage] = useState("Verificando sessão…");
   const [busy, setBusy] = useState(false);
 
@@ -61,10 +65,17 @@ function App() {
         setMessage("");
       }
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
+      if (event === "PASSWORD_RECOVERY" && nextSession) {
+        setPasswordUpdateMode(true);
+        setView("password-update");
+        setMessage("Crie uma nova senha para continuar.");
+        return;
+      }
       if (!nextSession) {
         setContext(null);
+        setPasswordUpdateMode(false);
         setView("login");
       }
     });
@@ -72,7 +83,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || passwordUpdateMode) return;
     let active = true;
     setView("checking");
     setMessage("Validando permissões…");
@@ -98,7 +109,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [passwordUpdateMode, session]);
 
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
@@ -138,6 +149,37 @@ function App() {
         ? "Não foi possível solicitar a recuperação agora."
         : "Se o e-mail estiver cadastrado, você receberá as orientações.",
     );
+    setBusy(false);
+  }
+
+  async function updatePassword(event: React.FormEvent) {
+    event.preventDefault();
+    if (newPassword.length < 8) {
+      setMessage("A nova senha precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (newPassword !== passwordConfirmation) {
+      setMessage("As senhas informadas não são iguais.");
+      return;
+    }
+
+    setBusy(true);
+    setMessage("Salvando a nova senha…");
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setNewPassword("");
+    setPasswordConfirmation("");
+
+    if (error) {
+      setMessage("Não foi possível atualizar a senha. Solicite um novo link.");
+      setBusy(false);
+      return;
+    }
+
+    await writeAudit("admin.password.updated", "success");
+    await supabase.auth.signOut();
+    setPasswordUpdateMode(false);
+    setView("login");
+    setMessage("Senha criada com sucesso. Entre usando a nova senha.");
     setBusy(false);
   }
 
@@ -204,6 +246,50 @@ function App() {
     );
   }
 
+  if (view === "password-update") {
+    return (
+      <main className="shell">
+        <section className="card">
+          <p className="eyebrow">Portal Giro</p>
+          <h1>Criar nova senha</h1>
+          <p>Use pelo menos 8 caracteres e não reutilize uma senha antiga.</p>
+          <form onSubmit={updatePassword}>
+            <label>
+              Nova senha
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Confirmar nova senha
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                value={passwordConfirmation}
+                onChange={(event) =>
+                  setPasswordConfirmation(event.target.value)
+                }
+                required
+              />
+            </label>
+            <button type="submit" disabled={busy}>
+              {busy ? "Salvando…" : "Salvar nova senha"}
+            </button>
+          </form>
+          <p role="status" className="status">
+            {message}
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   if (view === "denied") {
     return (
       <main className="shell">
@@ -244,6 +330,17 @@ function App() {
         </p>
         <button
           className="secondary"
+          disabled={busy}
+          onClick={() => {
+            setPasswordUpdateMode(true);
+            setView("password-update");
+            setMessage("Crie uma nova senha para continuar.");
+          }}
+        >
+          Criar ou alterar senha
+        </button>
+        <button
+          className="secondary spaced"
           disabled={busy}
           onClick={() => void signOut()}
         >
