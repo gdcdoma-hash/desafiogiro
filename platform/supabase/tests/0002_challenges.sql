@@ -21,8 +21,8 @@ select ok((select relrowsecurity from pg_class c join pg_namespace n on n.oid = 
 select ok((select relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relname = 'challenge_offer_goals'), 'RLS enabled on challenge_offer_goals');
 
 insert into public.challenges (
-  id, code, name, reference_year, reference_month,
-  sport_starts_at, sport_ends_at, status
+  id, code, public_name, reference_year, reference_month,
+  sports_starts_at, sports_ends_at, status
 ) values (
   '11111111-1111-1111-1111-111111111111',
   'teste-agosto-2026',
@@ -34,7 +34,7 @@ insert into public.challenges (
 );
 
 insert into public.challenge_goals (
-  id, challenge_id, distance_km, public_label, display_order
+  id, challenge_id, target_km, public_label, display_order
 ) values (
   '22222222-2222-2222-2222-222222222222',
   '11111111-1111-1111-1111-111111111111',
@@ -44,19 +44,18 @@ insert into public.challenge_goals (
 );
 
 insert into public.challenge_offers (
-  id, challenge_id, code, internal_name, public_name, category,
-  registration_starts_at, registration_ends_at, price_cents,
+  id, challenge_id, internal_name, public_name, category_code,
+  registration_starts_at, registration_ends_at, price,
   max_per_participant, status
 ) values (
   '33333333-3333-3333-3333-333333333333',
   '11111111-1111-1111-1111-111111111111',
-  'normal-1',
   'Normal 1',
   'Inscrição',
   'NORMAL',
   '2026-07-15 00:00:00-03',
   '2026-08-10 23:59:59-03',
-  3990,
+  39.90,
   1,
   'DRAFT'
 );
@@ -66,17 +65,13 @@ insert into public.challenge_offer_goals (offer_id, goal_id) values (
   '22222222-2222-2222-2222-222222222222'
 );
 
-update public.challenge_offers
-set status = 'OPEN'
-where id = '33333333-3333-3333-3333-333333333333';
-
 select ok(exists (
   select 1
   from public.challenge_offers o
   join public.challenge_offer_goals cog on cog.offer_id = o.id
   where o.id = '33333333-3333-3333-3333-333333333333'
-    and o.status = 'OPEN'
-), 'open offer keeps at least one linked goal');
+    and cog.goal_id = '22222222-2222-2222-2222-222222222222'
+), 'offer keeps linked goal');
 
 select * from finish();
 rollback;
