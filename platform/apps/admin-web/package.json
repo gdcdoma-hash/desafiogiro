@@ -1,0 +1,21 @@
+{
+  "name": "@portal-giro/admin-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "dev": "vite",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.56.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "vite": "^7.1.3"
+  }
+}

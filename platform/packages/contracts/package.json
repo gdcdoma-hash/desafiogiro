@@ -1,0 +1,10 @@
+{
+  "name": "@portal-giro/contracts",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

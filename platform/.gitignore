@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+coverage/
+dist/
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+.wrangler/
+supabase/.branches/
+supabase/.temp/
+backups/*.dump
+backups/*.sql
+!backups/.gitkeep

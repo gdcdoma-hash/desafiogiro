@@ -1,0 +1,13 @@
+{
+  "name": "@portal-giro/authorization",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@portal-giro/contracts": "workspace:*"
+  }
+}
