@@ -2,9 +2,13 @@
 
 ## Decisão de identificação
 
-Cada participante recebe um `id` interno UUID, aleatório e permanente. O identificador legado `ID_DGMB` continua opcionalmente armazenado para migração, rastreabilidade e compatibilidade, mas não é a chave primária da nova plataforma.
+Cada participante recebe um `id` interno UUID, aleatório e permanente. O
+identificador legado `ID_DGMB` continua opcionalmente armazenado para migração,
+rastreabilidade e compatibilidade, mas não é a chave primária da nova
+plataforma.
 
-CPF não é usado como identificador técnico. Este ciclo não introduz armazenamento de CPF na tabela principal de participantes.
+CPF não é usado como identificador técnico. Este ciclo não introduz
+armazenamento de CPF na tabela principal de participantes.
 
 ## Entidade `participants`
 
@@ -26,9 +30,11 @@ Campos iniciais:
 2. O mesmo `legacy_id_dgmb` não pode pertencer a duas pessoas.
 3. Telefone não é chave primária e pode mudar.
 4. Nome não é usado para deduplicação automática.
-5. Participantes não são apagados destrutivamente quando já fizerem parte de outros domínios; serão inativados ou consolidados em ciclo específico.
+5. Participantes não são apagados destrutivamente quando já fizerem parte de
+   outros domínios; serão inativados ou consolidados em ciclo específico.
 6. Nenhuma regra de inscrição é acoplada nesta tabela.
-7. Dados documentais sensíveis, se forem necessários mais adiante, terão estrutura e proteção próprias.
+7. Dados documentais sensíveis, se forem necessários mais adiante, terão
+   estrutura e proteção próprias.
 
 ## Permissões
 
