@@ -34,11 +34,7 @@ type Registration = {
 };
 
 type RegistrationStatus =
-  | "PENDING"
-  | "CONFIRMED"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "EXPIRED";
+  "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "EXPIRED";
 
 const statusLabels: Record<RegistrationStatus, string> = {
   PENDING: "Pendente",
@@ -380,9 +376,8 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
               </div>
               <div className="audit-meta">
                 <span>
-                  {statusLabels[
-                    registration.status as RegistrationStatus
-                  ] ?? registration.status}
+                  {statusLabels[registration.status as RegistrationStatus] ??
+                    registration.status}
                 </span>
                 <span>
                   R${" "}
