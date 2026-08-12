@@ -3,6 +3,7 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ChallengesPanel } from "./ChallengesPanel";
 import { ParticipantsPanel } from "./ParticipantsPanel";
+import { RegistrationsPanel } from "./RegistrationsPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 
@@ -371,6 +372,13 @@ function App() {
           <ParticipantsPanel
             supabase={supabase}
             canManage={context.permissions.includes("participants.manage")}
+          />
+        ) : null}
+
+        {context?.permissions.includes("registrations.read") ? (
+          <RegistrationsPanel
+            supabase={supabase}
+            canManage={context.permissions.includes("registrations.manage")}
           />
         ) : null}
 
