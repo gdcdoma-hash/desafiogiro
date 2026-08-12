@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { ChallengesPanel } from "./ChallengesPanel";
 import { ParticipantsPanel } from "./ParticipantsPanel";
 import { RegistrationsPanel } from "./RegistrationsPanel";
+import { PaymentsPanel } from "./PaymentsPanel";
 import { InventoryPanel } from "./InventoryPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
@@ -387,6 +388,13 @@ function App() {
           <InventoryPanel
             supabase={supabase}
             canManage={context.permissions.includes("inventory.manage")}
+          />
+        ) : null}
+
+        {context?.permissions.includes("payments.read") ? (
+          <PaymentsPanel
+            supabase={supabase}
+            canManage={context.permissions.includes("payments.manage")}
           />
         ) : null}
 
