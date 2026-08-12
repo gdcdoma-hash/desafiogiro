@@ -39,7 +39,13 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
     const term = query.trim().toLocaleLowerCase("pt-BR");
     if (!term) return items;
     return items.filter((item) =>
-      [item.full_name, item.phone_e164 ?? "", item.city, item.state_code ?? "", item.legacy_id_dgmb ?? ""]
+      [
+        item.full_name,
+        item.phone_e164 ?? "",
+        item.city,
+        item.state_code ?? "",
+        item.legacy_id_dgmb ?? "",
+      ]
         .join(" ")
         .toLocaleLowerCase("pt-BR")
         .includes(term),
@@ -143,46 +149,77 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
         ) : null}
       </div>
       <p className="section-description">
-        Cadastro-base da pessoa. Inscrições e desafios serão vinculados ao ID interno, não ao CPF.
+        Cadastro-base da pessoa. Inscrições e desafios serão vinculados ao ID
+        interno, não ao CPF.
       </p>
 
       {showForm ? (
         <form className="challenge-form" onSubmit={createParticipant}>
           <label>
             Nome completo
-            <input value={fullName} onChange={(event) => setFullName(event.target.value)} minLength={2} required />
+            <input
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              minLength={2}
+              required
+            />
           </label>
           <div className="form-grid two">
             <label>
               Telefone
-              <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="(98) 99999-9999" inputMode="tel" />
+              <input
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                placeholder="(98) 99999-9999"
+                inputMode="tel"
+              />
             </label>
             <label>
               ID legado DGMB
-              <input value={legacyId} onChange={(event) => setLegacyId(event.target.value)} placeholder="Opcional" />
+              <input
+                value={legacyId}
+                onChange={(event) => setLegacyId(event.target.value)}
+                placeholder="Opcional"
+              />
             </label>
           </div>
           <div className="form-grid two">
             <label>
               Cidade
-              <input value={city} onChange={(event) => setCity(event.target.value)} />
+              <input
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+              />
             </label>
             <label>
               UF
-              <input value={stateCode} onChange={(event) => setStateCode(event.target.value)} maxLength={2} placeholder="MA" />
+              <input
+                value={stateCode}
+                onChange={(event) => setStateCode(event.target.value)}
+                maxLength={2}
+                placeholder="MA"
+              />
             </label>
           </div>
           <div className="form-actions">
-            <button type="submit" disabled={busy}>{busy ? "Salvando…" : "Cadastrar participante"}</button>
+            <button type="submit" disabled={busy}>
+              {busy ? "Salvando…" : "Cadastrar participante"}
+            </button>
           </div>
         </form>
       ) : null}
 
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
 
       <label>
         Buscar participante
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, telefone, cidade ou ID legado" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Nome, telefone, cidade ou ID legado"
+        />
       </label>
 
       <div className="simple-list">
@@ -190,17 +227,30 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
           <div className="offer-row" key={item.id}>
             <div>
               <strong>{item.full_name}</strong>
-              <span>{[item.city, item.state_code].filter(Boolean).join(" - ") || "Localidade não informada"}</span>
+              <span>
+                {[item.city, item.state_code].filter(Boolean).join(" - ") ||
+                  "Localidade não informada"}
+              </span>
               <span>{item.phone_e164 || "Telefone não informado"}</span>
             </div>
             <div className="offer-side">
-              <strong>{item.status === "ACTIVE" ? "Ativo" : item.status === "INACTIVE" ? "Inativo" : "Consolidado"}</strong>
+              <strong>
+                {item.status === "ACTIVE"
+                  ? "Ativo"
+                  : item.status === "INACTIVE"
+                    ? "Inativo"
+                    : "Consolidado"}
+              </strong>
               <span>ID {item.id.slice(0, 8)}…</span>
-              {item.legacy_id_dgmb ? <span>Legado: {item.legacy_id_dgmb}</span> : null}
+              {item.legacy_id_dgmb ? (
+                <span>Legado: {item.legacy_id_dgmb}</span>
+              ) : null}
             </div>
           </div>
         ))}
-        {items.length > 0 && visibleItems.length === 0 ? <p className="empty-note">Nenhum participante encontrado.</p> : null}
+        {items.length > 0 && visibleItems.length === 0 ? (
+          <p className="empty-note">Nenhum participante encontrado.</p>
+        ) : null}
       </div>
     </section>
   );
