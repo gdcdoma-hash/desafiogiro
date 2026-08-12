@@ -9,16 +9,20 @@
   background: #eef5f0;
   font-synthesis: none;
 }
+
 * {
   box-sizing: border-box;
 }
+
 body {
   margin: 0;
 }
+
 button,
 input {
   font: inherit;
 }
+
 .shell {
   min-height: 100vh;
   display: grid;
@@ -32,6 +36,11 @@ input {
     ),
     #eef5f0;
 }
+
+.dashboard-shell {
+  align-items: start;
+}
+
 .card {
   width: min(100%, 31rem);
   padding: clamp(1.5rem, 5vw, 2.25rem);
@@ -40,9 +49,11 @@ input {
   background: white;
   box-shadow: 0 1rem 3rem rgb(20 70 40 / 10%);
 }
+
 .card.dashboard {
-  width: min(100%, 38rem);
+  width: min(100%, 58rem);
 }
+
 .eyebrow {
   margin: 0;
   color: #237c42;
@@ -51,28 +62,39 @@ input {
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
+
 .eyebrow.warning {
   color: #9a5a00;
 }
+
 h1 {
   margin: 0.35rem 0 0.75rem;
   font-size: clamp(1.7rem, 5vw, 2.3rem);
   line-height: 1.1;
 }
+
 h2 {
   margin: 0.25rem 0 0;
   font-size: 1.35rem;
 }
+
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
 form {
   display: grid;
   gap: 1rem;
   margin-top: 1.5rem;
 }
+
 label {
   display: grid;
   gap: 0.4rem;
   font-weight: 750;
 }
+
 input {
   width: 100%;
   min-height: 3rem;
@@ -82,11 +104,14 @@ input {
   color: #17211b;
   background: white;
 }
+
 input:focus-visible,
-button:focus-visible {
+button:focus-visible,
+summary:focus-visible {
   outline: 3px solid rgb(35 124 66 / 28%);
   outline-offset: 2px;
 }
+
 button {
   min-height: 3rem;
   padding: 0.8rem 1rem;
@@ -97,23 +122,28 @@ button {
   font-weight: 800;
   cursor: pointer;
 }
+
 button:disabled {
   cursor: wait;
   opacity: 0.65;
 }
+
 button.secondary {
   width: 100%;
   background: #e7efe9;
   color: #174a2a;
 }
+
 button.secondary.spaced {
   margin-top: 0.75rem;
 }
+
 button.compact {
   min-height: 2.5rem;
   padding: 0.65rem 0.85rem;
   font-size: 0.85rem;
 }
+
 button.link-button {
   min-height: auto;
   margin-top: 0.9rem;
@@ -122,15 +152,18 @@ button.link-button {
   color: #176b36;
   text-decoration: underline;
 }
+
 .status {
   min-height: 1.5rem;
   margin-bottom: 0;
   color: #4b5f52;
 }
+
 .status.success {
   color: #176b36;
   font-weight: 700;
 }
+
 .environment {
   margin: 1.5rem 0 0;
   padding-top: 1rem;
@@ -138,6 +171,7 @@ button.link-button {
   color: #647168;
   font-size: 0.82rem;
 }
+
 .status-row {
   display: flex;
   align-items: center;
@@ -150,6 +184,7 @@ button.link-button {
   font-size: 0.88rem;
   font-weight: 700;
 }
+
 .dot {
   width: 0.65rem;
   height: 0.65rem;
@@ -158,6 +193,7 @@ button.link-button {
   background: #28a654;
   box-shadow: 0 0 0 0.25rem rgb(40 166 84 / 14%);
 }
+
 dl {
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(0, 1.4fr);
@@ -167,86 +203,337 @@ dl {
   border-radius: 0.8rem;
   background: #f6f9f7;
 }
+
 dt {
   font-weight: 800;
 }
+
 dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
-.audit-panel {
+
+.module-panel,
+.audit-panel,
+.account-panel {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid #dbe6de;
 }
+
 .section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
+
 .section-description {
   margin: 0.7rem 0 0;
   color: #4b5f52;
 }
+
+.challenge-form {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #dbe6de;
+  border-radius: 0.9rem;
+  background: #f8faf8;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.form-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.challenge-list,
 .audit-list {
   display: grid;
   gap: 0.65rem;
   margin-top: 1rem;
 }
+
+.challenge-item,
 .audit-item {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.85rem;
+  padding: 0.9rem;
   border: 1px solid #e0e9e2;
   border-radius: 0.7rem;
   background: #f8faf8;
 }
+
+.challenge-select {
+  width: 100%;
+  min-height: 0;
+  color: inherit;
+  text-align: left;
+}
+
+.challenge-select:hover,
+.challenge-select.selected {
+  border-color: #7fb08c;
+  background: #eff7f1;
+}
+
+.challenge-select.selected {
+  box-shadow: inset 0 0 0 1px #7fb08c;
+}
+
+.challenge-main,
+.challenge-side {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.challenge-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.challenge-main > span,
+.challenge-side span {
+  color: #647168;
+  font-size: 0.82rem;
+}
+
+.challenge-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.challenge-side {
+  flex: none;
+  text-align: right;
+  align-content: start;
+}
+
+.challenge-status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #e7efe9;
+  color: #174a2a !important;
+  font-size: 0.72rem !important;
+  font-weight: 800;
+}
+
+.challenge-status.active {
+  background: #dff4e5;
+  color: #176b36 !important;
+}
+
+.challenge-status.cancelled {
+  background: #f8e8e4;
+  color: #9a3d25 !important;
+}
+
+.challenge-status.finished,
+.challenge-status.archived {
+  background: #edf0ee;
+  color: #59645d !important;
+}
+
+.challenge-detail {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #dbe6de;
+}
+
+.compact-heading {
+  margin-bottom: 1rem;
+}
+
+.challenge-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 1rem;
+}
+
+.config-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #dbe6de;
+  border-radius: 0.9rem;
+  background: #fbfcfb;
+}
+
+.mini-description,
+.empty-note {
+  margin: 0.25rem 0 0;
+  color: #647168;
+  font-size: 0.82rem;
+}
+
+.compact-form {
+  margin: 1rem 0;
+  padding: 0.9rem;
+  border-radius: 0.75rem;
+  background: #f3f7f4;
+}
+
+.simple-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.simple-row,
+.offer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e1e9e3;
+  border-radius: 0.65rem;
+  background: white;
+}
+
+.simple-row span,
+.offer-row span {
+  color: #647168;
+  font-size: 0.78rem;
+}
+
+.offer-row > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.offer-side {
+  flex: none;
+  text-align: right;
+}
+
+.goal-picker {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid #ccd9cf;
+  border-radius: 0.65rem;
+}
+
+.goal-picker legend {
+  padding: 0 0.25rem;
+  font-weight: 800;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 650;
+}
+
+.check-row input {
+  width: 1.1rem;
+  min-height: 1.1rem;
+  margin: 0;
+}
+
 .audit-item strong,
 .audit-item span,
 .audit-item time {
   display: block;
 }
+
 .audit-item strong {
   overflow-wrap: anywhere;
 }
+
 .audit-item span,
 .audit-item time {
   color: #647168;
   font-size: 0.78rem;
 }
+
 .audit-meta {
   flex: none;
   text-align: right;
 }
+
 .audit-meta .outcome {
   margin-bottom: 0.25rem;
   font-weight: 800;
 }
+
 .audit-meta .outcome.success {
   color: #176b36;
 }
+
 .audit-meta .outcome.failure,
 .audit-meta .outcome.denied {
   color: #9a3d25;
 }
+
+.account-panel details {
+  border-radius: 0.8rem;
+  background: #f6f9f7;
+  padding: 0.85rem;
+}
+
+.account-panel summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: #174a2a;
+}
+
+@media (max-width: 52rem) {
+  .challenge-config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 42rem) {
+  .form-grid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .challenge-item,
+  .simple-row,
+  .offer-row {
+    flex-direction: column;
+  }
+
+  .challenge-side,
+  .offer-side {
+    text-align: left;
+  }
+}
+
 @media (max-width: 30rem) {
   dl {
     grid-template-columns: 1fr;
     gap: 0.25rem;
   }
+
   dd:not(:last-child) {
     margin-bottom: 0.7rem;
   }
+
   .section-heading,
   .audit-item {
     align-items: stretch;
     flex-direction: column;
   }
+
   .section-heading button {
     width: 100%;
   }
+
   .audit-meta {
     text-align: left;
   }

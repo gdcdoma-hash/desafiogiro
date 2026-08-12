@@ -1,6 +1,7 @@
 import { createClient, type Session } from "@supabase/supabase-js";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { ChallengesPanel } from "./ChallengesPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 
@@ -10,7 +11,7 @@ const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
 const environment =
   (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ?? "development";
 const applicationVersion =
-  (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "cycle-2";
+  (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "cycle-3";
 
 if (!supabaseUrl || !publishableKey) {
   throw new Error(
@@ -76,6 +77,7 @@ function App() {
         setMessage("");
       }
     });
+
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
       if (event === "PASSWORD_RECOVERY" && nextSession) {
@@ -90,6 +92,7 @@ function App() {
         setView("login");
       }
     });
+
     return () => data.subscription.unsubscribe();
   }, []);
 
@@ -173,19 +176,16 @@ function App() {
       setMessage("As senhas informadas não são iguais.");
       return;
     }
-
     setBusy(true);
     setMessage("Salvando a nova senha…");
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setNewPassword("");
     setPasswordConfirmation("");
-
     if (error) {
       setMessage("Não foi possível atualizar a senha. Solicite um novo link.");
       setBusy(false);
       return;
     }
-
     await writeAudit("admin.password.updated", "success");
     await supabase.auth.signOut();
     setPasswordUpdateMode(false);
@@ -347,46 +347,25 @@ function App() {
   }
 
   return (
-    <main className="shell">
+    <main className="shell dashboard-shell">
       <section className="card dashboard">
         <div className="status-row">
           <span className="dot" aria-hidden="true" />
           <span>Ambiente de desenvolvimento conectado</span>
         </div>
-        <p className="eyebrow">Fundação técnica</p>
+        <p className="eyebrow">Portal Giro</p>
         <h1>Painel administrativo</h1>
-        <p>Autenticação, autorização e banco estão funcionando.</p>
-        <dl>
-          <dt>Usuário conectado</dt>
-          <dd>{session?.user.email ?? "E-mail não disponível"}</dd>
-          <dt>Papel</dt>
-          <dd>{context?.roles.join(", ")}</dd>
-          <dt>Permissões ativas</dt>
-          <dd>{context?.permissions.length}</dd>
-          <dt>Versão</dt>
-          <dd>{applicationVersion}</dd>
-        </dl>
         <p role="status" className="status success">
           {message}
         </p>
-        <button
-          className="secondary"
-          disabled={busy}
-          onClick={() => {
-            setPasswordUpdateMode(true);
-            setView("password-update");
-            setMessage("Crie uma nova senha para continuar.");
-          }}
-        >
-          Criar ou alterar senha
-        </button>
-        <button
-          className="secondary spaced"
-          disabled={busy}
-          onClick={() => void signOut()}
-        >
-          {busy ? "Saindo…" : "Sair com segurança"}
-        </button>
+
+        {context?.permissions.includes("challenges.read") ? (
+          <ChallengesPanel
+            supabase={supabase}
+            canManage={context.permissions.includes("challenges.manage")}
+          />
+        ) : null}
+
         {context?.permissions.includes("audit.read") ? (
           <section className="audit-panel" aria-labelledby="audit-title">
             <div className="section-heading">
@@ -440,6 +419,40 @@ function App() {
             ) : null}
           </section>
         ) : null}
+
+        <section className="account-panel">
+          <details>
+            <summary>Conta e acesso</summary>
+            <dl>
+              <dt>Usuário conectado</dt>
+              <dd>{session?.user.email ?? "E-mail não disponível"}</dd>
+              <dt>Papel</dt>
+              <dd>{context?.roles.join(", ")}</dd>
+              <dt>Permissões ativas</dt>
+              <dd>{context?.permissions.length}</dd>
+              <dt>Versão</dt>
+              <dd>{applicationVersion}</dd>
+            </dl>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => {
+                setPasswordUpdateMode(true);
+                setView("password-update");
+                setMessage("Crie uma nova senha para continuar.");
+              }}
+            >
+              Criar ou alterar senha
+            </button>
+            <button
+              className="secondary spaced"
+              disabled={busy}
+              onClick={() => void signOut()}
+            >
+              {busy ? "Saindo…" : "Sair com segurança"}
+            </button>
+          </details>
+        </section>
       </section>
     </main>
   );
