@@ -44,7 +44,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
         .limit(100),
       supabase
         .from("registration_payments")
-        .select("id,registration_id,amount,method_code,status,paid_at,created_at")
+        .select(
+          "id,registration_id,amount,method_code,status,paid_at,created_at",
+        )
         .order("created_at", { ascending: false })
         .limit(100),
     ]);
@@ -55,7 +57,11 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
       setParticipants((p.data ?? []) as Participant[]);
       setRegistrations((r.data ?? []) as Registration[]);
       setPayments((pay.data ?? []) as Payment[]);
-      setMessage(pay.data?.length ? `${pay.data.length} pagamentos mais recentes.` : "Nenhum pagamento registrado ainda.");
+      setMessage(
+        pay.data?.length
+          ? `${pay.data.length} pagamentos mais recentes.`
+          : "Nenhum pagamento registrado ainda.",
+      );
     }
     setBusy(false);
   }
@@ -65,17 +71,27 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
   }, []);
 
   const selectedRegistration = useMemo(
-    () => registrations.find((registration) => registration.id === registrationId) ?? null,
+    () =>
+      registrations.find(
+        (registration) => registration.id === registrationId,
+      ) ?? null,
     [registrations, registrationId],
   );
 
   function participantName(participantId: string) {
-    return participants.find((participant) => participant.id === participantId)?.full_name ?? "Participante";
+    return (
+      participants.find((participant) => participant.id === participantId)
+        ?.full_name ?? "Participante"
+    );
   }
 
   function paymentParticipantName(registrationIdValue: string) {
-    const registration = registrations.find((item) => item.id === registrationIdValue);
-    return registration ? participantName(registration.participant_id) : "Participante";
+    const registration = registrations.find(
+      (item) => item.id === registrationIdValue,
+    );
+    return registration
+      ? participantName(registration.participant_id)
+      : "Participante";
   }
 
   async function createPayment(event: React.FormEvent) {
@@ -103,7 +119,10 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
     setBusy(false);
   }
 
-  async function changeStatus(payment: Payment, status: "CONFIRMED" | "CANCELLED") {
+  async function changeStatus(
+    payment: Payment,
+    status: "CONFIRMED" | "CANCELLED",
+  ) {
     if (!canManage || payment.status !== "PENDING") return;
     setBusy(true);
     const { error } = await supabase
@@ -128,29 +147,47 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
           <p className="eyebrow">Financeiro</p>
           <h2 id="payments-title">Pagamentos</h2>
         </div>
-        <button type="button" className="compact" disabled={busy} onClick={() => void load()}>
+        <button
+          type="button"
+          className="compact"
+          disabled={busy}
+          onClick={() => void load()}
+        >
           {busy ? "Carregando…" : "Atualizar"}
         </button>
       </div>
       <p className="section-description">
-        Registro financeiro da inscrição. Confirmar pagamento não conclui automaticamente a inscrição neste ciclo.
+        Registro financeiro da inscrição. Confirmar pagamento não conclui
+        automaticamente a inscrição neste ciclo.
       </p>
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
 
       {canManage ? (
         <form onSubmit={createPayment}>
           <label>
             Inscrição
-            <select value={registrationId} onChange={(event) => setRegistrationId(event.target.value)} required>
+            <select
+              value={registrationId}
+              onChange={(event) => setRegistrationId(event.target.value)}
+              required
+            >
               <option value="">Selecione</option>
               {registrations.map((registration) => (
                 <option key={registration.id} value={registration.id}>
-                  {participantName(registration.participant_id)} · R$ {Number(registration.price_snapshot).toFixed(2).replace(".", ",")} · {registration.status}
+                  {participantName(registration.participant_id)} · R${" "}
+                  {Number(registration.price_snapshot)
+                    .toFixed(2)
+                    .replace(".", ",")}{" "}
+                  · {registration.status}
                 </option>
               ))}
             </select>
           </label>
-          <button type="submit" disabled={busy || !selectedRegistration}>Criar pagamento pendente</button>
+          <button type="submit" disabled={busy || !selectedRegistration}>
+            Criar pagamento pendente
+          </button>
         </form>
       ) : null}
 
@@ -159,15 +196,34 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
           {payments.map((payment) => (
             <article className="audit-item" key={payment.id}>
               <div>
-                <strong>{paymentParticipantName(payment.registration_id)}</strong>
-                <span>{payment.method_code} · R$ {Number(payment.amount).toFixed(2).replace(".", ",")}</span>
+                <strong>
+                  {paymentParticipantName(payment.registration_id)}
+                </strong>
+                <span>
+                  {payment.method_code} · R${" "}
+                  {Number(payment.amount).toFixed(2).replace(".", ",")}
+                </span>
               </div>
               <div className="audit-meta">
                 <span>{payment.status}</span>
                 {canManage && payment.status === "PENDING" ? (
                   <>
-                    <button type="button" className="compact" disabled={busy} onClick={() => void changeStatus(payment, "CONFIRMED")}>Confirmar</button>
-                    <button type="button" className="compact secondary" disabled={busy} onClick={() => void changeStatus(payment, "CANCELLED")}>Cancelar</button>
+                    <button
+                      type="button"
+                      className="compact"
+                      disabled={busy}
+                      onClick={() => void changeStatus(payment, "CONFIRMED")}
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      type="button"
+                      className="compact secondary"
+                      disabled={busy}
+                      onClick={() => void changeStatus(payment, "CANCELLED")}
+                    >
+                      Cancelar
+                    </button>
                   </>
                 ) : null}
               </div>
