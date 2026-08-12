@@ -23,3 +23,15 @@ alteração de domínio, segredo, deploy ou cobrança exige autorização separa
 - a chave privilegiada do Supabase não é necessária no navegador;
 - `.env`, `.env.local` e `.dev.vars` não entram no Git;
 - a inicialização falha quando uma variável obrigatória está ausente.
+
+### Prévia administrativa
+
+| Variável                        | Visibilidade | Uso                                           |
+| ------------------------------- | ------------ | --------------------------------------------- |
+| `VITE_SUPABASE_URL`             | pública      | endereço da API do projeto de desenvolvimento |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | pública      | chave de cliente protegida por Auth e RLS     |
+| `VITE_PORTAL_GIRO_ENV`          | pública      | identificação visual do ambiente              |
+| `VITE_APP_VERSION`              | pública      | versão exibida e registrada na auditoria      |
+
+Nunca configurar `service_role`, chave secreta ou senha do banco com prefixo
+`VITE_`, pois esse prefixo inclui o valor no JavaScript enviado ao navegador.
