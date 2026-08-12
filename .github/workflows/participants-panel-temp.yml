@@ -1,0 +1,55 @@
+name: Integrate participants panel temp
+
+on:
+  push:
+    branches:
+      - feature/participants-domain-cycle-1
+    paths:
+      - '.github/workflows/participants-panel-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/participants-domain-cycle-1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+      - working-directory: platform
+        run: pnpm install --frozen-lockfile
+      - name: Wire ParticipantsPanel into admin
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('platform/apps/admin-web/src/main.tsx')
+          s = p.read_text()
+          anchor = 'import { ChallengesPanel } from "./ChallengesPanel";\n'
+          if 'ParticipantsPanel' not in s:
+              s = s.replace(anchor, anchor + 'import { ParticipantsPanel } from "./ParticipantsPanel";\n')
+          block = '''\n        {context?.permissions.includes("participants.read") ? (\n          <ParticipantsPanel\n            supabase={supabase}\n            canManage={context.permissions.includes("participants.manage")}\n          />\n        ) : null}\n'''
+          challenge_block = '''        {context?.permissions.includes("challenges.read") ? (\n          <ChallengesPanel\n            supabase={supabase}\n            canManage={context.permissions.includes("challenges.manage")}\n          />\n        ) : null}\n'''
+          if 'permissions.includes("participants.read")' not in s:
+              s = s.replace(challenge_block, challenge_block + block)
+          p.write_text(s)
+          PY
+      - working-directory: platform
+        run: pnpm exec prettier --write apps/admin-web/src/main.tsx apps/admin-web/src/ParticipantsPanel.tsx
+      - name: Commit integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add platform/apps/admin-web/src/main.tsx platform/apps/admin-web/src/ParticipantsPanel.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: integra participantes ao painel admin"
+            git push origin HEAD:feature/participants-domain-cycle-1
+          fi
