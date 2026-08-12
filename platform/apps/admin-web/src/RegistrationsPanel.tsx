@@ -78,7 +78,9 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
     ]);
 
     if ([p, c, g, o, og, r].some((result) => result.error)) {
-      setMessage("Não foi possível carregar todas as informações de inscrições.");
+      setMessage(
+        "Não foi possível carregar todas as informações de inscrições.",
+      );
     } else {
       setParticipants((p.data ?? []) as Participant[]);
       setChallenges((c.data ?? []) as Challenge[]);
@@ -280,7 +282,9 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
           {registrations.map((registration) => (
             <article className="audit-item" key={registration.id}>
               <div>
-                <strong>{nameOfParticipant(registration.participant_id)}</strong>
+                <strong>
+                  {nameOfParticipant(registration.participant_id)}
+                </strong>
                 <span>{nameOfChallenge(registration.challenge_id)}</span>
               </div>
               <div className="audit-meta">
