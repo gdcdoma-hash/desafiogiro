@@ -7,11 +7,9 @@ import "./styles.css";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
-  | string
-  | undefined;
+  string | undefined;
 const environment =
-  (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ??
-  "development";
+  (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ?? "development";
 const applicationVersion =
   (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "cycle-3";
 
@@ -30,11 +28,7 @@ const supabase = createClient(supabaseUrl, publishableKey, {
 });
 
 type ViewState =
-  | "checking"
-  | "login"
-  | "password-update"
-  | "authorized"
-  | "denied";
+  "checking" | "login" | "password-update" | "authorized" | "denied";
 
 type AuditEvent = {
   id: string;

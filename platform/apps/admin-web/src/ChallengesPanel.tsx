@@ -10,12 +10,7 @@ type Challenge = {
   sports_starts_at: string;
   sports_ends_at: string;
   status:
-    | "DRAFT"
-    | "SCHEDULED"
-    | "ACTIVE"
-    | "FINISHED"
-    | "CANCELLED"
-    | "ARCHIVED";
+    "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
   is_public: boolean;
 };
 
