@@ -8,7 +8,7 @@ select has_table('public', 'app_permissions', 'permissions table exists');
 select has_table('public', 'user_roles', 'user roles table exists');
 select has_table('public', 'audit_events', 'audit table exists');
 select results_eq('select count(*)::bigint from public.app_roles', array[2::bigint], 'two technical roles');
-select results_eq('select count(*)::bigint from public.app_permissions', array[14::bigint], 'fourteen initial permissions including payments');
+select results_eq('select count(*)::bigint from public.app_permissions', array[16::bigint], 'sixteen permissions including inventory');
 select is_empty($$select 1 from public.audit_events where metadata ?| array['password','token','secret','cpf','authorization']$$, 'audit has no forbidden keys');
 
 select * from finish();
