@@ -33,6 +33,21 @@ type Registration = {
   offer_id: string;
 };
 
+type RegistrationStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "EXPIRED";
+
+const statusLabels: Record<RegistrationStatus, string> = {
+  PENDING: "Pendente",
+  CONFIRMED: "Confirmada",
+  COMPLETED: "Concluída",
+  CANCELLED: "Cancelada",
+  EXPIRED: "Expirada",
+};
+
 export function RegistrationsPanel({ supabase, canManage }: Props) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -166,6 +181,22 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
     setBusy(false);
   }
 
+  async function updateStatus(id: string, status: RegistrationStatus) {
+    setBusy(true);
+    const { error } = await supabase
+      .from("registrations")
+      .update({ status })
+      .eq("id", id);
+
+    if (error) {
+      setMessage("A mudança de situação não é permitida para esta inscrição.");
+    } else {
+      setMessage(`Inscrição atualizada para ${statusLabels[status]}.`);
+      await load();
+    }
+    setBusy(false);
+  }
+
   function nameOfParticipant(id: string) {
     return (
       participants.find((item) => item.id === id)?.full_name ?? "Participante"
@@ -174,6 +205,66 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
 
   function nameOfChallenge(id: string) {
     return challenges.find((item) => item.id === id)?.public_name ?? "Desafio";
+  }
+
+  function lifecycleActions(registration: Registration) {
+    if (!canManage) return null;
+
+    if (registration.status === "PENDING") {
+      return (
+        <div className="registration-actions">
+          <button
+            type="button"
+            className="compact"
+            disabled={busy}
+            onClick={() => void updateStatus(registration.id, "CONFIRMED")}
+          >
+            Confirmar
+          </button>
+          <button
+            type="button"
+            className="compact secondary"
+            disabled={busy}
+            onClick={() => void updateStatus(registration.id, "CANCELLED")}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="compact secondary"
+            disabled={busy}
+            onClick={() => void updateStatus(registration.id, "EXPIRED")}
+          >
+            Expirar
+          </button>
+        </div>
+      );
+    }
+
+    if (registration.status === "CONFIRMED") {
+      return (
+        <div className="registration-actions">
+          <button
+            type="button"
+            className="compact"
+            disabled={busy}
+            onClick={() => void updateStatus(registration.id, "COMPLETED")}
+          >
+            Concluir
+          </button>
+          <button
+            type="button"
+            className="compact secondary"
+            disabled={busy}
+            onClick={() => void updateStatus(registration.id, "CANCELLED")}
+          >
+            Cancelar
+          </button>
+        </div>
+      );
+    }
+
+    return null;
   }
 
   return (
@@ -288,13 +379,18 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
                 <span>{nameOfChallenge(registration.challenge_id)}</span>
               </div>
               <div className="audit-meta">
-                <span>{registration.status}</span>
+                <span>
+                  {statusLabels[
+                    registration.status as RegistrationStatus
+                  ] ?? registration.status}
+                </span>
                 <span>
                   R${" "}
                   {Number(registration.price_snapshot)
                     .toFixed(2)
                     .replace(".", ",")}
                 </span>
+                {lifecycleActions(registration)}
               </div>
             </article>
           ))}
