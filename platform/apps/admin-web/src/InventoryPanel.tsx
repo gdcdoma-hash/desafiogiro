@@ -7,7 +7,12 @@ type Props = {
 };
 
 type Challenge = { id: string; public_name: string };
-type Goal = { id: string; challenge_id: string; public_label: string | null; target_km: number };
+type Goal = {
+  id: string;
+  challenge_id: string;
+  public_label: string | null;
+  target_km: number;
+};
 type InventoryItem = {
   inventory_item_id: string;
   challenge_id: string;
@@ -33,9 +38,20 @@ export function InventoryPanel({ supabase, canManage }: Props) {
   async function load() {
     setBusy(true);
     const [c, g, i] = await Promise.all([
-      supabase.from("challenges").select("id,public_name").order("sports_starts_at", { ascending: false }),
-      supabase.from("challenge_goals").select("id,challenge_id,public_label,target_km").eq("is_active", true),
-      supabase.from("inventory_balances").select("inventory_item_id,challenge_id,goal_id,code,public_name,status,balance").order("public_name"),
+      supabase
+        .from("challenges")
+        .select("id,public_name")
+        .order("sports_starts_at", { ascending: false }),
+      supabase
+        .from("challenge_goals")
+        .select("id,challenge_id,public_label,target_km")
+        .eq("is_active", true),
+      supabase
+        .from("inventory_balances")
+        .select(
+          "inventory_item_id,challenge_id,goal_id,code,public_name,status,balance",
+        )
+        .order("public_name"),
     ]);
 
     if (c.error || g.error || i.error) {
@@ -44,7 +60,11 @@ export function InventoryPanel({ supabase, canManage }: Props) {
       setChallenges((c.data ?? []) as Challenge[]);
       setGoals((g.data ?? []) as Goal[]);
       setItems((i.data ?? []) as InventoryItem[]);
-      setMessage(i.data?.length ? `${i.data.length} itens de estoque.` : "Nenhum item de estoque cadastrado.");
+      setMessage(
+        i.data?.length
+          ? `${i.data.length} itens de estoque.`
+          : "Nenhum item de estoque cadastrado.",
+      );
     }
     setBusy(false);
   }
@@ -61,8 +81,16 @@ export function InventoryPanel({ supabase, canManage }: Props) {
   async function createItem(event: React.FormEvent) {
     event.preventDefault();
     const initialQuantity = Number.parseInt(quantity, 10);
-    if (!challengeId || !name.trim() || !code.trim() || Number.isNaN(initialQuantity) || initialQuantity < 0) {
-      setMessage("Preencha desafio, nome, código e uma quantidade inicial válida.");
+    if (
+      !challengeId ||
+      !name.trim() ||
+      !code.trim() ||
+      Number.isNaN(initialQuantity) ||
+      initialQuantity < 0
+    ) {
+      setMessage(
+        "Preencha desafio, nome, código e uma quantidade inicial válida.",
+      );
       return;
     }
 
@@ -72,7 +100,10 @@ export function InventoryPanel({ supabase, canManage }: Props) {
       .insert({
         challenge_id: challengeId,
         goal_id: goalId || null,
-        code: code.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-"),
+        code: code
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]+/g, "-"),
         public_name: name.trim(),
       })
       .select("id")
@@ -116,44 +147,90 @@ export function InventoryPanel({ supabase, canManage }: Props) {
           <p className="eyebrow">Operação</p>
           <h2 id="inventory-title">Estoque</h2>
         </div>
-        <button type="button" className="compact" disabled={busy} onClick={() => void load()}>
+        <button
+          type="button"
+          className="compact"
+          disabled={busy}
+          onClick={() => void load()}
+        >
           {busy ? "Carregando…" : "Atualizar"}
         </button>
       </div>
       <p className="section-description">
-        Controle por movimentos. O saldo é calculado pelo histórico de entradas, saídas e ajustes.
+        Controle por movimentos. O saldo é calculado pelo histórico de entradas,
+        saídas e ajustes.
       </p>
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
 
       {canManage ? (
         <form onSubmit={createItem}>
           <label>
             Desafio
-            <select value={challengeId} onChange={(event) => { setChallengeId(event.target.value); setGoalId(""); }} required>
+            <select
+              value={challengeId}
+              onChange={(event) => {
+                setChallengeId(event.target.value);
+                setGoalId("");
+              }}
+              required
+            >
               <option value="">Selecione</option>
-              {challenges.map((challenge) => <option key={challenge.id} value={challenge.id}>{challenge.public_name}</option>)}
+              {challenges.map((challenge) => (
+                <option key={challenge.id} value={challenge.id}>
+                  {challenge.public_name}
+                </option>
+              ))}
             </select>
           </label>
           <label>
             Meta relacionada
-            <select value={goalId} onChange={(event) => setGoalId(event.target.value)} disabled={!challengeId}>
+            <select
+              value={goalId}
+              onChange={(event) => setGoalId(event.target.value)}
+              disabled={!challengeId}
+            >
               <option value="">Sem meta específica</option>
-              {challengeGoals.map((goal) => <option key={goal.id} value={goal.id}>{goal.public_label ?? `${goal.target_km} km`}</option>)}
+              {challengeGoals.map((goal) => (
+                <option key={goal.id} value={goal.id}>
+                  {goal.public_label ?? `${goal.target_km} km`}
+                </option>
+              ))}
             </select>
           </label>
           <label>
             Nome do item
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Medalha 300 km" required />
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Ex.: Medalha 300 km"
+              required
+            />
           </label>
           <label>
             Código interno
-            <input value={code} onChange={(event) => setCode(event.target.value)} placeholder="medal-300" required />
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              placeholder="medal-300"
+              required
+            />
           </label>
           <label>
             Quantidade inicial
-            <input type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={quantity}
+              onChange={(event) => setQuantity(event.target.value)}
+              required
+            />
           </label>
-          <button type="submit" disabled={busy}>Cadastrar item</button>
+          <button type="submit" disabled={busy}>
+            Cadastrar item
+          </button>
         </form>
       ) : null}
 
