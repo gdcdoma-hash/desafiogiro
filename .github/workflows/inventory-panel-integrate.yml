@@ -1,0 +1,50 @@
+name: Integrate inventory panel
+
+on:
+  push:
+    branches: [feature/inventory-domain-cycle-1]
+    paths: [.github/workflows/inventory-panel-integrate.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/inventory-domain-cycle-1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+      - name: Patch main
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('platform/apps/admin-web/src/main.tsx')
+          s = p.read_text()
+          s = s.replace('import { RegistrationsPanel } from "./RegistrationsPanel";\n', 'import { RegistrationsPanel } from "./RegistrationsPanel";\nimport { InventoryPanel } from "./InventoryPanel";\n')
+          marker = '''        {context?.permissions.includes("audit.read") ? (\n'''
+          block = '''        {context?.permissions.includes("inventory.read") ? (\n          <InventoryPanel\n            supabase={supabase}\n            canManage={context.permissions.includes("inventory.manage")}\n          />\n        ) : null}\n\n'''
+          if block not in s:
+              s = s.replace(marker, block + marker)
+          p.write_text(s)
+          PY
+      - name: Format
+        working-directory: platform
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec prettier --write apps/admin-web/src/main.tsx apps/admin-web/src/InventoryPanel.tsx
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add platform/apps/admin-web/src/main.tsx platform/apps/admin-web/src/InventoryPanel.tsx
+          git diff --cached --quiet || git commit -m "feat: integra estoque ao painel administrativo"
+          git push origin HEAD:feature/inventory-domain-cycle-1
