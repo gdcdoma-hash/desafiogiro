@@ -102,6 +102,9 @@ button.secondary {
   background: #e7efe9;
   color: #174a2a;
 }
+button.secondary.spaced {
+  margin-top: 0.75rem;
+}
 button.link-button {
   min-height: auto;
   margin-top: 0.9rem;
