@@ -78,7 +78,9 @@ create trigger inventory_items_set_updated_at
 before update on public.inventory_items
 for each row execute function public.set_updated_at();
 
-create or replace view public.inventory_balances as
+create or replace view public.inventory_balances
+with (security_invoker = true)
+as
 select
   i.id as inventory_item_id,
   i.challenge_id,
