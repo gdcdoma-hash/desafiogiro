@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { useEffect, useMemo, useState } from "react";
 
 type Challenge = {
   id: string;
@@ -9,7 +9,13 @@ type Challenge = {
   reference_month: number | null;
   sports_starts_at: string;
   sports_ends_at: string;
-  status: "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
+  status:
+    | "DRAFT"
+    | "SCHEDULED"
+    | "ACTIVE"
+    | "FINISHED"
+    | "CANCELLED"
+    | "ARCHIVED";
   is_public: boolean;
 };
 
@@ -49,8 +55,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     setMessage("Carregando desafios…");
     const { data, error } = await supabase
       .from("challenges")
-      .select("id,code,public_name,reference_year,reference_month,sports_starts_at,sports_ends_at,status,is_public")
+      .select(
+        "id,code,public_name,reference_year,reference_month,sports_starts_at,sports_ends_at,status,is_public",
+      )
       .order("sports_starts_at", { ascending: false });
+
     if (error) {
       setItems([]);
       setMessage("Não foi possível carregar os desafios.");
@@ -79,7 +88,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
 
     setBusy(true);
     setMessage("Salvando desafio…");
-    const normalizedCode = code.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+    const normalizedCode = code
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
     const { error } = await supabase.from("challenges").insert({
       code: normalizedCode,
       public_name: name.trim(),
@@ -93,7 +106,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     });
 
     if (error) {
-      setMessage(error.code === "23505" ? "Já existe um desafio com esse código." : "Não foi possível salvar o desafio.");
+      setMessage(
+        error.code === "23505"
+          ? "Já existe um desafio com esse código."
+          : "Não foi possível salvar o desafio.",
+      );
       setBusy(false);
       return;
     }
@@ -119,7 +136,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
   }
 
   function formatPeriod(item: Challenge) {
-    const formatter = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" });
+    const formatter = new Intl.DateTimeFormat("pt-BR", {
+      dateStyle: "short",
+    });
     return `${formatter.format(new Date(item.sports_starts_at))} a ${formatter.format(new Date(item.sports_ends_at))}`;
   }
 
@@ -131,50 +150,102 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
           <h2 id="challenges-title">Desafios</h2>
         </div>
         {canManage ? (
-          <button type="button" className="compact" onClick={() => setShowForm((value) => !value)} disabled={busy}>
+          <button
+            type="button"
+            className="compact"
+            onClick={() => setShowForm((value) => !value)}
+            disabled={busy}
+          >
             {showForm ? "Cancelar" : "Novo desafio"}
           </button>
         ) : null}
       </div>
-      <p className="section-description">Cadastre primeiro a edição. Metas e ofertas serão configuradas dentro dela nas próximas etapas.</p>
+      <p className="section-description">
+        Cadastre primeiro a edição. Metas e ofertas serão configuradas dentro
+        dela nas próximas etapas.
+      </p>
 
       {showForm ? (
         <form className="challenge-form" onSubmit={createChallenge}>
           <label>
             Nome público
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Desafio Giro Agosto 2026" required minLength={2} />
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Ex.: Desafio Giro Agosto 2026"
+              required
+              minLength={2}
+            />
           </label>
           <label>
             Código interno
-            <input value={code} onChange={(event) => setCode(event.target.value)} placeholder="ex.: agosto-2026" required pattern="[A-Za-z0-9_-]+" />
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              placeholder="ex.: agosto-2026"
+              required
+              pattern="[A-Za-z0-9_-]+"
+            />
           </label>
           <div className="form-grid two">
             <label>
               Mês de referência
-              <input type="number" min={1} max={12} value={referenceMonth} onChange={(event) => setReferenceMonth(Number(event.target.value))} required />
+              <input
+                type="number"
+                min={1}
+                max={12}
+                value={referenceMonth}
+                onChange={(event) =>
+                  setReferenceMonth(Number(event.target.value))
+                }
+                required
+              />
             </label>
             <label>
               Ano de referência
-              <input type="number" min={2020} max={2200} value={referenceYear} onChange={(event) => setReferenceYear(Number(event.target.value))} required />
+              <input
+                type="number"
+                min={2020}
+                max={2200}
+                value={referenceYear}
+                onChange={(event) =>
+                  setReferenceYear(Number(event.target.value))
+                }
+                required
+              />
             </label>
           </div>
           <div className="form-grid two">
             <label>
               Início do período esportivo
-              <input type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required />
+              <input
+                type="datetime-local"
+                value={startsAt}
+                onChange={(event) => setStartsAt(event.target.value)}
+                required
+              />
             </label>
             <label>
               Fim do período esportivo
-              <input type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required />
+              <input
+                type="datetime-local"
+                value={endsAt}
+                onChange={(event) => setEndsAt(event.target.value)}
+                required
+              />
             </label>
           </div>
           <div className="form-actions">
-            <button type="submit" disabled={busy}>{busy ? "Salvando…" : "Criar rascunho"}</button>
+            <button type="submit" disabled={busy}>
+              {busy ? "Salvando…" : "Criar rascunho"}
+            </button>
           </div>
         </form>
       ) : null}
 
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
 
       <div className="challenge-list">
         {items.map((item) => (
@@ -182,20 +253,35 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             <div className="challenge-main">
               <div className="challenge-title-row">
                 <strong>{item.public_name}</strong>
-                <span className={`challenge-status ${item.status.toLowerCase()}`}>{statusLabel[item.status]}</span>
+                <span
+                  className={`challenge-status ${item.status.toLowerCase()}`}
+                >
+                  {statusLabel[item.status]}
+                </span>
               </div>
               <span className="challenge-code">{item.code}</span>
               <span>{formatPeriod(item)}</span>
             </div>
             <div className="challenge-side">
-              <span>{item.reference_month ? `${String(item.reference_month).padStart(2, "0")}/${item.reference_year}` : item.reference_year}</span>
+              <span>
+                {item.reference_month
+                  ? `${String(item.reference_month).padStart(2, "0")}/${item.reference_year}`
+                  : item.reference_year}
+              </span>
               <span>{item.is_public ? "Visível" : "Não publicado"}</span>
             </div>
           </article>
         ))}
       </div>
       {items.length ? (
-        <button type="button" className="link-button" onClick={() => void load()} disabled={busy}>Atualizar lista</button>
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => void load()}
+          disabled={busy}
+        >
+          Atualizar lista
+        </button>
       ) : null}
     </section>
   );
