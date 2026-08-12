@@ -2,6 +2,7 @@ import { createClient, type Session } from "@supabase/supabase-js";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ChallengesPanel } from "./ChallengesPanel";
+import { ParticipantsPanel } from "./ParticipantsPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 
@@ -363,6 +364,13 @@ function App() {
           <ChallengesPanel
             supabase={supabase}
             canManage={context.permissions.includes("challenges.manage")}
+          />
+        ) : null}
+
+        {context?.permissions.includes("participants.read") ? (
+          <ParticipantsPanel
+            supabase={supabase}
+            canManage={context.permissions.includes("participants.manage")}
           />
         ) : null}
 
