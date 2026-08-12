@@ -1,38 +1,25 @@
 begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(11);
 
--- Estrutura principal
-select 1 / case when to_regclass('public.challenges') is not null then 1 else 0 end;
-select 1 / case when to_regclass('public.challenge_goals') is not null then 1 else 0 end;
-select 1 / case when to_regclass('public.challenge_offers') is not null then 1 else 0 end;
-select 1 / case when to_regclass('public.challenge_offer_goals') is not null then 1 else 0 end;
+select has_table('public', 'challenges', 'challenges table exists');
+select has_table('public', 'challenge_goals', 'challenge goals table exists');
+select has_table('public', 'challenge_offers', 'challenge offers table exists');
+select has_table('public', 'challenge_offer_goals', 'challenge offer goals table exists');
 
--- Permissões RBAC cadastradas
-select 1 / case when exists (
+select ok(exists (
   select 1 from public.app_permissions where code = 'challenges.read'
-) then 1 else 0 end;
-select 1 / case when exists (
+), 'challenges.read permission exists');
+select ok(exists (
   select 1 from public.app_permissions where code = 'challenges.manage'
-) then 1 else 0 end;
+), 'challenges.manage permission exists');
 
--- RLS habilitada
-select 1 / case when exists (
-  select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'public' and c.relname = 'challenges' and c.relrowsecurity
-) then 1 else 0 end;
-select 1 / case when exists (
-  select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'public' and c.relname = 'challenge_goals' and c.relrowsecurity
-) then 1 else 0 end;
-select 1 / case when exists (
-  select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'public' and c.relname = 'challenge_offers' and c.relrowsecurity
-) then 1 else 0 end;
-select 1 / case when exists (
-  select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'public' and c.relname = 'challenge_offer_goals' and c.relrowsecurity
-) then 1 else 0 end;
+select ok((select relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relname = 'challenges'), 'RLS enabled on challenges');
+select ok((select relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relname = 'challenge_goals'), 'RLS enabled on challenge_goals');
+select ok((select relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relname = 'challenge_offers'), 'RLS enabled on challenge_offers');
+select ok((select relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relname = 'challenge_offer_goals'), 'RLS enabled on challenge_offer_goals');
 
--- Cenário válido básico
 insert into public.challenges (
   id, code, name, reference_year, reference_month,
   sport_starts_at, sport_ends_at, status
@@ -83,13 +70,13 @@ update public.challenge_offers
 set status = 'OPEN'
 where id = '33333333-3333-3333-3333-333333333333';
 
--- Garante que a oferta aberta conservou meta vinculada
-select 1 / case when exists (
+select ok(exists (
   select 1
   from public.challenge_offers o
   join public.challenge_offer_goals cog on cog.offer_id = o.id
   where o.id = '33333333-3333-3333-3333-333333333333'
     and o.status = 'OPEN'
-) then 1 else 0 end;
+), 'open offer keeps at least one linked goal');
 
+select * from finish();
 rollback;
