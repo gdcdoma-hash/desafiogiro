@@ -29,6 +29,14 @@ const supabase = createClient(supabaseUrl, publishableKey, {
 type ViewState =
   "checking" | "login" | "password-update" | "authorized" | "denied";
 
+type AuditEvent = {
+  id: string;
+  occurred_at: string;
+  action: string;
+  resource_type: string;
+  outcome: "success" | "failure" | "denied";
+};
+
 async function writeAudit(
   action: string,
   outcome: "success" | "failure" | "denied",
@@ -56,6 +64,9 @@ function App() {
   const [passwordUpdateMode, setPasswordUpdateMode] = useState(false);
   const [message, setMessage] = useState("Verificando sessão…");
   const [busy, setBusy] = useState(false);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [auditMessage, setAuditMessage] = useState("");
+  const [auditBusy, setAuditBusy] = useState(false);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -181,6 +192,36 @@ function App() {
     setView("login");
     setMessage("Senha criada com sucesso. Entre usando a nova senha.");
     setBusy(false);
+  }
+
+  async function loadAuditEvents() {
+    setAuditBusy(true);
+    setAuditMessage("Carregando registros…");
+    const { data, error } = await supabase
+      .from("audit_events")
+      .select("id,occurred_at,action,resource_type,outcome")
+      .order("occurred_at", { ascending: false })
+      .limit(25);
+
+    if (error) {
+      setAuditEvents([]);
+      setAuditMessage("Não foi possível carregar a auditoria agora.");
+    } else {
+      setAuditEvents((data ?? []) as AuditEvent[]);
+      setAuditMessage(
+        data?.length
+          ? `${data.length} registros mais recentes.`
+          : "Nenhum registro de auditoria encontrado.",
+      );
+    }
+    setAuditBusy(false);
+  }
+
+  function formatAuditDate(value: string) {
+    return new Intl.DateTimeFormat("pt-BR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(value));
   }
 
   if (view === "checking") {
@@ -346,6 +387,59 @@ function App() {
         >
           {busy ? "Saindo…" : "Sair com segurança"}
         </button>
+        {context?.permissions.includes("audit.read") ? (
+          <section className="audit-panel" aria-labelledby="audit-title">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Segurança</p>
+                <h2 id="audit-title">Auditoria recente</h2>
+              </div>
+              <button
+                type="button"
+                className="compact"
+                disabled={auditBusy}
+                onClick={() => void loadAuditEvents()}
+              >
+                {auditBusy
+                  ? "Carregando…"
+                  : auditEvents.length
+                    ? "Atualizar"
+                    : "Carregar registros"}
+              </button>
+            </div>
+            <p className="section-description">
+              Consulta somente leitura das 25 ações administrativas mais
+              recentes.
+            </p>
+            <p role="status" className="status">
+              {auditMessage}
+            </p>
+            {auditEvents.length > 0 ? (
+              <div className="audit-list">
+                {auditEvents.map((event) => (
+                  <article className="audit-item" key={event.id}>
+                    <div>
+                      <strong>{event.action}</strong>
+                      <span>{event.resource_type}</span>
+                    </div>
+                    <div className="audit-meta">
+                      <span className={`outcome ${event.outcome}`}>
+                        {event.outcome === "success"
+                          ? "Sucesso"
+                          : event.outcome === "denied"
+                            ? "Negado"
+                            : "Falha"}
+                      </span>
+                      <time dateTime={event.occurred_at}>
+                        {formatAuditDate(event.occurred_at)}
+                      </time>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
       </section>
     </main>
   );
