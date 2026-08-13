@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import "./payments-summary.css";
 
 type Props = {
   supabase: SupabaseClient;
@@ -14,14 +15,29 @@ type Registration = {
   price_snapshot: number;
   created_at: string;
 };
+type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 type Payment = {
   id: string;
   registration_id: string;
   amount: number;
   method_code: string;
-  status: string;
+  status: PaymentStatus;
   paid_at: string | null;
   created_at: string;
+};
+
+const paymentLabels: Record<PaymentStatus, string> = {
+  PENDING: "Pendente",
+  CONFIRMED: "Confirmado",
+  CANCELLED: "Cancelado",
+};
+
+const registrationLabels: Record<string, string> = {
+  PENDING: "Inscrição pendente",
+  CONFIRMED: "Inscrição confirmada",
+  COMPLETED: "Inscrição concluída",
+  CANCELLED: "Inscrição cancelada",
+  EXPIRED: "Inscrição expirada",
 };
 
 export function PaymentsPanel({ supabase, canManage }: Props) {
@@ -29,6 +45,8 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [registrationId, setRegistrationId] = useState("");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | PaymentStatus>("ALL");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -39,16 +57,15 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
       supabase
         .from("registrations")
         .select("id,participant_id,status,price_snapshot,created_at")
-        .in("status", ["PENDING", "CONFIRMED"])
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(250),
       supabase
         .from("registration_payments")
         .select(
           "id,registration_id,amount,method_code,status,paid_at,created_at",
         )
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(150),
     ]);
 
     if (p.error || r.error || pay.error) {
@@ -70,12 +87,38 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
     void load();
   }, []);
 
+  const eligibleRegistrations = useMemo(
+    () =>
+      registrations.filter((registration) =>
+        ["PENDING", "CONFIRMED"].includes(registration.status),
+      ),
+    [registrations],
+  );
+
   const selectedRegistration = useMemo(
     () =>
-      registrations.find(
+      eligibleRegistrations.find(
         (registration) => registration.id === registrationId,
       ) ?? null,
-    [registrations, registrationId],
+    [eligibleRegistrations, registrationId],
+  );
+
+  const counts = useMemo(
+    () => ({
+      all: payments.length,
+      pending: payments.filter((payment) => payment.status === "PENDING").length,
+      confirmed: payments.filter((payment) => payment.status === "CONFIRMED").length,
+      cancelled: payments.filter((payment) => payment.status === "CANCELLED").length,
+    }),
+    [payments],
+  );
+
+  const confirmedTotal = useMemo(
+    () =>
+      payments
+        .filter((payment) => payment.status === "CONFIRMED")
+        .reduce((total, payment) => total + Number(payment.amount), 0),
+    [payments],
   );
 
   function participantName(participantId: string) {
@@ -85,14 +128,32 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
     );
   }
 
+  function registrationForPayment(registrationIdValue: string) {
+    return registrations.find((item) => item.id === registrationIdValue) ?? null;
+  }
+
   function paymentParticipantName(registrationIdValue: string) {
-    const registration = registrations.find(
-      (item) => item.id === registrationIdValue,
-    );
+    const registration = registrationForPayment(registrationIdValue);
     return registration
       ? participantName(registration.participant_id)
-      : "Participante";
+      : "Participante não encontrado";
   }
+
+  const filteredPayments = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("pt-BR");
+    return payments.filter((payment) => {
+      if (statusFilter !== "ALL" && payment.status !== statusFilter) return false;
+      if (!normalized) return true;
+      const registration = registrationForPayment(payment.registration_id);
+      const participant = registration
+        ? participantName(registration.participant_id)
+        : "";
+      return [participant, payment.method_code, paymentLabels[payment.status]]
+        .join(" ")
+        .toLocaleLowerCase("pt-BR")
+        .includes(normalized);
+    });
+  }, [payments, query, statusFilter, participants, registrations]);
 
   async function createPayment(event: React.FormEvent) {
     event.preventDefault();
@@ -140,6 +201,20 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
     setBusy(false);
   }
 
+  function formatMoney(value: number) {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(Number(value));
+  }
+
+  function formatDate(value: string) {
+    return new Intl.DateTimeFormat("pt-BR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(value));
+  }
+
   return (
     <section className="audit-panel" aria-labelledby="payments-title">
       <div className="section-heading">
@@ -160,77 +235,113 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
         Registro financeiro da inscrição. Confirmar pagamento não conclui
         automaticamente a inscrição neste ciclo.
       </p>
+
+      <div className="payments-summary" aria-label="Resumo dos pagamentos">
+        <button type="button" className={statusFilter === "ALL" ? "active" : ""} onClick={() => setStatusFilter("ALL")}>
+          <span>Total</span><strong>{counts.all}</strong>
+        </button>
+        <button type="button" className={statusFilter === "PENDING" ? "active" : ""} onClick={() => setStatusFilter("PENDING")}>
+          <span>Pendentes</span><strong>{counts.pending}</strong>
+        </button>
+        <button type="button" className={statusFilter === "CONFIRMED" ? "active" : ""} onClick={() => setStatusFilter("CONFIRMED")}>
+          <span>Confirmados</span><strong>{counts.confirmed}</strong>
+        </button>
+        <button type="button" className={statusFilter === "CANCELLED" ? "active" : ""} onClick={() => setStatusFilter("CANCELLED")}>
+          <span>Cancelados</span><strong>{counts.cancelled}</strong>
+        </button>
+        <div className="payments-total">
+          <span>Valor confirmado</span>
+          <strong>{formatMoney(confirmedTotal)}</strong>
+        </div>
+      </div>
+
       <p role="status" className="status">
         {message}
       </p>
 
       {canManage ? (
-        <form onSubmit={createPayment}>
+        <form className="payment-create-form" onSubmit={createPayment}>
           <label>
-            Inscrição
+            Inscrição aberta
             <select
               value={registrationId}
               onChange={(event) => setRegistrationId(event.target.value)}
               required
             >
               <option value="">Selecione</option>
-              {registrations.map((registration) => (
+              {eligibleRegistrations.map((registration) => (
                 <option key={registration.id} value={registration.id}>
-                  {participantName(registration.participant_id)} · R${" "}
-                  {Number(registration.price_snapshot)
-                    .toFixed(2)
-                    .replace(".", ",")}{" "}
-                  · {registration.status}
+                  {participantName(registration.participant_id)} · {formatMoney(registration.price_snapshot)} · {registrationLabels[registration.status] ?? registration.status}
                 </option>
               ))}
             </select>
           </label>
+          {selectedRegistration ? (
+            <div className="payment-preview">
+              <span>Valor da inscrição</span>
+              <strong>{formatMoney(selectedRegistration.price_snapshot)}</strong>
+            </div>
+          ) : null}
           <button type="submit" disabled={busy || !selectedRegistration}>
             Criar pagamento pendente
           </button>
         </form>
       ) : null}
 
-      {payments.length > 0 ? (
+      <div className="payments-toolbar">
+        <label>
+          Buscar pagamento
+          <input
+            type="search"
+            value={query}
+            placeholder="Participante, método ou situação"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        <p>{filteredPayments.length} resultado(s)</p>
+      </div>
+
+      {filteredPayments.length > 0 ? (
         <div className="audit-list">
-          {payments.map((payment) => (
-            <article className="audit-item" key={payment.id}>
-              <div>
-                <strong>
-                  {paymentParticipantName(payment.registration_id)}
-                </strong>
-                <span>
-                  {payment.method_code} · R${" "}
-                  {Number(payment.amount).toFixed(2).replace(".", ",")}
-                </span>
-              </div>
-              <div className="audit-meta">
-                <span>{payment.status}</span>
-                {canManage && payment.status === "PENDING" ? (
-                  <>
-                    <button
-                      type="button"
-                      className="compact"
-                      disabled={busy}
-                      onClick={() => void changeStatus(payment, "CONFIRMED")}
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      type="button"
-                      className="compact secondary"
-                      disabled={busy}
-                      onClick={() => void changeStatus(payment, "CANCELLED")}
-                    >
-                      Cancelar
-                    </button>
-                  </>
-                ) : null}
-              </div>
-            </article>
-          ))}
+          {filteredPayments.map((payment) => {
+            const registration = registrationForPayment(payment.registration_id);
+            return (
+              <article className="audit-item payment-item" key={payment.id}>
+                <div className="payment-main">
+                  <strong>{paymentParticipantName(payment.registration_id)}</strong>
+                  <span>{payment.method_code} · {formatMoney(payment.amount)}</span>
+                  <span>
+                    {registration
+                      ? registrationLabels[registration.status] ?? registration.status
+                      : "Inscrição não localizada na consulta atual"}
+                  </span>
+                  <time dateTime={payment.created_at}>Registrado em {formatDate(payment.created_at)}</time>
+                </div>
+                <div className="audit-meta payment-meta">
+                  <span className={`payment-status ${payment.status.toLocaleLowerCase()}`}>
+                    {paymentLabels[payment.status]}
+                  </span>
+                  {payment.paid_at ? (
+                    <time dateTime={payment.paid_at}>Confirmado em {formatDate(payment.paid_at)}</time>
+                  ) : null}
+                  {canManage && payment.status === "PENDING" ? (
+                    <div className="payment-actions">
+                      <button type="button" className="compact" disabled={busy} onClick={() => void changeStatus(payment, "CONFIRMED")}>
+                        Confirmar
+                      </button>
+                      <button type="button" className="compact secondary" disabled={busy} onClick={() => void changeStatus(payment, "CANCELLED")}>
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
         </div>
-      ) : null}
+      ) : (
+        <p className="empty-note">Nenhum pagamento corresponde aos filtros atuais.</p>
+      )}
     </section>
   );
 }
