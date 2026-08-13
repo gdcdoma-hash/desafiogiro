@@ -23,16 +23,20 @@ select
     when coalesce(pay.pending_amount, 0) > 0 then 'PENDING'
     else 'UNPAID'
   end as payment_summary,
+  r.created_at,
   ir.status as reservation_status,
   ir.inventory_item_id,
-  case when r.status='CONFIRMED' and ir.status='RESERVED' then true else false end as avatar_acceptance_ready,
-  r.created_at
+  case
+    when r.status = 'CONFIRMED' and ir.status = 'RESERVED' then true
+    else false
+  end as avatar_acceptance_ready
 from public.registrations r
 join public.participants p on p.id = r.participant_id
 join public.challenges c on c.id = r.challenge_id
 join public.challenge_goals g on g.id = r.goal_id
 join public.challenge_offers o on o.id = r.offer_id
-left join public.inventory_reservations ir on ir.registration_id = r.id
+left join public.inventory_reservations ir
+  on ir.registration_id = r.id
 left join lateral (
   select
     coalesce(sum(rp.amount) filter (where rp.status = 'CONFIRMED'), 0) as confirmed_amount,
