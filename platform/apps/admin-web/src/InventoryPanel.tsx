@@ -260,8 +260,9 @@ export function InventoryPanel({ supabase, canManage }: Props) {
         </button>
       </div>
       <p className="section-description">
-        Controle por movimentos e reservas. Estoque físico é o que existe; reservado
-        pertence a inscrições pagas; disponível é o que ainda pode ser comprometido.
+        Controle por movimentos e reservas. Estoque físico é o que existe;
+        reservado pertence a inscrições pagas; disponível é o que ainda pode ser
+        comprometido.
       </p>
       <p role="status" className="status">
         {message}
