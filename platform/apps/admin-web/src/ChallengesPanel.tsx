@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { ChallengeLifecycleControls } from "./ChallengeLifecycleControls";
+import { OfferLifecycleControls } from "./OfferLifecycleControls";
 
 type Challenge = {
   id: string;
@@ -742,6 +743,14 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                         {offerStatusLabel[offer.status]} · limite{" "}
                         {offer.max_per_participant}
                       </span>
+                      <OfferLifecycleControls
+                        supabase={supabase}
+                        offerId={offer.id}
+                        offerStatus={offer.status}
+                        challengeStatus={selected.status}
+                        canManage={canManage}
+                        onChanged={() => loadChallengeDetails(selected.id)}
+                      />
                     </div>
                   </div>
                 ))}
