@@ -35,11 +35,7 @@ type Registration = {
 };
 
 type RegistrationStatus =
-  | "PENDING"
-  | "CONFIRMED"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "EXPIRED";
+  "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "EXPIRED";
 
 const statusLabels: Record<RegistrationStatus, string> = {
   PENDING: "Pendente",
@@ -419,7 +415,9 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
       <div className="registration-summary" aria-label="Resumo das inscrições">
         <button
           type="button"
-          className={statusFilter === "ALL" ? "summary-card selected" : "summary-card"}
+          className={
+            statusFilter === "ALL" ? "summary-card selected" : "summary-card"
+          }
           onClick={() => setStatusFilter("ALL")}
         >
           <span>Total</span>
@@ -428,7 +426,9 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
         {(Object.keys(statusLabels) as RegistrationStatus[]).map((key) => (
           <button
             type="button"
-            className={statusFilter === key ? "summary-card selected" : "summary-card"}
+            className={
+              statusFilter === key ? "summary-card selected" : "summary-card"
+            }
             key={key}
             onClick={() => setStatusFilter(key)}
           >
@@ -447,9 +447,11 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
-      {registrations.length > 0 && filteredRegistrations.length !== registrations.length ? (
+      {registrations.length > 0 &&
+      filteredRegistrations.length !== registrations.length ? (
         <p className="mini-description">
-          Exibindo {filteredRegistrations.length} de {registrations.length} inscrições.
+          Exibindo {filteredRegistrations.length} de {registrations.length}{" "}
+          inscrições.
         </p>
       ) : null}
 
@@ -458,12 +460,17 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
           {filteredRegistrations.map((registration) => (
             <article className="audit-item" key={registration.id}>
               <div>
-                <strong>{nameOfParticipant(registration.participant_id)}</strong>
+                <strong>
+                  {nameOfParticipant(registration.participant_id)}
+                </strong>
                 <span>{nameOfChallenge(registration.challenge_id)}</span>
               </div>
               <div className="audit-meta registration-meta">
-                <span className={`registration-status ${registration.status.toLowerCase()}`}>
-                  {statusLabels[registration.status as RegistrationStatus] ?? registration.status}
+                <span
+                  className={`registration-status ${registration.status.toLowerCase()}`}
+                >
+                  {statusLabels[registration.status as RegistrationStatus] ??
+                    registration.status}
                 </span>
                 <span>
                   R${" "}
@@ -477,7 +484,9 @@ export function RegistrationsPanel({ supabase, canManage }: Props) {
           ))}
         </div>
       ) : registrations.length > 0 ? (
-        <p className="empty-note">Nenhuma inscrição corresponde aos filtros atuais.</p>
+        <p className="empty-note">
+          Nenhuma inscrição corresponde aos filtros atuais.
+        </p>
       ) : null}
     </section>
   );
