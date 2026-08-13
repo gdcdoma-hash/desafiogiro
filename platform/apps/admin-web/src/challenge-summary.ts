@@ -1,10 +1,5 @@
 export type ChallengeStatus =
-  | "DRAFT"
-  | "SCHEDULED"
-  | "ACTIVE"
-  | "FINISHED"
-  | "CANCELLED"
-  | "ARCHIVED";
+  "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
 
 export type ChallengeSummaryItem = {
   status: ChallengeStatus;
