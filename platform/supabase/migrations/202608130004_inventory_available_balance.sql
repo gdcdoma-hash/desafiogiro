@@ -25,16 +25,16 @@ select
   i.code,
   i.public_name,
   i.status,
-  a.physical_balance,
-  a.reserved_quantity,
   a.available_balance as balance,
   max(m.occurred_at) as last_movement_at,
-  count(m.id)::bigint as movement_count
+  count(m.id)::bigint as movement_count,
+  a.physical_balance,
+  a.reserved_quantity
 from public.inventory_items i
 join public.challenges c on c.id = i.challenge_id
 left join public.challenge_goals g on g.id = i.goal_id
 join public.inventory_availability a on a.inventory_item_id = i.id
 left join public.inventory_movements m on m.inventory_item_id = i.id
-group by i.id, i.challenge_id, c.public_name, i.goal_id, g.public_label, g.target_km, i.code, i.public_name, i.status, a.physical_balance, a.reserved_quantity, a.available_balance;
+group by i.id, i.challenge_id, c.public_name, i.goal_id, g.public_label, g.target_km, i.code, i.public_name, i.status, a.available_balance, a.physical_balance, a.reserved_quantity;
 
 commit;
