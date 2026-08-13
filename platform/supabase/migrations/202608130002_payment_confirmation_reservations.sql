@@ -33,6 +33,11 @@ select i.id as inventory_item_id, i.challenge_id, i.goal_id, i.code, i.public_na
    - coalesce((select sum(r.quantity) from public.inventory_reservations r where r.inventory_item_id=i.id and r.status='RESERVED'),0))::bigint as available_balance
 from public.inventory_items i;
 
+alter table public.inventory_reservations enable row level security;
+create policy inventory_reservations_admin_read on public.inventory_reservations for select to authenticated using (public.has_permission('inventory.read'));
+create policy inventory_reservations_admin_insert on public.inventory_reservations for insert to authenticated with check (public.has_permission('inventory.manage'));
+create policy inventory_reservations_admin_update on public.inventory_reservations for update to authenticated using (public.has_permission('inventory.manage')) with check (public.has_permission('inventory.manage'));
+
 create or replace function public.apply_confirmed_payment_to_registration()
 returns trigger
 language plpgsql
@@ -90,11 +95,9 @@ create trigger registrations_release_reservation_on_cancel
 before update on public.registrations
 for each row execute function public.release_inventory_reservation_on_registration_cancel();
 
-alter table public.inventory_reservations enable row level security;
-create policy inventory_reservations_admin_read on public.inventory_reservations for select to authenticated using (public.has_permission('inventory.read'));
 revoke all on public.inventory_reservations from anon;
 revoke all on public.inventory_availability from anon;
-grant select on public.inventory_reservations to authenticated;
+grant select, insert, update on public.inventory_reservations to authenticated;
 grant select on public.inventory_availability to authenticated;
 
 commit;
