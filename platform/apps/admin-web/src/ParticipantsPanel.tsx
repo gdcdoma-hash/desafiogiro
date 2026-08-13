@@ -29,11 +29,13 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [stateCode, setStateCode] = useState("");
   const [legacyId, setLegacyId] = useState("");
+  const [status, setStatus] = useState<Participant["status"]>("ACTIVE");
 
   const visibleItems = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("pt-BR");
@@ -51,6 +53,35 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
         .includes(term),
     );
   }, [items, query]);
+
+  function clearForm() {
+    setEditingId(null);
+    setFullName("");
+    setPhone("");
+    setCity("");
+    setStateCode("");
+    setLegacyId("");
+    setStatus("ACTIVE");
+    setShowForm(false);
+  }
+
+  function startCreate() {
+    clearForm();
+    setShowForm(true);
+    setMessage("");
+  }
+
+  function startEdit(item: Participant) {
+    setEditingId(item.id);
+    setFullName(item.full_name);
+    setPhone(item.phone_e164 ?? "");
+    setCity(item.city);
+    setStateCode(item.state_code ?? "");
+    setLegacyId(item.legacy_id_dgmb ?? "");
+    setStatus(item.status);
+    setShowForm(true);
+    setMessage(`Editando ${item.full_name}.`);
+  }
 
   async function loadParticipants() {
     setBusy(true);
@@ -75,7 +106,7 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
     void loadParticipants();
   }, []);
 
-  async function createParticipant(event: React.FormEvent) {
+  async function saveParticipant(event: React.FormEvent) {
     event.preventDefault();
     if (!canManage) return;
 
@@ -86,19 +117,29 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
     }
 
     setBusy(true);
-    setMessage("Salvando participante…");
-    const { data, error } = await supabase
-      .from("participants")
-      .insert({
-        full_name: fullName.trim(),
-        phone_e164: normalizePhone(phone),
-        city: city.trim(),
-        state_code: normalizedState || null,
-        legacy_id_dgmb: legacyId.trim() || null,
-        status: "ACTIVE",
-      })
-      .select("id")
-      .single();
+    setMessage(
+      editingId ? "Atualizando participante…" : "Salvando participante…",
+    );
+
+    const payload = {
+      full_name: fullName.trim(),
+      phone_e164: normalizePhone(phone),
+      city: city.trim(),
+      state_code: normalizedState || null,
+      legacy_id_dgmb: legacyId.trim() || null,
+      status,
+    };
+
+    const request = editingId
+      ? supabase
+          .from("participants")
+          .update(payload)
+          .eq("id", editingId)
+          .select("id")
+          .single()
+      : supabase.from("participants").insert(payload).select("id").single();
+
+    const { data, error } = await request;
 
     if (error) {
       setMessage(
@@ -111,8 +152,8 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
     }
 
     await supabase.rpc("write_audit_event", {
-      event_action: "participant.created",
-      event_application_version: "participants-cycle-1",
+      event_action: editingId ? "participant.updated" : "participant.created",
+      event_application_version: "participants-cycle-2",
       event_metadata: {},
       event_outcome: "success",
       event_reason: null,
@@ -120,14 +161,14 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
       event_resource_type: "participant",
     });
 
-    setFullName("");
-    setPhone("");
-    setCity("");
-    setStateCode("");
-    setLegacyId("");
-    setShowForm(false);
+    const wasEditing = Boolean(editingId);
+    clearForm();
     await loadParticipants();
-    setMessage(`Participante cadastrado. ID interno: ${data.id.slice(0, 8)}…`);
+    setMessage(
+      wasEditing
+        ? "Cadastro do participante atualizado."
+        : `Participante cadastrado. ID interno: ${data.id.slice(0, 8)}…`,
+    );
   }
 
   return (
@@ -141,7 +182,7 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
           <button
             type="button"
             className="compact"
-            onClick={() => setShowForm((value) => !value)}
+            onClick={showForm ? clearForm : startCreate}
             disabled={busy}
           >
             {showForm ? "Cancelar" : "Novo participante"}
@@ -149,12 +190,18 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
         ) : null}
       </div>
       <p className="section-description">
-        Cadastro-base da pessoa. Inscrições e desafios serão vinculados ao ID
+        Cadastro-base da pessoa. Inscrições e desafios são vinculados ao ID
         interno, não ao CPF.
       </p>
 
       {showForm ? (
-        <form className="challenge-form" onSubmit={createParticipant}>
+        <form className="challenge-form" onSubmit={saveParticipant}>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Cadastro</p>
+              <h3>{editingId ? "Editar participante" : "Novo participante"}</h3>
+            </div>
+          </div>
           <label>
             Nome completo
             <input
@@ -201,9 +248,28 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
               />
             </label>
           </div>
+          {editingId ? (
+            <label>
+              Situação
+              <select
+                value={status}
+                onChange={(event) =>
+                  setStatus(event.target.value as Participant["status"])
+                }
+              >
+                <option value="ACTIVE">Ativo</option>
+                <option value="INACTIVE">Inativo</option>
+                <option value="MERGED">Consolidado</option>
+              </select>
+            </label>
+          ) : null}
           <div className="form-actions">
             <button type="submit" disabled={busy}>
-              {busy ? "Salvando…" : "Cadastrar participante"}
+              {busy
+                ? "Salvando…"
+                : editingId
+                  ? "Salvar alterações"
+                  : "Cadastrar participante"}
             </button>
           </div>
         </form>
@@ -244,6 +310,16 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
               <span>ID {item.id.slice(0, 8)}…</span>
               {item.legacy_id_dgmb ? (
                 <span>Legado: {item.legacy_id_dgmb}</span>
+              ) : null}
+              {canManage ? (
+                <button
+                  type="button"
+                  className="compact"
+                  disabled={busy}
+                  onClick={() => startEdit(item)}
+                >
+                  Editar cadastro
+                </button>
               ) : null}
             </div>
           </div>
