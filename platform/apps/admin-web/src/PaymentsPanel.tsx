@@ -46,7 +46,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [registrationId, setRegistrationId] = useState("");
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | PaymentStatus>("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | PaymentStatus>(
+    "ALL",
+  );
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -106,9 +108,12 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
   const counts = useMemo(
     () => ({
       all: payments.length,
-      pending: payments.filter((payment) => payment.status === "PENDING").length,
-      confirmed: payments.filter((payment) => payment.status === "CONFIRMED").length,
-      cancelled: payments.filter((payment) => payment.status === "CANCELLED").length,
+      pending: payments.filter((payment) => payment.status === "PENDING")
+        .length,
+      confirmed: payments.filter((payment) => payment.status === "CONFIRMED")
+        .length,
+      cancelled: payments.filter((payment) => payment.status === "CANCELLED")
+        .length,
     }),
     [payments],
   );
@@ -129,7 +134,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
   }
 
   function registrationForPayment(registrationIdValue: string) {
-    return registrations.find((item) => item.id === registrationIdValue) ?? null;
+    return (
+      registrations.find((item) => item.id === registrationIdValue) ?? null
+    );
   }
 
   function paymentParticipantName(registrationIdValue: string) {
@@ -142,7 +149,8 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
   const filteredPayments = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("pt-BR");
     return payments.filter((payment) => {
-      if (statusFilter !== "ALL" && payment.status !== statusFilter) return false;
+      if (statusFilter !== "ALL" && payment.status !== statusFilter)
+        return false;
       if (!normalized) return true;
       const registration = registrationForPayment(payment.registration_id);
       const participant = registration
@@ -237,17 +245,37 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
       </p>
 
       <div className="payments-summary" aria-label="Resumo dos pagamentos">
-        <button type="button" className={statusFilter === "ALL" ? "active" : ""} onClick={() => setStatusFilter("ALL")}>
-          <span>Total</span><strong>{counts.all}</strong>
+        <button
+          type="button"
+          className={statusFilter === "ALL" ? "active" : ""}
+          onClick={() => setStatusFilter("ALL")}
+        >
+          <span>Total</span>
+          <strong>{counts.all}</strong>
         </button>
-        <button type="button" className={statusFilter === "PENDING" ? "active" : ""} onClick={() => setStatusFilter("PENDING")}>
-          <span>Pendentes</span><strong>{counts.pending}</strong>
+        <button
+          type="button"
+          className={statusFilter === "PENDING" ? "active" : ""}
+          onClick={() => setStatusFilter("PENDING")}
+        >
+          <span>Pendentes</span>
+          <strong>{counts.pending}</strong>
         </button>
-        <button type="button" className={statusFilter === "CONFIRMED" ? "active" : ""} onClick={() => setStatusFilter("CONFIRMED")}>
-          <span>Confirmados</span><strong>{counts.confirmed}</strong>
+        <button
+          type="button"
+          className={statusFilter === "CONFIRMED" ? "active" : ""}
+          onClick={() => setStatusFilter("CONFIRMED")}
+        >
+          <span>Confirmados</span>
+          <strong>{counts.confirmed}</strong>
         </button>
-        <button type="button" className={statusFilter === "CANCELLED" ? "active" : ""} onClick={() => setStatusFilter("CANCELLED")}>
-          <span>Cancelados</span><strong>{counts.cancelled}</strong>
+        <button
+          type="button"
+          className={statusFilter === "CANCELLED" ? "active" : ""}
+          onClick={() => setStatusFilter("CANCELLED")}
+        >
+          <span>Cancelados</span>
+          <strong>{counts.cancelled}</strong>
         </button>
         <div className="payments-total">
           <span>Valor confirmado</span>
@@ -271,7 +299,10 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
               <option value="">Selecione</option>
               {eligibleRegistrations.map((registration) => (
                 <option key={registration.id} value={registration.id}>
-                  {participantName(registration.participant_id)} · {formatMoney(registration.price_snapshot)} · {registrationLabels[registration.status] ?? registration.status}
+                  {participantName(registration.participant_id)} ·{" "}
+                  {formatMoney(registration.price_snapshot)} ·{" "}
+                  {registrationLabels[registration.status] ??
+                    registration.status}
                 </option>
               ))}
             </select>
@@ -279,7 +310,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
           {selectedRegistration ? (
             <div className="payment-preview">
               <span>Valor da inscrição</span>
-              <strong>{formatMoney(selectedRegistration.price_snapshot)}</strong>
+              <strong>
+                {formatMoney(selectedRegistration.price_snapshot)}
+              </strong>
             </div>
           ) : null}
           <button type="submit" disabled={busy || !selectedRegistration}>
@@ -304,32 +337,55 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
       {filteredPayments.length > 0 ? (
         <div className="audit-list">
           {filteredPayments.map((payment) => {
-            const registration = registrationForPayment(payment.registration_id);
+            const registration = registrationForPayment(
+              payment.registration_id,
+            );
             return (
               <article className="audit-item payment-item" key={payment.id}>
                 <div className="payment-main">
-                  <strong>{paymentParticipantName(payment.registration_id)}</strong>
-                  <span>{payment.method_code} · {formatMoney(payment.amount)}</span>
+                  <strong>
+                    {paymentParticipantName(payment.registration_id)}
+                  </strong>
+                  <span>
+                    {payment.method_code} · {formatMoney(payment.amount)}
+                  </span>
                   <span>
                     {registration
-                      ? registrationLabels[registration.status] ?? registration.status
+                      ? (registrationLabels[registration.status] ??
+                        registration.status)
                       : "Inscrição não localizada na consulta atual"}
                   </span>
-                  <time dateTime={payment.created_at}>Registrado em {formatDate(payment.created_at)}</time>
+                  <time dateTime={payment.created_at}>
+                    Registrado em {formatDate(payment.created_at)}
+                  </time>
                 </div>
                 <div className="audit-meta payment-meta">
-                  <span className={`payment-status ${payment.status.toLocaleLowerCase()}`}>
+                  <span
+                    className={`payment-status ${payment.status.toLocaleLowerCase()}`}
+                  >
                     {paymentLabels[payment.status]}
                   </span>
                   {payment.paid_at ? (
-                    <time dateTime={payment.paid_at}>Confirmado em {formatDate(payment.paid_at)}</time>
+                    <time dateTime={payment.paid_at}>
+                      Confirmado em {formatDate(payment.paid_at)}
+                    </time>
                   ) : null}
                   {canManage && payment.status === "PENDING" ? (
                     <div className="payment-actions">
-                      <button type="button" className="compact" disabled={busy} onClick={() => void changeStatus(payment, "CONFIRMED")}>
+                      <button
+                        type="button"
+                        className="compact"
+                        disabled={busy}
+                        onClick={() => void changeStatus(payment, "CONFIRMED")}
+                      >
                         Confirmar
                       </button>
-                      <button type="button" className="compact secondary" disabled={busy} onClick={() => void changeStatus(payment, "CANCELLED")}>
+                      <button
+                        type="button"
+                        className="compact secondary"
+                        disabled={busy}
+                        onClick={() => void changeStatus(payment, "CANCELLED")}
+                      >
                         Cancelar
                       </button>
                     </div>
@@ -340,7 +396,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
           })}
         </div>
       ) : (
-        <p className="empty-note">Nenhum pagamento corresponde aos filtros atuais.</p>
+        <p className="empty-note">
+          Nenhum pagamento corresponde aos filtros atuais.
+        </p>
       )}
     </section>
   );
