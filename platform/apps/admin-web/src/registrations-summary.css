@@ -1,0 +1,127 @@
+.registration-form {
+  margin: 1rem 0 1.25rem;
+  padding: 1rem;
+  border: 1px solid #dbe6de;
+  border-radius: 0.9rem;
+  background: #f8faf8;
+}
+
+.registration-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.registration-summary .summary-card {
+  min-height: 4.25rem;
+  display: grid;
+  align-content: center;
+  gap: 0.2rem;
+  padding: 0.7rem;
+  border: 1px solid #dbe6de;
+  background: #f8faf8;
+  color: #174a2a;
+  text-align: left;
+}
+
+.registration-summary .summary-card span {
+  color: #647168;
+  font-size: 0.73rem;
+  font-weight: 750;
+}
+
+.registration-summary .summary-card strong {
+  font-size: 1.2rem;
+}
+
+.registration-summary .summary-card.selected {
+  border-color: #7fb08c;
+  background: #e9f6ed;
+  box-shadow: inset 0 0 0 1px #7fb08c;
+}
+
+.registration-meta {
+  min-width: 11rem;
+}
+
+.registration-status {
+  display: inline-flex !important;
+  width: fit-content;
+  margin-left: auto;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #fff2d8;
+  color: #7a5600 !important;
+  font-weight: 800;
+}
+
+.registration-status.confirmed {
+  background: #e3f2e8;
+  color: #176b36 !important;
+}
+
+.registration-status.completed {
+  background: #dff4e5;
+  color: #125a2b !important;
+}
+
+.registration-status.cancelled,
+.registration-status.expired {
+  background: #f3e8e5;
+  color: #8a3f2a !important;
+}
+
+.registration-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.registration-actions button.secondary {
+  width: auto;
+}
+
+select {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #9fb2a5;
+  border-radius: 0.65rem;
+  color: #17211b;
+  background: white;
+  font: inherit;
+}
+
+select:focus-visible {
+  outline: 3px solid rgb(35 124 66 / 28%);
+  outline-offset: 2px;
+}
+
+@media (max-width: 54rem) {
+  .registration-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 42rem) {
+  .registration-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .registration-status {
+    margin-left: 0;
+  }
+
+  .registration-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 26rem) {
+  .registration-summary {
+    grid-template-columns: 1fr;
+  }
+}
