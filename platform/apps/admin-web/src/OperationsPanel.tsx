@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { ReservationStatusNote } from "./ReservationStatusNote";
 import "./operations-summary.css";
 
 type Props = { supabase: SupabaseClient };
@@ -18,6 +19,9 @@ type OperationRow = {
   pending_amount: number;
   payment_summary: PaymentSummary;
   created_at: string;
+  reservation_status: string | null;
+  inventory_item_id: string | null;
+  avatar_acceptance_ready: boolean;
 };
 
 const paymentLabels: Record<PaymentSummary, string> = {
@@ -41,7 +45,7 @@ export function OperationsPanel({ supabase }: Props) {
     const { data, error } = await supabase
       .from("registration_operations_overview")
       .select(
-        "registration_id,participant_name,challenge_name,goal_name,offer_name,registration_status,price_snapshot,confirmed_amount,pending_amount,payment_summary,created_at",
+        "registration_id,participant_name,challenge_name,goal_name,offer_name,registration_status,price_snapshot,confirmed_amount,pending_amount,payment_summary,created_at,reservation_status,inventory_item_id,avatar_acceptance_ready",
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -78,6 +82,16 @@ export function OperationsPanel({ supabase }: Props) {
     }, initial);
   }, [rows]);
 
+  const reservedCount = useMemo(
+    () => rows.filter((row) => row.reservation_status === "RESERVED").length,
+    [rows],
+  );
+
+  const avatarReadyCount = useMemo(
+    () => rows.filter((row) => row.avatar_acceptance_ready).length,
+    [rows],
+  );
+
   const filteredRows = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("pt-BR");
     return rows.filter((row) => {
@@ -90,6 +104,8 @@ export function OperationsPanel({ supabase }: Props) {
           row.challenge_name,
           row.goal_name,
           row.offer_name,
+          row.registration_status,
+          row.reservation_status ?? "",
         ]
           .join(" ")
           .toLocaleLowerCase("pt-BR")
@@ -115,8 +131,8 @@ export function OperationsPanel({ supabase }: Props) {
         </button>
       </div>
       <p className="section-description">
-        Leitura consolidada de inscrição e pagamento. Esta tela não altera
-        estados nem movimenta estoque.
+        Leitura consolidada de inscrição, pagamento e reserva de medalha. Esta
+        tela não altera estados nem movimenta estoque.
       </p>
 
       <div
@@ -148,12 +164,23 @@ export function OperationsPanel({ supabase }: Props) {
         ))}
       </div>
 
+      <div className="operations-summary" aria-label="Resumo de reservas">
+        <div className="summary-card static-card">
+          <span>Medalhas reservadas</span>
+          <strong>{reservedCount}</strong>
+        </div>
+        <div className="summary-card static-card">
+          <span>Avatares liberados</span>
+          <strong>{avatarReadyCount}</strong>
+        </div>
+      </div>
+
       <label>
         Buscar
         <input
           type="search"
           value={query}
-          placeholder="Participante, desafio, meta ou oferta"
+          placeholder="Participante, desafio, meta, oferta ou situação"
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
@@ -177,6 +204,10 @@ export function OperationsPanel({ supabase }: Props) {
               <div className="audit-meta">
                 <span>{row.registration_status}</span>
                 <span>{paymentLabels[row.payment_summary]}</span>
+                <ReservationStatusNote
+                  reservationStatus={row.reservation_status}
+                  avatarAcceptanceReady={row.avatar_acceptance_ready}
+                />
                 <span>
                   R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")}{" "}
                   / R$ {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
