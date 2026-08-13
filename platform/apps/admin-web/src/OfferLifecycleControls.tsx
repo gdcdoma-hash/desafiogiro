@@ -3,12 +3,7 @@ import { useMemo, useState } from "react";
 
 type OfferStatus = "DRAFT" | "SCHEDULED" | "OPEN" | "CLOSED" | "DISABLED";
 type ChallengeStatus =
-  | "DRAFT"
-  | "SCHEDULED"
-  | "ACTIVE"
-  | "FINISHED"
-  | "CANCELLED"
-  | "ARCHIVED";
+  "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
 
 type Props = {
   supabase: SupabaseClient;
