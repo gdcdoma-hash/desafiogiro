@@ -30,7 +30,9 @@ const paymentLabels: Record<PaymentSummary, string> = {
 export function OperationsPanel({ supabase }: Props) {
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [query, setQuery] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState<PaymentSummary | "ALL">("ALL");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentSummary | "ALL">(
+    "ALL",
+  );
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -83,7 +85,12 @@ export function OperationsPanel({ supabase }: Props) {
         paymentFilter === "ALL" || row.payment_summary === paymentFilter;
       const matchesQuery =
         !normalized ||
-        [row.participant_name, row.challenge_name, row.goal_name, row.offer_name]
+        [
+          row.participant_name,
+          row.challenge_name,
+          row.goal_name,
+          row.offer_name,
+        ]
           .join(" ")
           .toLocaleLowerCase("pt-BR")
           .includes(normalized);
@@ -112,10 +119,15 @@ export function OperationsPanel({ supabase }: Props) {
         estados nem movimenta estoque.
       </p>
 
-      <div className="operations-summary" aria-label="Resumo financeiro das inscrições">
+      <div
+        className="operations-summary"
+        aria-label="Resumo financeiro das inscrições"
+      >
         <button
           type="button"
-          className={paymentFilter === "ALL" ? "summary-card selected" : "summary-card"}
+          className={
+            paymentFilter === "ALL" ? "summary-card selected" : "summary-card"
+          }
           onClick={() => setPaymentFilter("ALL")}
         >
           <span>Total</span>
@@ -124,7 +136,9 @@ export function OperationsPanel({ supabase }: Props) {
         {(Object.keys(paymentLabels) as PaymentSummary[]).map((key) => (
           <button
             type="button"
-            className={paymentFilter === key ? "summary-card selected" : "summary-card"}
+            className={
+              paymentFilter === key ? "summary-card selected" : "summary-card"
+            }
             key={key}
             onClick={() => setPaymentFilter(key)}
           >
@@ -164,15 +178,17 @@ export function OperationsPanel({ supabase }: Props) {
                 <span>{row.registration_status}</span>
                 <span>{paymentLabels[row.payment_summary]}</span>
                 <span>
-                  R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")} / R${" "}
-                  {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
+                  R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")}{" "}
+                  / R$ {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
                 </span>
               </div>
             </article>
           ))}
         </div>
       ) : rows.length > 0 ? (
-        <p className="empty-note">Nenhuma inscrição corresponde aos filtros atuais.</p>
+        <p className="empty-note">
+          Nenhuma inscrição corresponde aos filtros atuais.
+        </p>
       ) : null}
     </section>
   );
