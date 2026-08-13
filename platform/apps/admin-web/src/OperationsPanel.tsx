@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import "./operations-summary.css";
 
 type Props = { supabase: SupabaseClient };
+
+type PaymentSummary = "PAID" | "PARTIAL" | "PENDING" | "UNPAID";
 
 type OperationRow = {
   registration_id: string;
@@ -13,11 +16,11 @@ type OperationRow = {
   price_snapshot: number;
   confirmed_amount: number;
   pending_amount: number;
-  payment_summary: "PAID" | "PARTIAL" | "PENDING" | "UNPAID";
+  payment_summary: PaymentSummary;
   created_at: string;
 };
 
-const paymentLabels: Record<OperationRow["payment_summary"], string> = {
+const paymentLabels: Record<PaymentSummary, string> = {
   PAID: "Pago",
   PARTIAL: "Parcial",
   PENDING: "Pagamento pendente",
@@ -27,6 +30,7 @@ const paymentLabels: Record<OperationRow["payment_summary"], string> = {
 export function OperationsPanel({ supabase }: Props) {
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [query, setQuery] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentSummary | "ALL">("ALL");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -58,16 +62,34 @@ export function OperationsPanel({ supabase }: Props) {
     void load();
   }, []);
 
+  const summary = useMemo(() => {
+    const initial: Record<PaymentSummary, number> = {
+      PAID: 0,
+      PARTIAL: 0,
+      PENDING: 0,
+      UNPAID: 0,
+    };
+
+    return rows.reduce((accumulator, row) => {
+      accumulator[row.payment_summary] += 1;
+      return accumulator;
+    }, initial);
+  }, [rows]);
+
   const filteredRows = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("pt-BR");
-    if (!normalized) return rows;
-    return rows.filter((row) =>
-      [row.participant_name, row.challenge_name, row.goal_name, row.offer_name]
-        .join(" ")
-        .toLocaleLowerCase("pt-BR")
-        .includes(normalized),
-    );
-  }, [query, rows]);
+    return rows.filter((row) => {
+      const matchesPayment =
+        paymentFilter === "ALL" || row.payment_summary === paymentFilter;
+      const matchesQuery =
+        !normalized ||
+        [row.participant_name, row.challenge_name, row.goal_name, row.offer_name]
+          .join(" ")
+          .toLocaleLowerCase("pt-BR")
+          .includes(normalized);
+      return matchesPayment && matchesQuery;
+    });
+  }, [paymentFilter, query, rows]);
 
   return (
     <section className="audit-panel" aria-labelledby="operations-title">
@@ -89,6 +111,29 @@ export function OperationsPanel({ supabase }: Props) {
         Leitura consolidada de inscrição e pagamento. Esta tela não altera
         estados nem movimenta estoque.
       </p>
+
+      <div className="operations-summary" aria-label="Resumo financeiro das inscrições">
+        <button
+          type="button"
+          className={paymentFilter === "ALL" ? "summary-card selected" : "summary-card"}
+          onClick={() => setPaymentFilter("ALL")}
+        >
+          <span>Total</span>
+          <strong>{rows.length}</strong>
+        </button>
+        {(Object.keys(paymentLabels) as PaymentSummary[]).map((key) => (
+          <button
+            type="button"
+            className={paymentFilter === key ? "summary-card selected" : "summary-card"}
+            key={key}
+            onClick={() => setPaymentFilter(key)}
+          >
+            <span>{paymentLabels[key]}</span>
+            <strong>{summary[key]}</strong>
+          </button>
+        ))}
+      </div>
+
       <label>
         Buscar
         <input
@@ -100,6 +145,9 @@ export function OperationsPanel({ supabase }: Props) {
       </label>
       <p role="status" className="status">
         {message}
+        {rows.length > 0 && filteredRows.length !== rows.length
+          ? ` Exibindo ${filteredRows.length} após os filtros.`
+          : ""}
       </p>
 
       {filteredRows.length > 0 ? (
@@ -114,17 +162,17 @@ export function OperationsPanel({ supabase }: Props) {
               </div>
               <div className="audit-meta">
                 <span>{row.registration_status}</span>
+                <span>{paymentLabels[row.payment_summary]}</span>
                 <span>
-                  {paymentLabels[row.payment_summary] ?? row.payment_summary}
-                </span>
-                <span>
-                  R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")}{" "}
-                  / R$ {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
+                  R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")} / R${" "}
+                  {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
                 </span>
               </div>
             </article>
           ))}
         </div>
+      ) : rows.length > 0 ? (
+        <p className="empty-note">Nenhuma inscrição corresponde aos filtros atuais.</p>
       ) : null}
     </section>
   );
