@@ -7,10 +7,7 @@ type Props = { supabase: SupabaseClient };
 
 type PaymentSummary = "PAID" | "PARTIAL" | "PENDING" | "UNPAID";
 type OperationalFilter =
-  | "ALL"
-  | "RESERVED"
-  | "AVATAR_READY"
-  | "PAID_WITHOUT_RESERVATION";
+  "ALL" | "RESERVED" | "AVATAR_READY" | "PAID_WITHOUT_RESERVATION";
 
 type OperationRow = {
   registration_id: string;
@@ -96,7 +93,8 @@ export function OperationsPanel({ supabase }: Props) {
       avatarReady: rows.filter((row) => row.avatar_acceptance_ready).length,
       paidWithoutReservation: rows.filter(
         (row) =>
-          row.payment_summary === "PAID" && row.reservation_status !== "RESERVED",
+          row.payment_summary === "PAID" &&
+          row.reservation_status !== "RESERVED",
       ).length,
     }),
     [rows],
