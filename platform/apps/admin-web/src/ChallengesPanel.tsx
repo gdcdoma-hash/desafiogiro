@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { ChallengeLifecycleControls } from "./ChallengeLifecycleControls";
 
 type Challenge = {
   id: string;
@@ -515,6 +516,17 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               <h2>{selected.public_name}</h2>
             </div>
           </div>
+
+          <ChallengeLifecycleControls
+            supabase={supabase}
+            challengeId={selected.id}
+            status={selected.status}
+            canManage={canManage}
+            onChanged={async () => {
+              await loadChallenges(selected.id);
+              await loadChallengeDetails(selected.id);
+            }}
+          />
 
           <div className="challenge-config-grid">
             <section className="config-card">

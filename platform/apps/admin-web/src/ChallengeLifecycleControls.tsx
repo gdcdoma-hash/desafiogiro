@@ -2,12 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMemo, useState } from "react";
 
 type ChallengeStatus =
-  | "DRAFT"
-  | "SCHEDULED"
-  | "ACTIVE"
-  | "FINISHED"
-  | "CANCELLED"
-  | "ARCHIVED";
+  "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
 
 type Props = {
   supabase: SupabaseClient;
@@ -70,13 +65,16 @@ export function ChallengeLifecycleControls({
   }
 
   return (
-    <section className="config-card" aria-labelledby="challenge-lifecycle-title">
+    <section
+      className="config-card"
+      aria-labelledby="challenge-lifecycle-title"
+    >
       <div className="section-heading">
         <div>
           <h3 id="challenge-lifecycle-title">Situação da edição</h3>
           <p className="mini-description">
-            Estado atual: <strong>{labels[status]}</strong>. As mudanças seguem o
-            fluxo operacional protegido pelo banco.
+            Estado atual: <strong>{labels[status]}</strong>. As mudanças seguem
+            o fluxo operacional protegido pelo banco.
           </p>
         </div>
       </div>
