@@ -43,9 +43,9 @@ export function InventoryPanel({ supabase, canManage }: Props) {
   const [code, setCode] = useState("");
   const [quantity, setQuantity] = useState("0");
   const [movementItemId, setMovementItemId] = useState("");
-  const [movementType, setMovementType] = useState<
-    "IN" | "OUT" | "ADJUSTMENT"
-  >("IN");
+  const [movementType, setMovementType] = useState<"IN" | "OUT" | "ADJUSTMENT">(
+    "IN",
+  );
   const [movementQuantity, setMovementQuantity] = useState("1");
   const [movementNotes, setMovementNotes] = useState("");
   const [message, setMessage] = useState("");
@@ -185,7 +185,9 @@ export function InventoryPanel({ supabase, canManage }: Props) {
       Number.isNaN(typedQuantity) ||
       typedQuantity === 0
     ) {
-      setMessage("Selecione um item e informe uma quantidade diferente de zero.");
+      setMessage(
+        "Selecione um item e informe uma quantidade diferente de zero.",
+      );
       return;
     }
 
@@ -409,7 +411,9 @@ export function InventoryPanel({ supabase, canManage }: Props) {
               </div>
               <div className="audit-meta">
                 <span>{movement.reason_code}</span>
-                <span>{new Date(movement.occurred_at).toLocaleString("pt-BR")}</span>
+                <span>
+                  {new Date(movement.occurred_at).toLocaleString("pt-BR")}
+                </span>
               </div>
             </article>
           ))}
