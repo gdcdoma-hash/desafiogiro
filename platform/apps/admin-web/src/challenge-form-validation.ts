@@ -31,15 +31,25 @@ function validDateRange(startsAt: string, endsAt: string) {
   return Number.isFinite(start) && Number.isFinite(end) && end > start;
 }
 
-export function validateChallengeDraft(input: ChallengeDraftInput): string | null {
+export function validateChallengeDraft(
+  input: ChallengeDraftInput,
+): string | null {
   if (input.name.trim().length < 2) return "Informe um nome público válido.";
   if (!/^[A-Za-z0-9_-]+$/.test(input.code.trim())) {
     return "Use apenas letras, números, hífen e sublinhado no código interno.";
   }
-  if (!Number.isInteger(input.referenceMonth) || input.referenceMonth < 1 || input.referenceMonth > 12) {
+  if (
+    !Number.isInteger(input.referenceMonth) ||
+    input.referenceMonth < 1 ||
+    input.referenceMonth > 12
+  ) {
     return "Informe um mês de referência válido.";
   }
-  if (!Number.isInteger(input.referenceYear) || input.referenceYear < 2020 || input.referenceYear > 2200) {
+  if (
+    !Number.isInteger(input.referenceYear) ||
+    input.referenceYear < 2020 ||
+    input.referenceYear > 2200
+  ) {
     return "Informe um ano de referência válido.";
   }
   if (!validDateRange(input.startsAt, input.endsAt)) {
@@ -59,7 +69,10 @@ export function validateGoalDraft(input: GoalDraftInput): string | null {
 }
 
 export function validateOfferDraft(input: OfferDraftInput): string | null {
-  if (input.internalName.trim().length < 2 || input.publicName.trim().length < 2) {
+  if (
+    input.internalName.trim().length < 2 ||
+    input.publicName.trim().length < 2
+  ) {
     return "Informe os nomes interno e público da oferta.";
   }
   if (!validDateRange(input.startsAt, input.endsAt)) {

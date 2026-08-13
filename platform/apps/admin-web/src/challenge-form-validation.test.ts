@@ -38,7 +38,9 @@ describe("challenge form validation", () => {
         limit: 1,
         goalIds: ["goal-1"],
       }),
-    ).toBe("A oferta não pode terminar depois do período esportivo do desafio.");
+    ).toBe(
+      "A oferta não pode terminar depois do período esportivo do desafio.",
+    );
   });
 
   it("requires at least one goal in the offer", () => {
