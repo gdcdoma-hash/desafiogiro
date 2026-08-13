@@ -22,22 +22,38 @@ type InventoryItem = {
   status: string;
   balance: number;
 };
+type InventoryMovement = {
+  id: string;
+  inventory_item_id: string;
+  movement_type: "IN" | "OUT" | "ADJUSTMENT";
+  quantity: number;
+  reason_code: string;
+  notes: string;
+  occurred_at: string;
+};
 
 export function InventoryPanel({ supabase, canManage }: Props) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [challengeId, setChallengeId] = useState("");
   const [goalId, setGoalId] = useState("");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [quantity, setQuantity] = useState("0");
+  const [movementItemId, setMovementItemId] = useState("");
+  const [movementType, setMovementType] = useState<"IN" | "OUT" | "ADJUSTMENT">(
+    "IN",
+  );
+  const [movementQuantity, setMovementQuantity] = useState("1");
+  const [movementNotes, setMovementNotes] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function load() {
     setBusy(true);
-    const [c, g, i] = await Promise.all([
+    const [c, g, i, m] = await Promise.all([
       supabase
         .from("challenges")
         .select("id,public_name")
@@ -52,14 +68,22 @@ export function InventoryPanel({ supabase, canManage }: Props) {
           "inventory_item_id,challenge_id,goal_id,code,public_name,status,balance",
         )
         .order("public_name"),
+      supabase
+        .from("inventory_movements")
+        .select(
+          "id,inventory_item_id,movement_type,quantity,reason_code,notes,occurred_at",
+        )
+        .order("occurred_at", { ascending: false })
+        .limit(100),
     ]);
 
-    if (c.error || g.error || i.error) {
+    if (c.error || g.error || i.error || m.error) {
       setMessage("Não foi possível carregar o estoque agora.");
     } else {
       setChallenges((c.data ?? []) as Challenge[]);
       setGoals((g.data ?? []) as Goal[]);
       setItems((i.data ?? []) as InventoryItem[]);
+      setMovements((m.data ?? []) as InventoryMovement[]);
       setMessage(
         i.data?.length
           ? `${i.data.length} itens de estoque.`
@@ -77,6 +101,19 @@ export function InventoryPanel({ supabase, canManage }: Props) {
     () => goals.filter((goal) => goal.challenge_id === challengeId),
     [goals, challengeId],
   );
+
+  const selectedMovementItem = useMemo(
+    () =>
+      items.find((item) => item.inventory_item_id === movementItemId) ?? null,
+    [items, movementItemId],
+  );
+
+  function itemName(itemId: string) {
+    return (
+      items.find((item) => item.inventory_item_id === itemId)?.public_name ??
+      "Item de estoque"
+    );
+  }
 
   async function createItem(event: React.FormEvent) {
     event.preventDefault();
@@ -140,6 +177,52 @@ export function InventoryPanel({ supabase, canManage }: Props) {
     setBusy(false);
   }
 
+  async function createMovement(event: React.FormEvent) {
+    event.preventDefault();
+    const typedQuantity = Number.parseInt(movementQuantity, 10);
+    if (
+      !selectedMovementItem ||
+      Number.isNaN(typedQuantity) ||
+      typedQuantity === 0
+    ) {
+      setMessage(
+        "Selecione um item e informe uma quantidade diferente de zero.",
+      );
+      return;
+    }
+
+    let storedQuantity = typedQuantity;
+    if (movementType === "IN") storedQuantity = Math.abs(typedQuantity);
+    if (movementType === "OUT") storedQuantity = -Math.abs(typedQuantity);
+
+    if (
+      movementType === "OUT" &&
+      Math.abs(storedQuantity) > Number(selectedMovementItem.balance)
+    ) {
+      setMessage("A saída informada é maior que o saldo disponível.");
+      return;
+    }
+
+    setBusy(true);
+    const { error } = await supabase.from("inventory_movements").insert({
+      inventory_item_id: selectedMovementItem.inventory_item_id,
+      movement_type: movementType,
+      quantity: storedQuantity,
+      reason_code: "MANUAL",
+      notes: movementNotes.trim(),
+    });
+
+    if (error) {
+      setMessage("Não foi possível registrar a movimentação de estoque.");
+    } else {
+      setMovementQuantity("1");
+      setMovementNotes("");
+      setMessage("Movimentação registrada.");
+      await load();
+    }
+    setBusy(false);
+  }
+
   return (
     <section className="audit-panel" aria-labelledby="inventory-title">
       <div className="section-heading">
@@ -165,73 +248,135 @@ export function InventoryPanel({ supabase, canManage }: Props) {
       </p>
 
       {canManage ? (
-        <form onSubmit={createItem}>
-          <label>
-            Desafio
-            <select
-              value={challengeId}
-              onChange={(event) => {
-                setChallengeId(event.target.value);
-                setGoalId("");
-              }}
-              required
-            >
-              <option value="">Selecione</option>
-              {challenges.map((challenge) => (
-                <option key={challenge.id} value={challenge.id}>
-                  {challenge.public_name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Meta relacionada
-            <select
-              value={goalId}
-              onChange={(event) => setGoalId(event.target.value)}
-              disabled={!challengeId}
-            >
-              <option value="">Sem meta específica</option>
-              {challengeGoals.map((goal) => (
-                <option key={goal.id} value={goal.id}>
-                  {goal.public_label ?? `${goal.target_km} km`}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Nome do item
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Ex.: Medalha 300 km"
-              required
-            />
-          </label>
-          <label>
-            Código interno
-            <input
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="medal-300"
-              required
-            />
-          </label>
-          <label>
-            Quantidade inicial
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
-              required
-            />
-          </label>
-          <button type="submit" disabled={busy}>
-            Cadastrar item
-          </button>
-        </form>
+        <>
+          <form onSubmit={createItem}>
+            <label>
+              Desafio
+              <select
+                value={challengeId}
+                onChange={(event) => {
+                  setChallengeId(event.target.value);
+                  setGoalId("");
+                }}
+                required
+              >
+                <option value="">Selecione</option>
+                {challenges.map((challenge) => (
+                  <option key={challenge.id} value={challenge.id}>
+                    {challenge.public_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Meta relacionada
+              <select
+                value={goalId}
+                onChange={(event) => setGoalId(event.target.value)}
+                disabled={!challengeId}
+              >
+                <option value="">Sem meta específica</option>
+                {challengeGoals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.public_label ?? `${goal.target_km} km`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Nome do item
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Ex.: Medalha 300 km"
+                required
+              />
+            </label>
+            <label>
+              Código interno
+              <input
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="medal-300"
+                required
+              />
+            </label>
+            <label>
+              Quantidade inicial
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
+                required
+              />
+            </label>
+            <button type="submit" disabled={busy}>
+              Cadastrar item
+            </button>
+          </form>
+
+          <form onSubmit={createMovement}>
+            <h3>Nova movimentação</h3>
+            <label>
+              Item
+              <select
+                value={movementItemId}
+                onChange={(event) => setMovementItemId(event.target.value)}
+                required
+              >
+                <option value="">Selecione</option>
+                {items
+                  .filter((item) => item.status === "ACTIVE")
+                  .map((item) => (
+                    <option
+                      key={item.inventory_item_id}
+                      value={item.inventory_item_id}
+                    >
+                      {item.public_name} · saldo {item.balance}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              Tipo
+              <select
+                value={movementType}
+                onChange={(event) =>
+                  setMovementType(
+                    event.target.value as "IN" | "OUT" | "ADJUSTMENT",
+                  )
+                }
+              >
+                <option value="IN">Entrada</option>
+                <option value="OUT">Saída</option>
+                <option value="ADJUSTMENT">Ajuste</option>
+              </select>
+            </label>
+            <label>
+              Quantidade
+              <input
+                type="number"
+                step="1"
+                value={movementQuantity}
+                onChange={(event) => setMovementQuantity(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Observação
+              <input
+                value={movementNotes}
+                onChange={(event) => setMovementNotes(event.target.value)}
+                placeholder="Motivo ou referência opcional"
+              />
+            </label>
+            <button type="submit" disabled={busy || !selectedMovementItem}>
+              Registrar movimentação
+            </button>
+          </form>
+        </>
       ) : null}
 
       {items.length > 0 ? (
@@ -245,6 +390,30 @@ export function InventoryPanel({ supabase, canManage }: Props) {
               <div className="audit-meta">
                 <span>{item.status}</span>
                 <span>{item.balance} un.</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {movements.length > 0 ? (
+        <div className="audit-list">
+          <h3>Movimentações recentes</h3>
+          {movements.map((movement) => (
+            <article className="audit-item" key={movement.id}>
+              <div>
+                <strong>{itemName(movement.inventory_item_id)}</strong>
+                <span>
+                  {movement.movement_type} · {movement.quantity > 0 ? "+" : ""}
+                  {movement.quantity} un.
+                </span>
+                {movement.notes ? <span>{movement.notes}</span> : null}
+              </div>
+              <div className="audit-meta">
+                <span>{movement.reason_code}</span>
+                <span>
+                  {new Date(movement.occurred_at).toLocaleString("pt-BR")}
+                </span>
               </div>
             </article>
           ))}
