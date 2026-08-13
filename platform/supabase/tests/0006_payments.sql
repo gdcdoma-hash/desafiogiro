@@ -17,6 +17,10 @@ values ('84444444-4444-4444-4444-444444444444','82222222-2222-2222-2222-22222222
 insert into public.challenge_offer_goals(offer_id,goal_id) values ('84444444-4444-4444-4444-444444444444','83333333-3333-3333-3333-333333333333');
 insert into public.registrations(id,participant_id,challenge_id,goal_id,offer_id,occurrence_number,price_snapshot)
 values ('85555555-5555-5555-5555-555555555555','81111111-1111-1111-1111-111111111111','82222222-2222-2222-2222-222222222222','83333333-3333-3333-3333-333333333333','84444444-4444-4444-4444-444444444444',1,0);
+insert into public.inventory_items(id,challenge_id,goal_id,code,public_name)
+values ('87777777-7777-7777-7777-777777777777','82222222-2222-2222-2222-222222222222','83333333-3333-3333-3333-333333333333','MEDAL-300','Medalha 300 km');
+insert into public.inventory_movements(inventory_item_id,movement_type,quantity,reason_code)
+values ('87777777-7777-7777-7777-777777777777','IN',1,'TEST_SETUP');
 
 insert into public.registration_payments(id,registration_id,amount,method_code)
 values ('86666666-6666-6666-6666-666666666666','85555555-5555-5555-5555-555555555555',44.90,'PIX');
