@@ -1,0 +1,46 @@
+.operations-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+
+.summary-card {
+  min-height: 4.5rem;
+  display: grid;
+  align-content: center;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border: 1px solid #dbe6de;
+  background: #f8faf8;
+  color: #174a2a;
+  text-align: left;
+}
+
+.summary-card span {
+  color: #647168;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.summary-card strong {
+  font-size: 1.25rem;
+}
+
+.summary-card.selected {
+  border-color: #7fb08c;
+  background: #e9f6ed;
+  box-shadow: inset 0 0 0 1px #7fb08c;
+}
+
+@media (max-width: 48rem) {
+  .operations-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 26rem) {
+  .operations-summary {
+    grid-template-columns: 1fr;
+  }
+}
