@@ -9,6 +9,7 @@ import { InventoryPanel } from "./InventoryPanel";
 import { OperationsPanel } from "./OperationsPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
+import "./module-nav.css";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
@@ -363,6 +364,30 @@ function App() {
         <p role="status" className="status success">
           {message}
         </p>
+
+        <nav className="module-nav" aria-label="Módulos administrativos">
+          {context?.permissions.includes("operations.read") ? (
+            <a href="#operations-title">Operação</a>
+          ) : null}
+          {context?.permissions.includes("registrations.read") ? (
+            <a href="#registrations-title">Inscrições</a>
+          ) : null}
+          {context?.permissions.includes("participants.read") ? (
+            <a href="#participants-title">Participantes</a>
+          ) : null}
+          {context?.permissions.includes("challenges.read") ? (
+            <a href="#challenges-title">Desafios</a>
+          ) : null}
+          {context?.permissions.includes("inventory.read") ? (
+            <a href="#inventory-title">Estoque</a>
+          ) : null}
+          {context?.permissions.includes("payments.read") ? (
+            <a href="#payments-title">Pagamentos</a>
+          ) : null}
+          {context?.permissions.includes("audit.read") ? (
+            <a href="#audit-title">Auditoria</a>
+          ) : null}
+        </nav>
 
         {context?.permissions.includes("challenges.read") ? (
           <ChallengesPanel
