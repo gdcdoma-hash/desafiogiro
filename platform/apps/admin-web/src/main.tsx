@@ -2,6 +2,7 @@ import { createClient, type Session } from "@supabase/supabase-js";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ChallengesPanel } from "./ChallengesPanel";
+import { ChallengeOperationsSummary } from "./ChallengeOperationsSummary";
 import { ParticipantsPanel } from "./ParticipantsPanel";
 import { RegistrationsPanel } from "./RegistrationsPanel";
 import { PaymentsPanel } from "./PaymentsPanel";
@@ -376,7 +377,10 @@ function App() {
             <a href="#participants-title">Participantes</a>
           ) : null}
           {context?.permissions.includes("challenges.read") ? (
-            <a href="#challenges-title">Desafios</a>
+            <>
+              <a href="#challenge-operations-title">Resumo dos desafios</a>
+              <a href="#challenges-title">Desafios</a>
+            </>
           ) : null}
           {context?.permissions.includes("inventory.read") ? (
             <a href="#inventory-title">Estoque</a>
@@ -390,10 +394,13 @@ function App() {
         </nav>
 
         {context?.permissions.includes("challenges.read") ? (
-          <ChallengesPanel
-            supabase={supabase}
-            canManage={context.permissions.includes("challenges.manage")}
-          />
+          <>
+            <ChallengeOperationsSummary supabase={supabase} />
+            <ChallengesPanel
+              supabase={supabase}
+              canManage={context.permissions.includes("challenges.manage")}
+            />
+          </>
         ) : null}
 
         {context?.permissions.includes("participants.read") ? (

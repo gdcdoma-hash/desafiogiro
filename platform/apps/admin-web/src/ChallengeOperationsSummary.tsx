@@ -49,7 +49,9 @@ export function ChallengeOperationsSummary({ supabase }: Props) {
 
     if (error) {
       setRows([]);
-      setMessage("Não foi possível carregar o resumo operacional dos desafios.");
+      setMessage(
+        "Não foi possível carregar o resumo operacional dos desafios.",
+      );
     } else {
       setRows((data ?? []) as ChallengeOperationRow[]);
       setMessage(
@@ -66,7 +68,10 @@ export function ChallengeOperationsSummary({ supabase }: Props) {
   }, []);
 
   return (
-    <section className="audit-panel" aria-labelledby="challenge-operations-title">
+    <section
+      className="audit-panel"
+      aria-labelledby="challenge-operations-title"
+    >
       <div className="section-heading">
         <div>
           <p className="eyebrow">Resumo</p>
