@@ -1,0 +1,51 @@
+name: Integrate admin module navigation
+
+on:
+  push:
+    branches: [feature/admin-module-navigation-cycle-1]
+    paths: [.github/workflows/admin-nav-integrate.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/admin-module-navigation-cycle-1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+      - name: Patch main
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('platform/apps/admin-web/src/main.tsx')
+          s = p.read_text()
+          if 'import "./module-nav.css";' not in s:
+              s = s.replace('import "./styles.css";\n', 'import "./styles.css";\nimport "./module-nav.css";\n')
+          marker = '''        <p role="status" className="status success">\n          {message}\n        </p>\n\n'''
+          nav = '''        <nav className="module-nav" aria-label="Módulos administrativos">\n          {context?.permissions.includes("operations.read") ? (\n            <a href="#operations-title">Operação</a>\n          ) : null}\n          {context?.permissions.includes("registrations.read") ? (\n            <a href="#registrations-title">Inscrições</a>\n          ) : null}\n          {context?.permissions.includes("participants.read") ? (\n            <a href="#participants-title">Participantes</a>\n          ) : null}\n          {context?.permissions.includes("challenges.read") ? (\n            <a href="#challenges-title">Desafios</a>\n          ) : null}\n          {context?.permissions.includes("inventory.read") ? (\n            <a href="#inventory-title">Estoque</a>\n          ) : null}\n          {context?.permissions.includes("payments.read") ? (\n            <a href="#payments-title">Pagamentos</a>\n          ) : null}\n          {context?.permissions.includes("audit.read") ? (\n            <a href="#audit-title">Auditoria</a>\n          ) : null}\n        </nav>\n\n'''
+          if nav not in s:
+              s = s.replace(marker, marker + nav)
+          p.write_text(s)
+          PY
+      - name: Format
+        working-directory: platform
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec prettier --write apps/admin-web/src/main.tsx apps/admin-web/src/module-nav.css
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add platform/apps/admin-web/src/main.tsx platform/apps/admin-web/src/module-nav.css
+          git diff --cached --quiet || git commit -m "feat: adiciona navegação fixa entre módulos administrativos"
+          git push origin HEAD:feature/admin-module-navigation-cycle-1
