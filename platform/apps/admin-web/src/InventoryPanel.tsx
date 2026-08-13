@@ -16,11 +16,15 @@ type Goal = {
 type InventoryItem = {
   inventory_item_id: string;
   challenge_id: string;
+  challenge_name: string;
   goal_id: string | null;
+  goal_name: string | null;
   code: string;
   public_name: string;
   status: string;
   balance: number;
+  physical_balance: number;
+  reserved_quantity: number;
 };
 type InventoryMovement = {
   id: string;
@@ -63,9 +67,9 @@ export function InventoryPanel({ supabase, canManage }: Props) {
         .select("id,challenge_id,public_label,target_km")
         .eq("is_active", true),
       supabase
-        .from("inventory_balances")
+        .from("inventory_operations_overview")
         .select(
-          "inventory_item_id,challenge_id,goal_id,code,public_name,status,balance",
+          "inventory_item_id,challenge_id,challenge_name,goal_id,goal_name,code,public_name,status,balance,physical_balance,reserved_quantity",
         )
         .order("public_name"),
       supabase
@@ -106,6 +110,20 @@ export function InventoryPanel({ supabase, canManage }: Props) {
     () =>
       items.find((item) => item.inventory_item_id === movementItemId) ?? null,
     [items, movementItemId],
+  );
+
+  const totals = useMemo(
+    () =>
+      items.reduce(
+        (accumulator, item) => {
+          accumulator.physical += Number(item.physical_balance);
+          accumulator.reserved += Number(item.reserved_quantity);
+          accumulator.available += Number(item.balance);
+          return accumulator;
+        },
+        { physical: 0, reserved: 0, available: 0 },
+      ),
+    [items],
   );
 
   function itemName(itemId: string) {
@@ -199,7 +217,9 @@ export function InventoryPanel({ supabase, canManage }: Props) {
       movementType === "OUT" &&
       Math.abs(storedQuantity) > Number(selectedMovementItem.balance)
     ) {
-      setMessage("A saída informada é maior que o saldo disponível.");
+      setMessage(
+        "A saída informada é maior que o estoque disponível. Medalhas reservadas não podem ser consumidas por uma saída manual.",
+      );
       return;
     }
 
@@ -240,12 +260,30 @@ export function InventoryPanel({ supabase, canManage }: Props) {
         </button>
       </div>
       <p className="section-description">
-        Controle por movimentos. O saldo é calculado pelo histórico de entradas,
-        saídas e ajustes.
+        Controle por movimentos e reservas. Estoque físico é o que existe;
+        reservado pertence a inscrições pagas; disponível é o que ainda pode ser
+        comprometido.
       </p>
       <p role="status" className="status">
         {message}
       </p>
+
+      {items.length > 0 ? (
+        <div className="operations-summary" aria-label="Resumo do estoque">
+          <div className="summary-card">
+            <span>Físico</span>
+            <strong>{totals.physical}</strong>
+          </div>
+          <div className="summary-card">
+            <span>Reservado</span>
+            <strong>{totals.reserved}</strong>
+          </div>
+          <div className="summary-card">
+            <span>Disponível</span>
+            <strong>{totals.available}</strong>
+          </div>
+        </div>
+      ) : null}
 
       {canManage ? (
         <>
@@ -334,7 +372,7 @@ export function InventoryPanel({ supabase, canManage }: Props) {
                       key={item.inventory_item_id}
                       value={item.inventory_item_id}
                     >
-                      {item.public_name} · saldo {item.balance}
+                      {item.public_name} · disponível {item.balance}
                     </option>
                   ))}
               </select>
@@ -385,11 +423,17 @@ export function InventoryPanel({ supabase, canManage }: Props) {
             <article className="audit-item" key={item.inventory_item_id}>
               <div>
                 <strong>{item.public_name}</strong>
+                <span>
+                  {item.challenge_name}
+                  {item.goal_name ? ` · ${item.goal_name}` : ""}
+                </span>
                 <span>{item.code}</span>
               </div>
               <div className="audit-meta">
                 <span>{item.status}</span>
-                <span>{item.balance} un.</span>
+                <span>Físico: {item.physical_balance}</span>
+                <span>Reservado: {item.reserved_quantity}</span>
+                <span>Disponível: {item.balance}</span>
               </div>
             </article>
           ))}
