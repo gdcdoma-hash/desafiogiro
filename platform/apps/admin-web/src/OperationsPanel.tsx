@@ -7,7 +7,12 @@ type Props = { supabase: SupabaseClient };
 
 type PaymentSummary = "PAID" | "PARTIAL" | "PENDING" | "UNPAID";
 type OperationalFilter =
-  "ALL" | "RESERVED" | "AVATAR_READY" | "PAID_WITHOUT_RESERVATION";
+  | "ALL"
+  | "RESERVED"
+  | "AVATAR_READY"
+  | "PAID_WITHOUT_RESERVATION"
+  | "CONFIRMED_WITHOUT_PAYMENT"
+  | "RESERVATION_WITHOUT_CONFIRMATION";
 
 type OperationRow = {
   registration_id: string;
@@ -96,9 +101,24 @@ export function OperationsPanel({ supabase }: Props) {
           row.payment_summary === "PAID" &&
           row.reservation_status !== "RESERVED",
       ).length,
+      confirmedWithoutPayment: rows.filter(
+        (row) =>
+          row.registration_status === "CONFIRMED" &&
+          row.payment_summary !== "PAID",
+      ).length,
+      reservationWithoutConfirmation: rows.filter(
+        (row) =>
+          row.reservation_status === "RESERVED" &&
+          row.registration_status !== "CONFIRMED",
+      ).length,
     }),
     [rows],
   );
+
+  const anomalyCount =
+    operationalSummary.paidWithoutReservation +
+    operationalSummary.confirmedWithoutPayment +
+    operationalSummary.reservationWithoutConfirmation;
 
   const filteredRows = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("pt-BR");
@@ -112,7 +132,13 @@ export function OperationsPanel({ supabase }: Props) {
         (operationalFilter === "AVATAR_READY" && row.avatar_acceptance_ready) ||
         (operationalFilter === "PAID_WITHOUT_RESERVATION" &&
           row.payment_summary === "PAID" &&
-          row.reservation_status !== "RESERVED");
+          row.reservation_status !== "RESERVED") ||
+        (operationalFilter === "CONFIRMED_WITHOUT_PAYMENT" &&
+          row.registration_status === "CONFIRMED" &&
+          row.payment_summary !== "PAID") ||
+        (operationalFilter === "RESERVATION_WITHOUT_CONFIRMATION" &&
+          row.reservation_status === "RESERVED" &&
+          row.registration_status !== "CONFIRMED");
       const matchesQuery =
         !normalized ||
         [
@@ -129,6 +155,10 @@ export function OperationsPanel({ supabase }: Props) {
       return matchesPayment && matchesOperational && matchesQuery;
     });
   }, [operationalFilter, paymentFilter, query, rows]);
+
+  function toggleOperationalFilter(filter: OperationalFilter) {
+    setOperationalFilter((current) => (current === filter ? "ALL" : filter));
+  }
 
   return (
     <section className="audit-panel" aria-labelledby="operations-title">
@@ -188,11 +218,7 @@ export function OperationsPanel({ supabase }: Props) {
               ? "summary-card selected"
               : "summary-card"
           }
-          onClick={() =>
-            setOperationalFilter((current) =>
-              current === "RESERVED" ? "ALL" : "RESERVED",
-            )
-          }
+          onClick={() => toggleOperationalFilter("RESERVED")}
         >
           <span>Medalhas reservadas</span>
           <strong>{operationalSummary.reserved}</strong>
@@ -204,34 +230,67 @@ export function OperationsPanel({ supabase }: Props) {
               ? "summary-card selected"
               : "summary-card"
           }
-          onClick={() =>
-            setOperationalFilter((current) =>
-              current === "AVATAR_READY" ? "ALL" : "AVATAR_READY",
-            )
-          }
+          onClick={() => toggleOperationalFilter("AVATAR_READY")}
         >
           <span>Avatares liberados</span>
           <strong>{operationalSummary.avatarReady}</strong>
         </button>
-        <button
-          type="button"
-          className={
-            operationalFilter === "PAID_WITHOUT_RESERVATION"
-              ? "summary-card selected"
-              : "summary-card"
-          }
-          onClick={() =>
-            setOperationalFilter((current) =>
-              current === "PAID_WITHOUT_RESERVATION"
-                ? "ALL"
-                : "PAID_WITHOUT_RESERVATION",
-            )
-          }
-        >
-          <span>Pago sem reserva</span>
-          <strong>{operationalSummary.paidWithoutReservation}</strong>
-        </button>
       </div>
+
+      {anomalyCount > 0 ? (
+        <>
+          <p className="status" role="alert">
+            Atenção: {anomalyCount} inconsistência(s) operacional(is) precisam
+            de conferência.
+          </p>
+          <div className="operations-summary" aria-label="Alertas operacionais">
+            <button
+              type="button"
+              className={
+                operationalFilter === "PAID_WITHOUT_RESERVATION"
+                  ? "summary-card selected"
+                  : "summary-card"
+              }
+              onClick={() =>
+                toggleOperationalFilter("PAID_WITHOUT_RESERVATION")
+              }
+            >
+              <span>Pago sem reserva</span>
+              <strong>{operationalSummary.paidWithoutReservation}</strong>
+            </button>
+            <button
+              type="button"
+              className={
+                operationalFilter === "CONFIRMED_WITHOUT_PAYMENT"
+                  ? "summary-card selected"
+                  : "summary-card"
+              }
+              onClick={() =>
+                toggleOperationalFilter("CONFIRMED_WITHOUT_PAYMENT")
+              }
+            >
+              <span>Confirmada sem pagamento</span>
+              <strong>{operationalSummary.confirmedWithoutPayment}</strong>
+            </button>
+            <button
+              type="button"
+              className={
+                operationalFilter === "RESERVATION_WITHOUT_CONFIRMATION"
+                  ? "summary-card selected"
+                  : "summary-card"
+              }
+              onClick={() =>
+                toggleOperationalFilter("RESERVATION_WITHOUT_CONFIRMATION")
+              }
+            >
+              <span>Reserva sem confirmação</span>
+              <strong>
+                {operationalSummary.reservationWithoutConfirmation}
+              </strong>
+            </button>
+          </div>
+        </>
+      ) : null}
 
       <label>
         Buscar
