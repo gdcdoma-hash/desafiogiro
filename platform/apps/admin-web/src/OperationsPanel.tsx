@@ -6,6 +6,8 @@ import "./operations-summary.css";
 type Props = { supabase: SupabaseClient };
 
 type PaymentSummary = "PAID" | "PARTIAL" | "PENDING" | "UNPAID";
+type OperationalFilter =
+  "ALL" | "RESERVED" | "AVATAR_READY" | "PAID_WITHOUT_RESERVATION";
 
 type OperationRow = {
   registration_id: string;
@@ -37,6 +39,8 @@ export function OperationsPanel({ supabase }: Props) {
   const [paymentFilter, setPaymentFilter] = useState<PaymentSummary | "ALL">(
     "ALL",
   );
+  const [operationalFilter, setOperationalFilter] =
+    useState<OperationalFilter>("ALL");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -82,13 +86,17 @@ export function OperationsPanel({ supabase }: Props) {
     }, initial);
   }, [rows]);
 
-  const reservedCount = useMemo(
-    () => rows.filter((row) => row.reservation_status === "RESERVED").length,
-    [rows],
-  );
-
-  const avatarReadyCount = useMemo(
-    () => rows.filter((row) => row.avatar_acceptance_ready).length,
+  const operationalSummary = useMemo(
+    () => ({
+      reserved: rows.filter((row) => row.reservation_status === "RESERVED")
+        .length,
+      avatarReady: rows.filter((row) => row.avatar_acceptance_ready).length,
+      paidWithoutReservation: rows.filter(
+        (row) =>
+          row.payment_summary === "PAID" &&
+          row.reservation_status !== "RESERVED",
+      ).length,
+    }),
     [rows],
   );
 
@@ -97,6 +105,14 @@ export function OperationsPanel({ supabase }: Props) {
     return rows.filter((row) => {
       const matchesPayment =
         paymentFilter === "ALL" || row.payment_summary === paymentFilter;
+      const matchesOperational =
+        operationalFilter === "ALL" ||
+        (operationalFilter === "RESERVED" &&
+          row.reservation_status === "RESERVED") ||
+        (operationalFilter === "AVATAR_READY" && row.avatar_acceptance_ready) ||
+        (operationalFilter === "PAID_WITHOUT_RESERVATION" &&
+          row.payment_summary === "PAID" &&
+          row.reservation_status !== "RESERVED");
       const matchesQuery =
         !normalized ||
         [
@@ -110,9 +126,9 @@ export function OperationsPanel({ supabase }: Props) {
           .join(" ")
           .toLocaleLowerCase("pt-BR")
           .includes(normalized);
-      return matchesPayment && matchesQuery;
+      return matchesPayment && matchesOperational && matchesQuery;
     });
-  }, [paymentFilter, query, rows]);
+  }, [operationalFilter, paymentFilter, query, rows]);
 
   return (
     <section className="audit-panel" aria-labelledby="operations-title">
@@ -165,14 +181,56 @@ export function OperationsPanel({ supabase }: Props) {
       </div>
 
       <div className="operations-summary" aria-label="Resumo de reservas">
-        <div className="summary-card static-card">
+        <button
+          type="button"
+          className={
+            operationalFilter === "RESERVED"
+              ? "summary-card selected"
+              : "summary-card"
+          }
+          onClick={() =>
+            setOperationalFilter((current) =>
+              current === "RESERVED" ? "ALL" : "RESERVED",
+            )
+          }
+        >
           <span>Medalhas reservadas</span>
-          <strong>{reservedCount}</strong>
-        </div>
-        <div className="summary-card static-card">
+          <strong>{operationalSummary.reserved}</strong>
+        </button>
+        <button
+          type="button"
+          className={
+            operationalFilter === "AVATAR_READY"
+              ? "summary-card selected"
+              : "summary-card"
+          }
+          onClick={() =>
+            setOperationalFilter((current) =>
+              current === "AVATAR_READY" ? "ALL" : "AVATAR_READY",
+            )
+          }
+        >
           <span>Avatares liberados</span>
-          <strong>{avatarReadyCount}</strong>
-        </div>
+          <strong>{operationalSummary.avatarReady}</strong>
+        </button>
+        <button
+          type="button"
+          className={
+            operationalFilter === "PAID_WITHOUT_RESERVATION"
+              ? "summary-card selected"
+              : "summary-card"
+          }
+          onClick={() =>
+            setOperationalFilter((current) =>
+              current === "PAID_WITHOUT_RESERVATION"
+                ? "ALL"
+                : "PAID_WITHOUT_RESERVATION",
+            )
+          }
+        >
+          <span>Pago sem reserva</span>
+          <strong>{operationalSummary.paidWithoutReservation}</strong>
+        </button>
       </div>
 
       <label>
