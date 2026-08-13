@@ -117,7 +117,9 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
     }
 
     setBusy(true);
-    setMessage(editingId ? "Atualizando participante…" : "Salvando participante…");
+    setMessage(
+      editingId ? "Atualizando participante…" : "Salvando participante…",
+    );
 
     const payload = {
       full_name: fullName.trim(),
@@ -129,7 +131,12 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
     };
 
     const request = editingId
-      ? supabase.from("participants").update(payload).eq("id", editingId).select("id").single()
+      ? supabase
+          .from("participants")
+          .update(payload)
+          .eq("id", editingId)
+          .select("id")
+          .single()
       : supabase.from("participants").insert(payload).select("id").single();
 
     const { data, error } = await request;
@@ -226,7 +233,10 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
           <div className="form-grid two">
             <label>
               Cidade
-              <input value={city} onChange={(event) => setCity(event.target.value)} />
+              <input
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+              />
             </label>
             <label>
               UF
@@ -243,7 +253,9 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
               Situação
               <select
                 value={status}
-                onChange={(event) => setStatus(event.target.value as Participant["status"])}
+                onChange={(event) =>
+                  setStatus(event.target.value as Participant["status"])
+                }
               >
                 <option value="ACTIVE">Ativo</option>
                 <option value="INACTIVE">Inativo</option>
@@ -296,7 +308,9 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
                     : "Consolidado"}
               </strong>
               <span>ID {item.id.slice(0, 8)}…</span>
-              {item.legacy_id_dgmb ? <span>Legado: {item.legacy_id_dgmb}</span> : null}
+              {item.legacy_id_dgmb ? (
+                <span>Legado: {item.legacy_id_dgmb}</span>
+              ) : null}
               {canManage ? (
                 <button
                   type="button"
