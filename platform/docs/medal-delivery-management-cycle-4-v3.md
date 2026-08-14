@@ -1,1 +1,0 @@
-Gestão de lotes de entrega de medalhas.
