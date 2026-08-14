@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { MedalDeliveryAdminWorkspace } from "./MedalDeliveryAdminWorkspace";
+import { MedalDeliveryBatchReconciliationPanel } from "./MedalDeliveryBatchReconciliationPanel";
 import { MedalDeliveriesPanel as MedalDeliveriesPanelBase } from "./MedalDeliveriesPanelBase";
 import { MedalDeliveryVisibilityPanel } from "./MedalDeliveryVisibilityPanel";
 
@@ -13,6 +14,7 @@ export function MedalDeliveriesPanel(props: Props) {
     <>
       <MedalDeliveriesPanelBase {...props} />
       <MedalDeliveryVisibilityPanel supabase={props.supabase} />
+      <MedalDeliveryBatchReconciliationPanel {...props} />
       <MedalDeliveryAdminWorkspace {...props} />
     </>
   );
