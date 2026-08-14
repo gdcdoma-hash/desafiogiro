@@ -1,0 +1,134 @@
+.public-registration-panel {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border, #d9dee7);
+}
+
+.public-registration-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.public-registration-summary button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-height: 72px;
+  padding: 0.85rem 1rem;
+}
+
+.public-registration-summary strong {
+  font-size: 1.35rem;
+}
+
+.public-registration-summary span {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.public-registration-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.public-registration-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.public-registration-item {
+  padding: 1rem;
+  border: 1px solid var(--border, #d9dee7);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.public-registration-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.public-registration-main > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.public-registration-main span,
+.public-registration-details dt {
+  font-size: 0.82rem;
+  opacity: 0.72;
+}
+
+.request-status {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.76rem !important;
+  font-weight: 700;
+  opacity: 1 !important;
+  background: #eef1f5;
+}
+
+.request-status.received {
+  background: #fff3c4;
+}
+
+.request-status.processed {
+  background: #d9f4df;
+}
+
+.request-status.rejected {
+  background: #f6dddd;
+}
+
+.public-registration-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem 1rem;
+  margin: 1rem 0 0;
+}
+
+.public-registration-details div {
+  min-width: 0;
+}
+
+.public-registration-details dt,
+.public-registration-details dd {
+  margin: 0;
+}
+
+.public-registration-details dd {
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.public-registration-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  padding: 1rem 0;
+  opacity: 0.72;
+}
+
+@media (max-width: 720px) {
+  .public-registration-summary,
+  .public-registration-details,
+  .public-registration-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .public-registration-main {
+    flex-direction: column;
+  }
+}
