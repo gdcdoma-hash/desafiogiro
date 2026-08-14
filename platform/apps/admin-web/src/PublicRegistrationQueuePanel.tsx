@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 
 type Props = {
   supabase: SupabaseClient;
-  canManage: boolean;
 };
 
 type RequestStatus = "RECEIVED" | "PROCESSED" | "REJECTED";
@@ -29,7 +28,7 @@ const statusLabels: Record<RequestStatus, string> = {
   REJECTED: "Rejeitada",
 };
 
-export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
+export function PublicRegistrationQueuePanel({ supabase }: Props) {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "ALL">(
     "RECEIVED",
@@ -37,6 +36,9 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [canRead, setCanRead] = useState(false);
+  const [canManage, setCanManage] = useState(false);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
 
   async function load() {
     setMessage("Carregando pré-inscrições…");
@@ -63,7 +65,25 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
   }
 
   useEffect(() => {
-    void load();
+    let active = true;
+    void supabase.rpc("current_admin_context").then(({ data, error }) => {
+      if (!active) return;
+      const permissions =
+        !error && data && typeof data === "object" && "permissions" in data
+          ? (data as { permissions?: unknown }).permissions
+          : null;
+      const values = Array.isArray(permissions)
+        ? permissions.filter((value): value is string => typeof value === "string")
+        : [];
+      const readAllowed = values.includes("public_registrations.read");
+      setCanRead(readAllowed);
+      setCanManage(values.includes("public_registrations.manage"));
+      setPermissionsLoaded(true);
+      if (readAllowed) void load();
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const summary = useMemo(
@@ -153,6 +173,8 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
       currency: "BRL",
     });
   }
+
+  if (!permissionsLoaded || !canRead) return null;
 
   return (
     <section
