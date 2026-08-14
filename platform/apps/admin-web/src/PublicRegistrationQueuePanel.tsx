@@ -73,7 +73,9 @@ export function PublicRegistrationQueuePanel({ supabase }: Props) {
           ? (data as { permissions?: unknown }).permissions
           : null;
       const values = Array.isArray(permissions)
-        ? permissions.filter((value): value is string => typeof value === "string")
+        ? permissions.filter(
+            (value): value is string => typeof value === "string",
+          )
         : [];
       const readAllowed = values.includes("public_registrations.read");
       setCanRead(readAllowed);

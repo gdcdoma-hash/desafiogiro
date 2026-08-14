@@ -191,9 +191,7 @@ export function OperationsPanel({ supabase }: Props) {
           <button
             type="button"
             className={
-              paymentFilter === "ALL"
-                ? "summary-card selected"
-                : "summary-card"
+              paymentFilter === "ALL" ? "summary-card selected" : "summary-card"
             }
             onClick={() => setPaymentFilter("ALL")}
           >
@@ -204,9 +202,7 @@ export function OperationsPanel({ supabase }: Props) {
             <button
               type="button"
               className={
-                paymentFilter === key
-                  ? "summary-card selected"
-                  : "summary-card"
+                paymentFilter === key ? "summary-card selected" : "summary-card"
               }
               key={key}
               onClick={() => setPaymentFilter(key)}
@@ -338,7 +334,8 @@ export function OperationsPanel({ supabase }: Props) {
                   <span>
                     R${" "}
                     {Number(row.confirmed_amount).toFixed(2).replace(".", ",")}{" "}
-                    / R$ {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
+                    / R${" "}
+                    {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
                   </span>
                 </div>
               </article>
