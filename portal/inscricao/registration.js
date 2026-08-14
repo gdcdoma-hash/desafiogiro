@@ -31,7 +31,9 @@
 
   const normalizePhone = (value) => {
     const digits = value.replace(/\D/g, "");
-    const brazilian = digits.startsWith("55") ? digits : `55${digits}`;
+    const hasCountryCode =
+      digits.startsWith("55") && (digits.length === 12 || digits.length === 13);
+    const brazilian = hasCountryCode ? digits : `55${digits}`;
     return `+${brazilian}`;
   };
 
