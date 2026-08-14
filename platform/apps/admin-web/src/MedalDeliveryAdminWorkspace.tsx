@@ -45,11 +45,15 @@ const statusLabel: Record<Delivery["status"], string> = {
 export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [batchByDelivery, setBatchByDelivery] = useState<Record<string, string>>({});
+  const [batchByDelivery, setBatchByDelivery] = useState<
+    Record<string, string>
+  >({});
   const [selectedBatchId, setSelectedBatchId] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [evidence, setEvidence] = useState("");
-  const [noteByDelivery, setNoteByDelivery] = useState<Record<string, string>>({});
+  const [noteByDelivery, setNoteByDelivery] = useState<Record<string, string>>(
+    {},
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -57,8 +61,16 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
     const [deliveryResult, batchResult] = await Promise.all([
       supabase
         .from("medal_delivery_overview")
-        .select("id,challenge_id,participant_name,participant_city,participant_state_code,challenge_name,target_km,status")
-        .in("status", ["PENDING", "ASSIGNED", "IN_TRANSIT", "AWAITING_CONFIRMATION", "ISSUE_REPORTED"])
+        .select(
+          "id,challenge_id,participant_name,participant_city,participant_state_code,challenge_name,target_km,status",
+        )
+        .in("status", [
+          "PENDING",
+          "ASSIGNED",
+          "IN_TRANSIT",
+          "AWAITING_CONFIRMATION",
+          "ISSUE_REPORTED",
+        ])
         .order("participant_name", { ascending: true }),
       supabase
         .from("medal_delivery_batches")
@@ -88,13 +100,22 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
       target_delivery_id: delivery.id,
       target_batch_id: batchId,
     });
-    setMessage(error ? "Não foi possível incluir a medalha no lote." : "Medalha incluída no lote.");
+    setMessage(
+      error
+        ? "Não foi possível incluir a medalha no lote."
+        : "Medalha incluída no lote.",
+    );
     if (!error) await load();
     setBusy(false);
   }
 
   async function handoffBatch() {
-    if (!selectedBatchId || recipientName.trim().length < 2 || evidence.trim().length < 3) return;
+    if (
+      !selectedBatchId ||
+      recipientName.trim().length < 2 ||
+      evidence.trim().length < 3
+    )
+      return;
     setBusy(true);
     const { data, error } = await supabase.rpc("handoff_medal_delivery_batch", {
       target_batch_id: selectedBatchId,
@@ -121,7 +142,11 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
       target_delivery_id: delivery.id,
       confirmation_note: noteByDelivery[delivery.id]?.trim() ?? "",
     });
-    setMessage(error ? "Não foi possível confirmar o recebimento." : "Recebimento confirmado.");
+    setMessage(
+      error
+        ? "Não foi possível confirmar o recebimento."
+        : "Recebimento confirmado.",
+    );
     if (!error) await load();
     setBusy(false);
   }
@@ -137,7 +162,11 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
       target_delivery_id: delivery.id,
       issue_description: note,
     });
-    setMessage(error ? "Não foi possível registrar a ocorrência." : "Ocorrência registrada.");
+    setMessage(
+      error
+        ? "Não foi possível registrar a ocorrência."
+        : "Ocorrência registrada.",
+    );
     if (!error) await load();
     setBusy(false);
   }
@@ -153,7 +182,11 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
       target_delivery_id: delivery.id,
       resolution_note: note,
     });
-    setMessage(error ? "Não foi possível concluir a resolução." : "Problema resolvido; entrega voltou para confirmação.");
+    setMessage(
+      error
+        ? "Não foi possível concluir a resolução."
+        : "Problema resolvido; entrega voltou para confirmação.",
+    );
     if (!error) await load();
     setBusy(false);
   }
@@ -161,35 +194,54 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
   if (!canManage) return null;
 
   return (
-    <section className="audit-panel" aria-labelledby="medal-delivery-actions-title">
+    <section
+      className="audit-panel"
+      aria-labelledby="medal-delivery-actions-title"
+    >
       <div className="section-heading">
         <div>
           <p className="eyebrow">Logística</p>
           <h2 id="medal-delivery-actions-title">Ações de entrega</h2>
         </div>
-        <button type="button" className="compact" disabled={busy} onClick={() => void load()}>
+        <button
+          type="button"
+          className="compact"
+          disabled={busy}
+          onClick={() => void load()}
+        >
           Atualizar
         </button>
       </div>
       <p className="section-description">
-        Separe medalhas em lotes, registre quem recebeu a sacola e mantenha a confirmação de cada atleta acompanhada.
+        Separe medalhas em lotes, registre quem recebeu a sacola e mantenha a
+        confirmação de cada atleta acompanhada.
       </p>
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
 
       <details>
         <summary>Registrar repasse de um lote</summary>
         <label>
           Lote em preparação
-          <select value={selectedBatchId} onChange={(event) => setSelectedBatchId(event.target.value)}>
+          <select
+            value={selectedBatchId}
+            onChange={(event) => setSelectedBatchId(event.target.value)}
+          >
             <option value="">Selecione</option>
             {preparingBatches.map((batch) => (
-              <option key={batch.id} value={batch.id}>{batch.label}</option>
+              <option key={batch.id} value={batch.id}>
+                {batch.label}
+              </option>
             ))}
           </select>
         </label>
         <label>
           Pessoa que recebeu o lote
-          <input value={recipientName} onChange={(event) => setRecipientName(event.target.value)} />
+          <input
+            value={recipientName}
+            onChange={(event) => setRecipientName(event.target.value)}
+          />
         </label>
         <label>
           Evidência do repasse
@@ -199,7 +251,11 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
             placeholder="Ex.: entregue no evento, foto/registro interno, protocolo"
           />
         </label>
-        <button type="button" disabled={busy || !selectedBatchId} onClick={() => void handoffBatch()}>
+        <button
+          type="button"
+          disabled={busy || !selectedBatchId}
+          onClick={() => void handoffBatch()}
+        >
           Confirmar repasse do lote
         </button>
       </details>
@@ -215,7 +271,10 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
                 <strong>{delivery.participant_name}</strong>
                 <span>
                   {delivery.participant_city}
-                  {delivery.participant_state_code ? ` - ${delivery.participant_state_code}` : ""} · {delivery.challenge_name} · {delivery.target_km} km
+                  {delivery.participant_state_code
+                    ? ` - ${delivery.participant_state_code}`
+                    : ""}{" "}
+                  · {delivery.challenge_name} · {delivery.target_km} km
                 </span>
                 <span>{statusLabel[delivery.status]}</span>
 
@@ -224,39 +283,84 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
                     <select
                       value={batchByDelivery[delivery.id] ?? ""}
                       onChange={(event) =>
-                        setBatchByDelivery((current) => ({ ...current, [delivery.id]: event.target.value }))
+                        setBatchByDelivery((current) => ({
+                          ...current,
+                          [delivery.id]: event.target.value,
+                        }))
                       }
                     >
                       <option value="">Selecione o lote</option>
                       {compatibleBatches.map((batch) => (
-                        <option key={batch.id} value={batch.id}>{batch.label}</option>
+                        <option key={batch.id} value={batch.id}>
+                          {batch.label}
+                        </option>
                       ))}
                     </select>
-                    <button type="button" disabled={busy || !batchByDelivery[delivery.id]} onClick={() => void assign(delivery)}>
+                    <button
+                      type="button"
+                      disabled={busy || !batchByDelivery[delivery.id]}
+                      onClick={() => void assign(delivery)}
+                    >
                       Incluir no lote
                     </button>
                   </>
                 ) : null}
 
-                {delivery.status === "IN_TRANSIT" || delivery.status === "AWAITING_CONFIRMATION" || delivery.status === "ISSUE_REPORTED" ? (
+                {delivery.status === "IN_TRANSIT" ||
+                delivery.status === "AWAITING_CONFIRMATION" ||
+                delivery.status === "ISSUE_REPORTED" ? (
                   <>
                     <input
                       value={noteByDelivery[delivery.id] ?? ""}
                       onChange={(event) =>
-                        setNoteByDelivery((current) => ({ ...current, [delivery.id]: event.target.value }))
+                        setNoteByDelivery((current) => ({
+                          ...current,
+                          [delivery.id]: event.target.value,
+                        }))
                       }
-                      placeholder={delivery.status === "ISSUE_REPORTED" ? "Informe a resolução" : "Observação ou problema informado"}
+                      placeholder={
+                        delivery.status === "ISSUE_REPORTED"
+                          ? "Informe a resolução"
+                          : "Observação ou problema informado"
+                      }
                     />
                     {delivery.status === "AWAITING_CONFIRMATION" ? (
-                      <button type="button" disabled={busy} onClick={() => void confirm(delivery)}>Confirmar recebimento</button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void confirm(delivery)}
+                      >
+                        Confirmar recebimento
+                      </button>
                     ) : null}
-                    {delivery.status === "IN_TRANSIT" || delivery.status === "AWAITING_CONFIRMATION" ? (
-                      <button type="button" className="secondary" disabled={busy} onClick={() => void reportIssue(delivery)}>Registrar problema</button>
+                    {delivery.status === "IN_TRANSIT" ||
+                    delivery.status === "AWAITING_CONFIRMATION" ? (
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={busy}
+                        onClick={() => void reportIssue(delivery)}
+                      >
+                        Registrar problema
+                      </button>
                     ) : null}
                     {delivery.status === "ISSUE_REPORTED" ? (
                       <>
-                        <button type="button" disabled={busy} onClick={() => void resume(delivery)}>Problema resolvido</button>
-                        <button type="button" className="secondary" disabled={busy} onClick={() => void confirm(delivery)}>Confirmar recebimento</button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void resume(delivery)}
+                        >
+                          Problema resolvido
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={busy}
+                          onClick={() => void confirm(delivery)}
+                        >
+                          Confirmar recebimento
+                        </button>
                       </>
                     ) : null}
                   </>
