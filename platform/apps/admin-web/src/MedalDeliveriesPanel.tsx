@@ -169,9 +169,7 @@ export function MedalDeliveriesPanel({ supabase, canManage }: Props) {
         .maybeSingle(),
       supabase
         .from("medal_delivery_batches")
-        .select(
-          "id,method,label,city,state_code,responsible_name,status",
-        )
+        .select("id,method,label,city,state_code,responsible_name,status")
         .eq("challenge_id", targetChallengeId)
         .order("created_at", { ascending: false }),
     ]);
@@ -219,12 +217,15 @@ export function MedalDeliveriesPanel({ supabase, canManage }: Props) {
     event.preventDefault();
     if (!challengeId || !periodStartsAt || !periodEndsAt) return;
     setBusy(true);
-    const { data, error } = await supabase.rpc("activate_medal_delivery_period", {
-      target_challenge_id: challengeId,
-      period_starts_at: toIso(periodStartsAt),
-      period_ends_at: toIso(periodEndsAt),
-      period_notes: periodNotes.trim(),
-    });
+    const { data, error } = await supabase.rpc(
+      "activate_medal_delivery_period",
+      {
+        target_challenge_id: challengeId,
+        period_starts_at: toIso(periodStartsAt),
+        period_ends_at: toIso(periodEndsAt),
+        period_notes: periodNotes.trim(),
+      },
+    );
     setMessage(
       error
         ? "Não foi possível abrir o período de entrega."
