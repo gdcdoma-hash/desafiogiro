@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inscrição | Desafio Giro</title>
+    <meta
+      name="description"
+      content="Escolha seu desafio, sua meta e envie sua pré-inscrição no Desafio Giro."
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="registration-shell">
+      <a class="back-link" href="../">← Voltar ao Portal Giro</a>
+
+      <section class="registration-card" aria-labelledby="registration-title">
+        <p class="eyebrow">Desafio Giro</p>
+        <h1 id="registration-title">Faça sua pré-inscrição</h1>
+        <p class="intro">
+          Escolha a edição e a meta disponíveis, informe seus dados e envie a
+          solicitação. Sua vaga só será confirmada após o pagamento ou uma
+          isenção autorizada pela organização.
+        </p>
+
+        <div id="loading-state" class="notice" role="status">
+          Carregando opções disponíveis…
+        </div>
+
+        <form id="registration-form" hidden>
+          <label>
+            Desafio e opção de inscrição
+            <select id="offer" name="offer" required></select>
+          </label>
+
+          <label>
+            Meta
+            <select id="goal" name="goal" required></select>
+          </label>
+
+          <div id="selection-summary" class="selection-summary"></div>
+
+          <label>
+            Nome completo
+            <input
+              id="full-name"
+              name="fullName"
+              type="text"
+              autocomplete="name"
+              maxlength="180"
+              required
+            />
+          </label>
+
+          <label>
+            Celular com DDD
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="(98) 99999-9999"
+              required
+            />
+          </label>
+
+          <div class="grid-two">
+            <label>
+              Cidade
+              <input
+                id="city"
+                name="city"
+                type="text"
+                autocomplete="address-level2"
+                maxlength="120"
+                required
+              />
+            </label>
+
+            <label>
+              UF
+              <input
+                id="state"
+                name="state"
+                type="text"
+                autocomplete="address-level1"
+                maxlength="2"
+                placeholder="MA"
+                required
+              />
+            </label>
+          </div>
+
+          <label>
+            Código de indicação (opcional)
+            <input id="referral" name="referral" type="text" maxlength="60" />
+          </label>
+
+          <p class="legal-note">
+            Ao enviar, você solicita sua participação. Isso ainda não confirma
+            pagamento nem reserva medalha.
+          </p>
+
+          <button id="submit-button" type="submit">Enviar pré-inscrição</button>
+        </form>
+
+        <div id="result" class="notice" role="status" hidden></div>
+      </section>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./registration.js"></script>
+  </body>
+</html>
