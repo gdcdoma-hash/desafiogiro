@@ -43,54 +43,55 @@ type SheetContract = {
   required: readonly RequiredField[];
 };
 
-export const legacyMigrationContracts: Record<LegacySheetName, SheetContract> = {
-  DadosPessoais: {
-    required: [
-      { field: "ID_DGMB", aliases: ["ID_DGMB", "id_dgmb", "idDgmb"] },
-    ],
-  },
-  ListaDesafios: {
-    required: [
-      {
-        field: "ID_DESAFIO_LISTA",
-        aliases: ["id_Desafio_lista", "ID_Desafio_Lista", "id_desafio_lista"],
-      },
-      {
-        field: "ID_DESAFIO_BASE",
-        aliases: ["id_desafio_base", "ID_Desafio_Base"],
-      },
-    ],
-  },
-  dgmbDesafios: {
-    required: [
-      { field: "ID_DGMB", aliases: ["ID_DGMB", "id_dgmb", "idDgmb"] },
-      {
-        field: "ID_INSCRICAO",
-        aliases: ["ID_INSCRICAO", "ID_Inscricao", "id_inscricao"],
-      },
-      {
-        field: "ID_DESAFIO_LISTA",
-        aliases: ["ID_Desafio_Lista", "id_Desafio_lista", "id_desafio_lista"],
-      },
-    ],
-  },
-  DesafioKMEstoque: {
-    required: [
-      {
-        field: "ID_ITEM_ESTOQUE",
-        aliases: ["id_item_estoque", "ID_Item_Estoque", "ID_ITEM_ESTOQUE"],
-      },
-    ],
-  },
-  DesafiosBase: {
-    required: [
-      {
-        field: "ID_DESAFIO_BASE",
-        aliases: ["id_desafio_base", "ID_Desafio_Base"],
-      },
-    ],
-  },
-};
+export const legacyMigrationContracts: Record<LegacySheetName, SheetContract> =
+  {
+    DadosPessoais: {
+      required: [
+        { field: "ID_DGMB", aliases: ["ID_DGMB", "id_dgmb", "idDgmb"] },
+      ],
+    },
+    ListaDesafios: {
+      required: [
+        {
+          field: "ID_DESAFIO_LISTA",
+          aliases: ["id_Desafio_lista", "ID_Desafio_Lista", "id_desafio_lista"],
+        },
+        {
+          field: "ID_DESAFIO_BASE",
+          aliases: ["id_desafio_base", "ID_Desafio_Base"],
+        },
+      ],
+    },
+    dgmbDesafios: {
+      required: [
+        { field: "ID_DGMB", aliases: ["ID_DGMB", "id_dgmb", "idDgmb"] },
+        {
+          field: "ID_INSCRICAO",
+          aliases: ["ID_INSCRICAO", "ID_Inscricao", "id_inscricao"],
+        },
+        {
+          field: "ID_DESAFIO_LISTA",
+          aliases: ["ID_Desafio_Lista", "id_Desafio_lista", "id_desafio_lista"],
+        },
+      ],
+    },
+    DesafioKMEstoque: {
+      required: [
+        {
+          field: "ID_ITEM_ESTOQUE",
+          aliases: ["id_item_estoque", "ID_Item_Estoque", "ID_ITEM_ESTOQUE"],
+        },
+      ],
+    },
+    DesafiosBase: {
+      required: [
+        {
+          field: "ID_DESAFIO_BASE",
+          aliases: ["id_desafio_base", "ID_Desafio_Base"],
+        },
+      ],
+    },
+  };
 
 const sheetNames = Object.keys(legacyMigrationContracts) as LegacySheetName[];
 
@@ -107,10 +108,12 @@ function findHeaderIndex(
   aliases: readonly string[],
 ): number {
   const normalized = headers.map(normalizeLegacyHeader);
-  return aliases
-    .map(normalizeLegacyHeader)
-    .map((alias) => normalized.indexOf(alias))
-    .find((index) => index >= 0) ?? -1;
+  return (
+    aliases
+      .map(normalizeLegacyHeader)
+      .map((alias) => normalized.indexOf(alias))
+      .find((index) => index >= 0) ?? -1
+  );
 }
 
 function emptyRowCounts(): Record<LegacySheetName, number> {
@@ -123,9 +126,7 @@ function emptyRowCounts(): Record<LegacySheetName, number> {
   };
 }
 
-function registrationIdIssues(
-  sheet: LegacySheetSnapshot,
-): MigrationIssue[] {
+function registrationIdIssues(sheet: LegacySheetSnapshot): MigrationIssue[] {
   const idField = legacyMigrationContracts.dgmbDesafios.required.find(
     ({ field }) => field === "ID_INSCRICAO",
   );
