@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(7);
+select plan(8);
 
 select has_function('public','close_medal_delivery_batch',array['uuid'],'batch close function exists');
 select has_view('public','medal_delivery_batch_reconciliation','batch reconciliation view exists');
