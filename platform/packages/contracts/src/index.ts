@@ -40,3 +40,5 @@ export type Permission = (typeof permissions)[number];
 export function isPermission(value: string): value is Permission {
   return (permissions as readonly string[]).includes(value);
 }
+
+export * from "./migration";
