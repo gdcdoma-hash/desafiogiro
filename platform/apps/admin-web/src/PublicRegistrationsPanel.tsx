@@ -182,7 +182,10 @@ export function PublicRegistrationsPanel({ supabase, canManage }: Props) {
         pagamento nem reserva medalha automaticamente.
       </p>
 
-      <div className="public-registration-summary" aria-label="Resumo da fila">
+      <div
+        className="public-registration-summary"
+        aria-label="Resumo da fila"
+      >
         <button type="button" onClick={() => setStatusFilter("RECEIVED")}>
           <strong>{summary.RECEIVED}</strong>
           <span>Recebidas</span>
@@ -237,7 +240,9 @@ export function PublicRegistrationsPanel({ supabase, canManage }: Props) {
                   {request.phone_e164} · {request.city}/{request.state_code}
                 </span>
               </div>
-              <span className={`request-status ${request.status.toLowerCase()}`}>
+              <span
+                className={`request-status ${request.status.toLowerCase()}`}
+              >
                 {statusLabels[request.status]}
               </span>
             </div>
@@ -294,7 +299,9 @@ export function PublicRegistrationsPanel({ supabase, canManage }: Props) {
       </div>
 
       {!loading && filtered.length === 0 ? (
-        <p className="empty-state">Nenhuma solicitação corresponde ao filtro.</p>
+        <p className="empty-state">
+          Nenhuma solicitação corresponde ao filtro.
+        </p>
       ) : null}
     </section>
   );
