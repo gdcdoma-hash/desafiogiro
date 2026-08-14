@@ -1,16 +1,36 @@
 # Plataforma Portal Giro
 
-Esta pasta contém o primeiro ciclo técnico da nova plataforma. Ela foi criada de
-forma isolada para não interferir no Portal público existente em `../portal/` nem
-no redirecionador de produção em `../index.html`.
+Esta pasta contém a nova fundação técnica do Portal Giro. Ela permanece isolada
+para não interferir no Portal público existente em `../portal/` nem no
+redirecionador legado em `../index.html` enquanto a migração é concluída.
+
+## Estado atual
+
+Já existem, com migrations, RLS e testes automatizados:
+
+- autenticação administrativa e RBAC;
+- auditoria administrativa;
+- desafios, metas, ofertas e ciclo de vida;
+- participantes;
+- inscrições administrativas;
+- pré-inscrição pública com catálogo filtrado e fila administrativa;
+- pagamentos e confirmação administrativa;
+- estoque, reservas e reconciliação;
+- planejamento e recebimento de pedidos de medalhas;
+- organização, repasse, confirmação e ocorrências de entrega de medalhas;
+- painéis administrativos correspondentes.
+
+A página pública de inscrição usa apenas RPCs explicitamente liberadas ao papel
+anônimo. As tabelas internas permanecem protegidas por RLS e permissões.
 
 ## Limites atuais
 
-- não conecta com GAS ou Google Sheets;
-- não contém dados reais;
-- não implementa inscrição, pagamento, PIX, estoque ou Strava;
-- não publica no domínio atual;
-- não exige serviço pago;
+- não migra automaticamente os dados existentes no GAS/Google Sheets;
+- não integra atividades do Strava nem substitui ainda o Meu Giro legado;
+- pagamento PIX ainda depende do fluxo administrativo existente; não há gateway
+  financeiro automático;
+- não altera o domínio/redirecionador legado de produção;
+- não requer serviço pago para o ciclo atual;
 - mantém banco, aplicação e hospedagem portáveis.
 
 ## Pré-requisitos
@@ -74,11 +94,12 @@ Nunca reutilize e-mail, senha, CPF, telefone ou outro dado de uma pessoa real.
 A aplicação em `apps/admin-web` é publicada separadamente do Portal visual. A
 chave `VITE_SUPABASE_PUBLISHABLE_KEY` é pública por definição; chaves secretas e
 `service_role` são proibidas no frontend. A autorização permanece no PostgreSQL
-por meio de RLS e da função `current_admin_context`.
+por meio de RLS, permissões e RPCs com validação interna.
 
-O usuário autenticado sem o papel `platform_admin` recebe acesso negado. Login,
-negação de acesso e logout são registrados pela auditoria sem senha, token, CPF
-ou outros dados sensíveis.
+O usuário autenticado sem `admin.access` não obtém contexto administrativo.
+Ações administrativas sensíveis validam permissões específicas no banco.
+Eventos de auditoria só podem ser gravados por uma sessão com `admin.access` e
+não aceitam senha, token, CPF ou outros campos sensíveis proibidos.
 
 ## Comandos de qualidade
 
@@ -90,13 +111,15 @@ pnpm test
 pnpm build
 ```
 
+O workflow `Foundation checks` também recria o banco do zero e executa os testes
+PgTAP de todas as migrations antes da integração de mudanças na `dev`.
+
 ## Ambientes
 
-| Ambiente   | Banco            | Dados permitidos  | Publicação neste ciclo |
-| ---------- | ---------------- | ----------------- | ---------------------- |
-| local      | Supabase local   | somente fictícios | sim, apenas na máquina |
-| staging    | projeto separado | somente fictícios | não configurada        |
-| production | projeto separado | banco vazio       | proibida               |
+O repositório continua tratando configuração, migrations e dados como elementos
+separados. Não coloque chaves secretas, dumps reais ou dados pessoais no Git.
+Antes de promover qualquer ambiente ou migrar dados legados, valide backup,
+restauração e compatibilidade das migrations.
 
 Consulte `docs/environments.md`, `docs/security.md` e
-`docs/backup-restore.md` antes de configurar qualquer ambiente externo.
+`docs/backup-restore.md` antes de configurar ou promover qualquer ambiente.
