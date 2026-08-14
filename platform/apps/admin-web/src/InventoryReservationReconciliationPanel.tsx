@@ -126,8 +126,8 @@ export function InventoryReservationReconciliationPanel({
               <div>
                 <strong>{challenge.challengeName}</strong>
                 <span>
-                  {challenge.withoutReservation} inscrição(ões) confirmada(s) sem
-                  reserva física
+                  {challenge.withoutReservation} inscrição(ões) confirmada(s)
+                  sem reserva física
                 </span>
                 <span>
                   {challenge.available} medalha(s) disponível(is) no total
