@@ -48,22 +48,24 @@ export function MedalOrdersPanel({ supabase, canManage }: Props) {
     setBusy(true);
     setMessage("");
 
-    const [{ data: planningData, error: planningError }, { data: orderData, error: orderError }] =
-      await Promise.all([
-        supabase
-          .from("medal_purchase_planning")
-          .select(
-            "challenge_id,challenge_name,goal_id,goal_label,suggested_purchase_quantity",
-          )
-          .order("challenge_name")
-          .order("goal_label"),
-        supabase
-          .from("medal_orders_overview")
-          .select(
-            "medal_order_id,challenge_id,challenge_name,order_reference,supplier_name,status,ordered_at,expected_at,received_at,item_count,total_quantity",
-          )
-          .order("created_at", { ascending: false }),
-      ]);
+    const [
+      { data: planningData, error: planningError },
+      { data: orderData, error: orderError },
+    ] = await Promise.all([
+      supabase
+        .from("medal_purchase_planning")
+        .select(
+          "challenge_id,challenge_name,goal_id,goal_label,suggested_purchase_quantity",
+        )
+        .order("challenge_name")
+        .order("goal_label"),
+      supabase
+        .from("medal_orders_overview")
+        .select(
+          "medal_order_id,challenge_id,challenge_name,order_reference,supplier_name,status,ordered_at,expected_at,received_at,item_count,total_quantity",
+        )
+        .order("created_at", { ascending: false }),
+    ]);
 
     if (planningError || orderError) {
       setMessage("Não foi possível carregar os pedidos de medalhas.");
@@ -131,13 +133,15 @@ export function MedalOrdersPanel({ supabase, canManage }: Props) {
       return;
     }
 
-    const { error: itemsError } = await supabase.from("medal_order_items").insert(
-      suggestedItems.map((item) => ({
-        medal_order_id: order.id,
-        goal_id: item.goal_id,
-        quantity: Number(item.suggested_purchase_quantity),
-      })),
-    );
+    const { error: itemsError } = await supabase
+      .from("medal_order_items")
+      .insert(
+        suggestedItems.map((item) => ({
+          medal_order_id: order.id,
+          goal_id: item.goal_id,
+          quantity: Number(item.suggested_purchase_quantity),
+        })),
+      );
 
     if (itemsError) {
       await supabase
