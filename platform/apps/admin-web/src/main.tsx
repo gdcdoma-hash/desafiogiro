@@ -422,7 +422,10 @@ function App() {
         ) : null}
 
         {context?.permissions.includes("medal_deliveries.read") ? (
-          <MedalDeliveriesPanel supabase={supabase} />
+          <MedalDeliveriesPanel
+            supabase={supabase}
+            canManage={context.permissions.includes("medal_deliveries.manage")}
+          />
         ) : null}
 
         {context?.permissions.includes("inventory.read") ? (
