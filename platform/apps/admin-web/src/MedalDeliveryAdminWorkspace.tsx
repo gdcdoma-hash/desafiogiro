@@ -1,10 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
-type Props = {
-  supabase: SupabaseClient;
-  canManage: boolean;
-};
+type Props = { supabase: SupabaseClient; canManage: boolean };
 
 type Delivery = {
   id: string;
@@ -48,6 +45,7 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
   const [batchByDelivery, setBatchByDelivery] = useState<
     Record<string, string>
   >({});
+  const [batchByCity, setBatchByCity] = useState<Record<string, string>>({});
   const [selectedBatchId, setSelectedBatchId] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [evidence, setEvidence] = useState("");
@@ -78,7 +76,6 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
         .in("status", ["PREPARING", "HANDED_OFF"])
         .order("created_at", { ascending: false }),
     ]);
-
     setDeliveries((deliveryResult.data ?? []) as Delivery[]);
     setBatches((batchResult.data ?? []) as Batch[]);
   }
@@ -86,11 +83,40 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
   useEffect(() => {
     void load();
   }, []);
-
   const preparingBatches = useMemo(
     () => batches.filter((batch) => batch.status === "PREPARING"),
     [batches],
   );
+  const pendingCities = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        key: string;
+        challengeId: string;
+        challengeName: string;
+        city: string;
+        stateCode: string | null;
+        count: number;
+      }
+    >();
+    for (const delivery of deliveries.filter(
+      (item) => item.status === "PENDING",
+    )) {
+      const key = `${delivery.challenge_id}|${delivery.participant_city}|${delivery.participant_state_code ?? ""}`;
+      const current = groups.get(key);
+      if (current) current.count += 1;
+      else
+        groups.set(key, {
+          key,
+          challengeId: delivery.challenge_id,
+          challengeName: delivery.challenge_name,
+          city: delivery.participant_city,
+          stateCode: delivery.participant_state_code,
+          count: 1,
+        });
+    }
+    return [...groups.values()].sort((a, b) => a.city.localeCompare(b.city));
+  }, [deliveries]);
 
   async function assign(delivery: Delivery) {
     const batchId = batchByDelivery[delivery.id];
@@ -106,6 +132,31 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
         : "Medalha incluída no lote.",
     );
     if (!error) await load();
+    setBusy(false);
+  }
+
+  async function assignCity(group: (typeof pendingCities)[number]) {
+    const batchId = batchByCity[group.key];
+    if (!batchId) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc(
+      "assign_pending_medal_deliveries_by_city",
+      {
+        target_challenge_id: group.challengeId,
+        target_city: group.city,
+        target_state_code: group.stateCode,
+        target_batch_id: batchId,
+      },
+    );
+    setMessage(
+      error
+        ? "Não foi possível agrupar as medalhas desta cidade."
+        : `${Number(data ?? 0)} medalha(s) de ${group.city} incluída(s) no lote.`,
+    );
+    if (!error) {
+      setBatchByCity((current) => ({ ...current, [group.key]: "" }));
+      await load();
+    }
     setBusy(false);
   }
 
@@ -150,7 +201,6 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
     if (!error) await load();
     setBusy(false);
   }
-
   async function reportIssue(delivery: Delivery) {
     const note = noteByDelivery[delivery.id]?.trim() ?? "";
     if (note.length < 5) {
@@ -170,7 +220,6 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
     if (!error) await load();
     setBusy(false);
   }
-
   async function resume(delivery: Delivery) {
     const note = noteByDelivery[delivery.id]?.trim() ?? "";
     if (note.length < 5) {
@@ -192,7 +241,6 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
   }
 
   if (!canManage) return null;
-
   return (
     <section
       className="audit-panel"
@@ -219,6 +267,56 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
       <p role="status" className="status">
         {message}
       </p>
+
+      {pendingCities.length > 0 ? (
+        <details open>
+          <summary>Agrupar pendências por cidade</summary>
+          <div className="audit-list">
+            {pendingCities.map((group) => {
+              const compatible = preparingBatches.filter(
+                (batch) => batch.challenge_id === group.challengeId,
+              );
+              return (
+                <article className="audit-item" key={group.key}>
+                  <div>
+                    <strong>
+                      {group.city}
+                      {group.stateCode ? ` - ${group.stateCode}` : ""}
+                    </strong>
+                    <span>
+                      {group.challengeName} · {group.count} medalha(s)
+                      pendente(s)
+                    </span>
+                    <select
+                      value={batchByCity[group.key] ?? ""}
+                      onChange={(event) =>
+                        setBatchByCity((current) => ({
+                          ...current,
+                          [group.key]: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Selecione o lote</option>
+                      {compatible.map((batch) => (
+                        <option key={batch.id} value={batch.id}>
+                          {batch.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={busy || !batchByCity[group.key]}
+                      onClick={() => void assignCity(group)}
+                    >
+                      Incluir cidade no lote
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </details>
+      ) : null}
 
       <details>
         <summary>Registrar repasse de um lote</summary>
@@ -277,7 +375,6 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
                   · {delivery.challenge_name} · {delivery.target_km} km
                 </span>
                 <span>{statusLabel[delivery.status]}</span>
-
                 {delivery.status === "PENDING" ? (
                   <>
                     <select
@@ -305,7 +402,6 @@ export function MedalDeliveryAdminWorkspace({ supabase, canManage }: Props) {
                     </button>
                   </>
                 ) : null}
-
                 {delivery.status === "IN_TRANSIT" ||
                 delivery.status === "AWAITING_CONFIRMATION" ||
                 delivery.status === "ISSUE_REPORTED" ? (
