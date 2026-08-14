@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { PublicRegistrationQueuePanel } from "./PublicRegistrationQueuePanel";
 import { ReservationStatusNote } from "./ReservationStatusNote";
 import "./operations-summary.css";
 
@@ -161,183 +162,194 @@ export function OperationsPanel({ supabase }: Props) {
   }
 
   return (
-    <section className="audit-panel" aria-labelledby="operations-title">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Operação</p>
-          <h2 id="operations-title">Visão operacional</h2>
+    <>
+      <PublicRegistrationQueuePanel supabase={supabase} />
+      <section className="audit-panel" aria-labelledby="operations-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Operação</p>
+            <h2 id="operations-title">Visão operacional</h2>
+          </div>
+          <button
+            type="button"
+            className="compact"
+            disabled={busy}
+            onClick={() => void load()}
+          >
+            {busy ? "Carregando…" : "Atualizar"}
+          </button>
         </div>
-        <button
-          type="button"
-          className="compact"
-          disabled={busy}
-          onClick={() => void load()}
-        >
-          {busy ? "Carregando…" : "Atualizar"}
-        </button>
-      </div>
-      <p className="section-description">
-        Leitura consolidada de inscrição, pagamento e reserva de medalha. Esta
-        tela não altera estados nem movimenta estoque.
-      </p>
+        <p className="section-description">
+          Leitura consolidada de inscrição, pagamento e reserva de medalha. Esta
+          tela não altera estados nem movimenta estoque.
+        </p>
 
-      <div
-        className="operations-summary"
-        aria-label="Resumo financeiro das inscrições"
-      >
-        <button
-          type="button"
-          className={
-            paymentFilter === "ALL" ? "summary-card selected" : "summary-card"
-          }
-          onClick={() => setPaymentFilter("ALL")}
+        <div
+          className="operations-summary"
+          aria-label="Resumo financeiro das inscrições"
         >
-          <span>Total</span>
-          <strong>{rows.length}</strong>
-        </button>
-        {(Object.keys(paymentLabels) as PaymentSummary[]).map((key) => (
           <button
             type="button"
             className={
-              paymentFilter === key ? "summary-card selected" : "summary-card"
+              paymentFilter === "ALL"
+                ? "summary-card selected"
+                : "summary-card"
             }
-            key={key}
-            onClick={() => setPaymentFilter(key)}
+            onClick={() => setPaymentFilter("ALL")}
           >
-            <span>{paymentLabels[key]}</span>
-            <strong>{summary[key]}</strong>
+            <span>Total</span>
+            <strong>{rows.length}</strong>
           </button>
-        ))}
-      </div>
-
-      <div className="operations-summary" aria-label="Resumo de reservas">
-        <button
-          type="button"
-          className={
-            operationalFilter === "RESERVED"
-              ? "summary-card selected"
-              : "summary-card"
-          }
-          onClick={() => toggleOperationalFilter("RESERVED")}
-        >
-          <span>Medalhas reservadas</span>
-          <strong>{operationalSummary.reserved}</strong>
-        </button>
-        <button
-          type="button"
-          className={
-            operationalFilter === "AVATAR_READY"
-              ? "summary-card selected"
-              : "summary-card"
-          }
-          onClick={() => toggleOperationalFilter("AVATAR_READY")}
-        >
-          <span>Avatares liberados</span>
-          <strong>{operationalSummary.avatarReady}</strong>
-        </button>
-      </div>
-
-      {anomalyCount > 0 ? (
-        <>
-          <p className="status" role="alert">
-            Atenção: {anomalyCount} inconsistência(s) operacional(is) precisam
-            de conferência.
-          </p>
-          <div className="operations-summary" aria-label="Alertas operacionais">
+          {(Object.keys(paymentLabels) as PaymentSummary[]).map((key) => (
             <button
               type="button"
               className={
-                operationalFilter === "PAID_WITHOUT_RESERVATION"
+                paymentFilter === key
                   ? "summary-card selected"
                   : "summary-card"
               }
-              onClick={() =>
-                toggleOperationalFilter("PAID_WITHOUT_RESERVATION")
-              }
+              key={key}
+              onClick={() => setPaymentFilter(key)}
             >
-              <span>Pago sem reserva</span>
-              <strong>{operationalSummary.paidWithoutReservation}</strong>
+              <span>{paymentLabels[key]}</span>
+              <strong>{summary[key]}</strong>
             </button>
-            <button
-              type="button"
-              className={
-                operationalFilter === "CONFIRMED_WITHOUT_PAYMENT"
-                  ? "summary-card selected"
-                  : "summary-card"
-              }
-              onClick={() =>
-                toggleOperationalFilter("CONFIRMED_WITHOUT_PAYMENT")
-              }
-            >
-              <span>Confirmada sem pagamento</span>
-              <strong>{operationalSummary.confirmedWithoutPayment}</strong>
-            </button>
-            <button
-              type="button"
-              className={
-                operationalFilter === "RESERVATION_WITHOUT_CONFIRMATION"
-                  ? "summary-card selected"
-                  : "summary-card"
-              }
-              onClick={() =>
-                toggleOperationalFilter("RESERVATION_WITHOUT_CONFIRMATION")
-              }
-            >
-              <span>Reserva sem confirmação</span>
-              <strong>
-                {operationalSummary.reservationWithoutConfirmation}
-              </strong>
-            </button>
-          </div>
-        </>
-      ) : null}
-
-      <label>
-        Buscar
-        <input
-          type="search"
-          value={query}
-          placeholder="Participante, desafio, meta, oferta ou situação"
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      </label>
-      <p role="status" className="status">
-        {message}
-        {rows.length > 0 && filteredRows.length !== rows.length
-          ? ` Exibindo ${filteredRows.length} após os filtros.`
-          : ""}
-      </p>
-
-      {filteredRows.length > 0 ? (
-        <div className="audit-list">
-          {filteredRows.map((row) => (
-            <article className="audit-item" key={row.registration_id}>
-              <div>
-                <strong>{row.participant_name}</strong>
-                <span>
-                  {row.challenge_name} · {row.goal_name} · {row.offer_name}
-                </span>
-              </div>
-              <div className="audit-meta">
-                <span>{row.registration_status}</span>
-                <span>{paymentLabels[row.payment_summary]}</span>
-                <ReservationStatusNote
-                  reservationStatus={row.reservation_status}
-                  avatarAcceptanceReady={row.avatar_acceptance_ready}
-                />
-                <span>
-                  R$ {Number(row.confirmed_amount).toFixed(2).replace(".", ",")}{" "}
-                  / R$ {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
-                </span>
-              </div>
-            </article>
           ))}
         </div>
-      ) : rows.length > 0 ? (
-        <p className="empty-note">
-          Nenhuma inscrição corresponde aos filtros atuais.
+
+        <div className="operations-summary" aria-label="Resumo de reservas">
+          <button
+            type="button"
+            className={
+              operationalFilter === "RESERVED"
+                ? "summary-card selected"
+                : "summary-card"
+            }
+            onClick={() => toggleOperationalFilter("RESERVED")}
+          >
+            <span>Medalhas reservadas</span>
+            <strong>{operationalSummary.reserved}</strong>
+          </button>
+          <button
+            type="button"
+            className={
+              operationalFilter === "AVATAR_READY"
+                ? "summary-card selected"
+                : "summary-card"
+            }
+            onClick={() => toggleOperationalFilter("AVATAR_READY")}
+          >
+            <span>Avatares liberados</span>
+            <strong>{operationalSummary.avatarReady}</strong>
+          </button>
+        </div>
+
+        {anomalyCount > 0 ? (
+          <>
+            <p className="status" role="alert">
+              Atenção: {anomalyCount} inconsistência(s) operacional(is) precisam
+              de conferência.
+            </p>
+            <div
+              className="operations-summary"
+              aria-label="Alertas operacionais"
+            >
+              <button
+                type="button"
+                className={
+                  operationalFilter === "PAID_WITHOUT_RESERVATION"
+                    ? "summary-card selected"
+                    : "summary-card"
+                }
+                onClick={() =>
+                  toggleOperationalFilter("PAID_WITHOUT_RESERVATION")
+                }
+              >
+                <span>Pago sem reserva</span>
+                <strong>{operationalSummary.paidWithoutReservation}</strong>
+              </button>
+              <button
+                type="button"
+                className={
+                  operationalFilter === "CONFIRMED_WITHOUT_PAYMENT"
+                    ? "summary-card selected"
+                    : "summary-card"
+                }
+                onClick={() =>
+                  toggleOperationalFilter("CONFIRMED_WITHOUT_PAYMENT")
+                }
+              >
+                <span>Confirmada sem pagamento</span>
+                <strong>{operationalSummary.confirmedWithoutPayment}</strong>
+              </button>
+              <button
+                type="button"
+                className={
+                  operationalFilter === "RESERVATION_WITHOUT_CONFIRMATION"
+                    ? "summary-card selected"
+                    : "summary-card"
+                }
+                onClick={() =>
+                  toggleOperationalFilter("RESERVATION_WITHOUT_CONFIRMATION")
+                }
+              >
+                <span>Reserva sem confirmação</span>
+                <strong>
+                  {operationalSummary.reservationWithoutConfirmation}
+                </strong>
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        <label>
+          Buscar
+          <input
+            type="search"
+            value={query}
+            placeholder="Participante, desafio, meta, oferta ou situação"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        <p role="status" className="status">
+          {message}
+          {rows.length > 0 && filteredRows.length !== rows.length
+            ? ` Exibindo ${filteredRows.length} após os filtros.`
+            : ""}
         </p>
-      ) : null}
-    </section>
+
+        {filteredRows.length > 0 ? (
+          <div className="audit-list">
+            {filteredRows.map((row) => (
+              <article className="audit-item" key={row.registration_id}>
+                <div>
+                  <strong>{row.participant_name}</strong>
+                  <span>
+                    {row.challenge_name} · {row.goal_name} · {row.offer_name}
+                  </span>
+                </div>
+                <div className="audit-meta">
+                  <span>{row.registration_status}</span>
+                  <span>{paymentLabels[row.payment_summary]}</span>
+                  <ReservationStatusNote
+                    reservationStatus={row.reservation_status}
+                    avatarAcceptanceReady={row.avatar_acceptance_ready}
+                  />
+                  <span>
+                    R${" "}
+                    {Number(row.confirmed_amount).toFixed(2).replace(".", ",")}{" "}
+                    / R$ {Number(row.price_snapshot).toFixed(2).replace(".", ",")}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : rows.length > 0 ? (
+          <p className="empty-note">
+            Nenhuma inscrição corresponde aos filtros atuais.
+          </p>
+        ) : null}
+      </section>
+    </>
   );
 }
