@@ -1,9 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
-type Props = {
-  supabase: SupabaseClient;
-};
+type Props = { supabase: SupabaseClient };
 
 type DeliveryStatus =
   | "PENDING"
@@ -125,12 +123,10 @@ export function MedalDeliveriesPanel({ supabase }: Props) {
           {busy ? "Carregando…" : "Atualizar"}
         </button>
       </div>
-
       <p className="section-description">
         Controle do repasse da medalha até a confirmação final de recebimento
         pelo atleta.
       </p>
-
       <div className="audit-list" aria-label="Resumo de entregas">
         <article className="audit-item">
           <div>
@@ -157,7 +153,6 @@ export function MedalDeliveriesPanel({ supabase }: Props) {
           </div>
         </article>
       </div>
-
       <label>
         Situação
         <select
@@ -174,11 +169,9 @@ export function MedalDeliveriesPanel({ supabase }: Props) {
           <option value="CANCELLED">Canceladas</option>
         </select>
       </label>
-
       <p role="status" className="status">
         {message}
       </p>
-
       {visibleRows.length ? (
         <div className="audit-list">
           {visibleRows.map((row) => (
@@ -192,7 +185,8 @@ export function MedalDeliveriesPanel({ supabase }: Props) {
                 {row.batch_label ? (
                   <span>
                     {methodLabels[row.delivery_method ?? ""] ??
-                      row.delivery_method} · {row.batch_label}
+                      row.delivery_method}{" "}
+                    · {row.batch_label}
                     {row.batch_responsible_name
                       ? ` · responsável: ${row.batch_responsible_name}`
                       : ""}
@@ -204,7 +198,9 @@ export function MedalDeliveriesPanel({ supabase }: Props) {
                 {row.tracking_code ? (
                   <span>Rastreio: {row.tracking_code}</span>
                 ) : null}
-                {row.issue_note ? <span>Ocorrência: {row.issue_note}</span> : null}
+                {row.issue_note ? (
+                  <span>Ocorrência: {row.issue_note}</span>
+                ) : null}
               </div>
               <div className="audit-meta">
                 {row.needs_attention ? <span>Atenção</span> : null}
