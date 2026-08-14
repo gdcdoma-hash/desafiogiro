@@ -99,7 +99,10 @@ export function InventoryReservationReconciliationPanel({
   if (!challenges.length) return null;
 
   return (
-    <section className="audit-panel" aria-labelledby="reservation-reconciliation-title">
+    <section
+      className="audit-panel"
+      aria-labelledby="reservation-reconciliation-title"
+    >
       <div className="section-heading">
         <div>
           <p className="eyebrow">Estoque</p>
@@ -107,9 +110,9 @@ export function InventoryReservationReconciliationPanel({
         </div>
       </div>
       <p className="section-description">
-        Inscrições pagas podem existir antes da entrada física das medalhas. Quando
-        houver saldo disponível, use a reconciliação para vincular as medalhas às
-        inscrições confirmadas sem alterar o status financeiro.
+        Inscrições pagas podem existir antes da entrada física das medalhas.
+        Quando houver saldo disponível, use a reconciliação para vincular as
+        medalhas às inscrições confirmadas sem alterar o status financeiro.
       </p>
       {message ? (
         <p role="status" className="status">
@@ -125,7 +128,9 @@ export function InventoryReservationReconciliationPanel({
                 {challenge.withoutReservation} inscrição(ões) confirmada(s) sem
                 reserva física
               </span>
-              <span>{challenge.available} medalha(s) disponível(is) no total</span>
+              <span>
+                {challenge.available} medalha(s) disponível(is) no total
+              </span>
             </div>
             {canManage ? (
               <button
