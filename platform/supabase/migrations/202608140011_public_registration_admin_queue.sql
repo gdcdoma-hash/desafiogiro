@@ -32,7 +32,7 @@ create policy public_registration_requests_admin_read
 on public.public_registration_requests
 for select
 to authenticated
-using (public.is_admin());
+using (public.has_permission('admin.access'));
 
 create or replace function public.reject_public_registration_request(
   target_request_id uuid
@@ -43,7 +43,7 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not public.is_admin() then
+  if not public.has_permission('admin.access') then
     raise exception 'Acesso administrativo necessário';
   end if;
 
