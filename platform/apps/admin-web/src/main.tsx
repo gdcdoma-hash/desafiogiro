@@ -5,6 +5,7 @@ import { ChallengesPanel } from "./ChallengesPanel";
 import { ChallengeOperationsSummary } from "./ChallengeOperationsSummary";
 import { ParticipantsPanel } from "./ParticipantsPanel";
 import { RegistrationsPanel } from "./RegistrationsPanel";
+import { PublicRegistrationsPanel } from "./PublicRegistrationsPanel";
 import { PaymentsPanel } from "./PaymentsPanel";
 import { InventoryPanel } from "./InventoryPanel";
 import { MedalDeliveriesPanel } from "./MedalDeliveriesPanel";
@@ -371,6 +372,9 @@ function App() {
           {context?.permissions.includes("operations.read") ? (
             <a href="#operations-title">Operação</a>
           ) : null}
+          {context?.permissions.includes("public_registrations.read") ? (
+            <a href="#public-registrations-title">Pré-inscrições</a>
+          ) : null}
           {context?.permissions.includes("registrations.read") ? (
             <a href="#registrations-title">Inscrições</a>
           ) : null}
@@ -396,6 +400,17 @@ function App() {
             <a href="#audit-title">Auditoria</a>
           ) : null}
         </nav>
+
+        {context?.permissions.includes("public_registrations.read") ? (
+          <PublicRegistrationsPanel
+            supabase={supabase}
+            canManage={
+              context.permissions.includes("public_registrations.manage") &&
+              context.permissions.includes("registrations.manage") &&
+              context.permissions.includes("payments.manage")
+            }
+          />
+        ) : null}
 
         {context?.permissions.includes("challenges.read") ? (
           <>
