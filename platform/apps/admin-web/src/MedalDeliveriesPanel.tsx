@@ -5,7 +5,6 @@ import { MedalDeliveryAdminWorkspace } from "./MedalDeliveryAdminWorkspace";
 import { MedalDeliveryBatchReconciliationPanel } from "./MedalDeliveryBatchReconciliationPanel";
 import { MedalDeliveriesPanel as MedalDeliveriesPanelBase } from "./MedalDeliveriesPanelBase";
 import { MedalDeliveryVisibilityPanel } from "./MedalDeliveryVisibilityPanel";
-import { MedalOrdersPanel } from "./MedalOrdersPanel";
 import { MedalPurchasePlanningPanel } from "./MedalPurchasePlanningPanel";
 
 type Props = {
@@ -19,7 +18,6 @@ export function MedalDeliveriesPanel(props: Props) {
       <MedalDeliveriesPanelBase {...props} />
       <MedalDemandSummaryPanel supabase={props.supabase} />
       <MedalPurchasePlanningPanel supabase={props.supabase} />
-      <MedalOrdersPanel {...props} />
       <InventoryReservationReconciliationPanel {...props} />
       <MedalDeliveryVisibilityPanel supabase={props.supabase} />
       <MedalDeliveryBatchReconciliationPanel {...props} />
