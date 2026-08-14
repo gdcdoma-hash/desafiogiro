@@ -7,6 +7,7 @@ import { ParticipantsPanel } from "./ParticipantsPanel";
 import { RegistrationsPanel } from "./RegistrationsPanel";
 import { PaymentsPanel } from "./PaymentsPanel";
 import { InventoryPanel } from "./InventoryPanel";
+import { MedalDeliveriesPanel } from "./MedalDeliveriesPanel";
 import { OperationsPanel } from "./OperationsPanel";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
@@ -388,6 +389,9 @@ function App() {
           {context?.permissions.includes("payments.read") ? (
             <a href="#payments-title">Pagamentos</a>
           ) : null}
+          {context?.permissions.includes("medal_deliveries.read") ? (
+            <a href="#medal-deliveries-title">Entrega de medalhas</a>
+          ) : null}
           {context?.permissions.includes("audit.read") ? (
             <a href="#audit-title">Auditoria</a>
           ) : null}
@@ -415,6 +419,10 @@ function App() {
             supabase={supabase}
             canManage={context.permissions.includes("registrations.manage")}
           />
+        ) : null}
+
+        {context?.permissions.includes("medal_deliveries.read") ? (
+          <MedalDeliveriesPanel supabase={supabase} />
         ) : null}
 
         {context?.permissions.includes("inventory.read") ? (
