@@ -123,16 +123,22 @@ export function MedalDemandSummaryPanel({ supabase }: Props) {
 
           <div className="audit-list">
             {rows.map((row) => (
-              <article className="audit-item" key={`${row.challenge_id}:${row.goal_id}`}>
+              <article
+                className="audit-item"
+                key={`${row.challenge_id}:${row.goal_id}`}
+              >
                 <div>
                   <strong>{row.goal_label}</strong>
                   <span>{row.challenge_name}</span>
                   <span>
-                    Confirmadas: {row.confirmed_count} · já reservadas: {row.reserved_registration_count}
+                    Confirmadas: {row.confirmed_count} · já reservadas:{" "}
+                    {row.reserved_registration_count}
                   </span>
                 </div>
                 <div className="audit-meta">
-                  <span>Sem reserva: {row.confirmed_without_reservation_count}</span>
+                  <span>
+                    Sem reserva: {row.confirmed_without_reservation_count}
+                  </span>
                   <span>Físico: {row.physical_balance}</span>
                   <span>Disponível: {row.available_balance}</span>
                   <span>
