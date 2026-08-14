@@ -102,9 +102,12 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
   async function processRequest(item: QueueItem) {
     setBusyId(item.id);
     setMessage(`Processando pré-inscrição de ${item.full_name}…`);
-    const { error } = await supabase.rpc("process_public_registration_request", {
-      target_request_id: item.id,
-    });
+    const { error } = await supabase.rpc(
+      "process_public_registration_request",
+      {
+        target_request_id: item.id,
+      },
+    );
 
     if (error) {
       setMessage(
@@ -176,10 +179,15 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
         {message}
       </p>
 
-      <div className="registration-summary" aria-label="Resumo das pré-inscrições">
+      <div
+        className="registration-summary"
+        aria-label="Resumo das pré-inscrições"
+      >
         <button
           type="button"
-          className={statusFilter === "ALL" ? "summary-card selected" : "summary-card"}
+          className={
+            statusFilter === "ALL" ? "summary-card selected" : "summary-card"
+          }
           onClick={() => setStatusFilter("ALL")}
         >
           <span>Total</span>
@@ -189,7 +197,9 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
           <button
             type="button"
             key={status}
-            className={statusFilter === status ? "summary-card selected" : "summary-card"}
+            className={
+              statusFilter === status ? "summary-card selected" : "summary-card"
+            }
             onClick={() => setStatusFilter(status)}
           >
             <span>{statusLabels[status]}</span>
@@ -218,8 +228,8 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
                   {item.city} - {item.state_code} · {item.phone_e164}
                 </span>
                 <span>
-                  {item.challenge_name} · {item.offer_name} · {item.goal_label} ·{" "}
-                  {formatPrice(item.price)}
+                  {item.challenge_name} · {item.offer_name} · {item.goal_label}{" "}
+                  · {formatPrice(item.price)}
                 </span>
                 <span>
                   {item.referral_code ? `REF ${item.referral_code} · ` : ""}
@@ -253,7 +263,9 @@ export function PublicRegistrationQueuePanel({ supabase, canManage }: Props) {
           ))}
         </div>
       ) : (
-        <p className="empty-note">Nenhuma pré-inscrição corresponde aos filtros atuais.</p>
+        <p className="empty-note">
+          Nenhuma pré-inscrição corresponde aos filtros atuais.
+        </p>
       )}
     </section>
   );
