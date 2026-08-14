@@ -72,7 +72,8 @@ export function MedalPurchasePlanningPanel({ supabase }: Props) {
           <p className="eyebrow">Planejamento de compra</p>
           <h2>Necessidade de medalhas</h2>
           <p className="muted">
-            Compara inscrições confirmadas, estoque disponível e pedidos já abertos para evitar compra duplicada.
+            Compara inscrições confirmadas, estoque disponível e pedidos já
+            abertos para evitar compra duplicada.
           </p>
         </div>
       </div>
@@ -102,7 +103,9 @@ export function MedalPurchasePlanningPanel({ supabase }: Props) {
           </div>
 
           {rows.length === 0 ? (
-            <p className="muted">Ainda não há dados suficientes para calcular compras.</p>
+            <p className="muted">
+              Ainda não há dados suficientes para calcular compras.
+            </p>
           ) : (
             <div className="table-wrap">
               <table>
