@@ -13,11 +13,30 @@ export type ApiFailure = {
 
 export const permissions = [
   "admin.access",
-  "admin.users.read",
   "admin.users.manage",
-  "rbac.read",
-  "rbac.manage",
+  "admin.users.read",
   "audit.read",
+  "challenges.manage",
+  "challenges.read",
+  "inventory.manage",
+  "inventory.read",
+  "medal_deliveries.manage",
+  "medal_deliveries.read",
+  "operations.read",
+  "participants.manage",
+  "participants.read",
+  "payments.manage",
+  "payments.read",
+  "public_registrations.manage",
+  "public_registrations.read",
+  "rbac.manage",
+  "rbac.read",
+  "registrations.manage",
+  "registrations.read",
 ] as const;
 
 export type Permission = (typeof permissions)[number];
+
+export function isPermission(value: string): value is Permission {
+  return (permissions as readonly string[]).includes(value);
+}
