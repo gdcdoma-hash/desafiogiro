@@ -36,6 +36,7 @@ export function MedalDemandSummaryPanel({ supabase }: Props) {
       .order("target_km");
 
     if (error) {
+      setRows([]);
       setMessage("Não foi possível carregar a demanda de medalhas.");
     } else {
       setRows((data ?? []) as DemandRow[]);
