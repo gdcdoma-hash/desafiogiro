@@ -63,12 +63,25 @@ substituídos automaticamente pela nova plataforma.
 
 ### Prévia administrativa
 
-| Variável                        | Visibilidade | Uso                                      |
-| ------------------------------- | ------------ | ---------------------------------------- |
-| `VITE_SUPABASE_URL`             | pública      | endereço da API do Supabase do ambiente |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | pública      | chave de cliente protegida por Auth/RLS |
-| `VITE_PORTAL_GIRO_ENV`          | pública      | identificação do ambiente               |
-| `VITE_APP_VERSION`              | pública      | versão exibida e registrada na auditoria |
+- `VITE_SUPABASE_URL`: endereço público da API do Supabase do ambiente;
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: chave pública de cliente protegida por Auth e
+  RLS;
+- `VITE_PORTAL_GIRO_ENV`: identificação pública do ambiente;
+- `VITE_APP_VERSION`: versão pública exibida e registrada na auditoria.
 
 Nunca configurar `service_role`, chave secreta ou senha do banco com prefixo
 `VITE_`, pois esse prefixo inclui o valor no JavaScript enviado ao navegador.
+
+## Limite conhecido do plano gratuito
+
+O advisor de segurança do Supabase pode apontar `Leaked Password Protection
+Disabled`. A proteção que consulta senhas conhecidas como vazadas no
+HaveIBeenPwned é disponibilizada pelo Supabase nos planos Pro e superiores. Ela
+não será ativada apenas para eliminar o aviso enquanto a plataforma estiver sob
+a restrição de não contratar serviços pagos.
+
+Esse aviso não deve ser tratado por SQL nem removido artificialmente. Durante a
+fase atual, o cadastro administrativo permanece controlado, o cadastro público
+de usuários administrativos fica desativado e a autorização continua protegida
+por Auth, RBAC e RLS. A decisão deve ser reavaliada antes da entrada em produção
+caso o plano da infraestrutura mude.
