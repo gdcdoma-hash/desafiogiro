@@ -117,40 +117,14 @@ export function MedalOrdersPanel({ supabase, canManage }: Props) {
     setBusy(true);
     setMessage("");
 
-    const { data: order, error: orderError } = await supabase
-      .from("medal_orders")
-      .insert({
-        challenge_id: challengeId,
-        order_reference: reference.trim(),
-        supplier_name: supplier.trim(),
-      })
-      .select("id")
-      .single();
+    const { error } = await supabase.rpc("create_suggested_medal_order", {
+      p_challenge_id: challengeId,
+      p_order_reference: reference.trim(),
+      p_supplier_name: supplier.trim(),
+    });
 
-    if (orderError || !order) {
-      setMessage(orderError?.message ?? "Não foi possível criar o pedido.");
-      setBusy(false);
-      return;
-    }
-
-    const { error: itemsError } = await supabase
-      .from("medal_order_items")
-      .insert(
-        suggestedItems.map((item) => ({
-          medal_order_id: order.id,
-          goal_id: item.goal_id,
-          quantity: Number(item.suggested_purchase_quantity),
-        })),
-      );
-
-    if (itemsError) {
-      await supabase
-        .from("medal_orders")
-        .update({ status: "CANCELLED" })
-        .eq("id", order.id);
-      setMessage(
-        "O cabeçalho foi criado, mas os itens falharam. O pedido foi cancelado para revisão.",
-      );
+    if (error) {
+      setMessage(error.message);
       setBusy(false);
       await load();
       return;
@@ -158,7 +132,9 @@ export function MedalOrdersPanel({ supabase, canManage }: Props) {
 
     setReference("");
     setSupplier("");
-    setMessage(`Rascunho criado com ${suggestedTotal} medalhas.`);
+    setMessage(
+      "Rascunho criado com a necessidade recalculada e validada pelo servidor.",
+    );
     setBusy(false);
     await load();
   }
