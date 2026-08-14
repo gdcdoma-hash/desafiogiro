@@ -30,11 +30,7 @@ type AttentionRow = {
   status: string;
   batch_label: string | null;
   attention_reason:
-    | "ISSUE"
-    | "OVERDUE_PERIOD"
-    | "AWAITING_7_DAYS"
-    | "PENDING"
-    | "NORMAL";
+    "ISSUE" | "OVERDUE_PERIOD" | "AWAITING_7_DAYS" | "PENDING" | "NORMAL";
   attention_priority: number;
   days_since_handoff: number | null;
 };
@@ -178,7 +174,8 @@ export function MedalDeliveryVisibilityPanel({ supabase }: Props) {
                 <span>
                   {[row.participant_city, row.participant_state_code]
                     .filter(Boolean)
-                    .join(" - ")} · {row.challenge_name} · {row.target_km} km
+                    .join(" - ")}{" "}
+                  · {row.challenge_name} · {row.target_km} km
                 </span>
                 <span>{reasonLabels[row.attention_reason]}</span>
                 {row.batch_label ? <span>Lote: {row.batch_label}</span> : null}
@@ -216,8 +213,8 @@ export function MedalDeliveryVisibilityPanel({ supabase }: Props) {
                   {row.awaiting_receipt_count}
                 </span>
                 <span>
-                  Problemas {row.issue_count} · confirmadas {row.confirmed_count}
-                  · lotes {row.batch_count}
+                  Problemas {row.issue_count} · confirmadas{" "}
+                  {row.confirmed_count}· lotes {row.batch_count}
                 </span>
               </div>
             </article>
