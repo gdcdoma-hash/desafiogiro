@@ -121,9 +121,12 @@ export function PublicRegistrationsPanel({ supabase, canManage }: Props) {
   async function processRequest(id: string) {
     setBusyId(id);
     setMessage("Processando pré-inscrição…");
-    const { error } = await supabase.rpc("process_public_registration_request", {
-      target_request_id: id,
-    });
+    const { error } = await supabase.rpc(
+      "process_public_registration_request",
+      {
+        target_request_id: id,
+      },
+    );
 
     if (error) {
       setMessage(
@@ -182,10 +185,7 @@ export function PublicRegistrationsPanel({ supabase, canManage }: Props) {
         pagamento nem reserva medalha automaticamente.
       </p>
 
-      <div
-        className="public-registration-summary"
-        aria-label="Resumo da fila"
-      >
+      <div className="public-registration-summary" aria-label="Resumo da fila">
         <button type="button" onClick={() => setStatusFilter("RECEIVED")}>
           <strong>{summary.RECEIVED}</strong>
           <span>Recebidas</span>
