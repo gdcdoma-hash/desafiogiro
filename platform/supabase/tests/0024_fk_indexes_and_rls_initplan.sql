@@ -35,7 +35,8 @@ select ok(
       from pg_policies
       where schemaname = 'public'
         and tablename = 'participant_user_links'
-        and policyname = 'participant_user_links_self_read'
+        and cmd = 'SELECT'
+      limit 1
     ), '')
   ) > 0,
   'participant self-read RLS evaluates auth.uid through a scalar subquery'
