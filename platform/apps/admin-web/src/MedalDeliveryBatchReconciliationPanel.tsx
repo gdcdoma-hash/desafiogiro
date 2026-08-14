@@ -23,7 +23,10 @@ type BatchReconciliation = {
   ready_to_close: boolean;
 };
 
-export function MedalDeliveryBatchReconciliationPanel({ supabase, canManage }: Props) {
+export function MedalDeliveryBatchReconciliationPanel({
+  supabase,
+  canManage,
+}: Props) {
   const [rows, setRows] = useState<BatchReconciliation[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -55,7 +58,9 @@ export function MedalDeliveryBatchReconciliationPanel({ supabase, canManage }: P
     });
 
     if (error) {
-      setMessage("O lote ainda não pode ser encerrado ou ocorreu um erro no fechamento.");
+      setMessage(
+        "O lote ainda não pode ser encerrado ou ocorreu um erro no fechamento.",
+      );
     } else {
       setMessage("Lote encerrado com sucesso.");
       await load();
@@ -67,7 +72,10 @@ export function MedalDeliveryBatchReconciliationPanel({ supabase, canManage }: P
   if (rows.length === 0) return null;
 
   return (
-    <section className="audit-panel" aria-labelledby="medal-delivery-reconciliation-title">
+    <section
+      className="audit-panel"
+      aria-labelledby="medal-delivery-reconciliation-title"
+    >
       <div className="section-heading">
         <div>
           <p className="eyebrow">Conciliação</p>
@@ -79,9 +87,12 @@ export function MedalDeliveryBatchReconciliationPanel({ supabase, canManage }: P
       </div>
 
       <p className="section-description">
-        Confira se todas as medalhas do lote foram confirmadas ou canceladas antes de encerrar a entrega.
+        Confira se todas as medalhas do lote foram confirmadas ou canceladas
+        antes de encerrar a entrega.
       </p>
-      <p className="status" role="status">{message}</p>
+      <p className="status" role="status">
+        {message}
+      </p>
 
       <div className="audit-list">
         {rows.map((row) => (
@@ -93,7 +104,9 @@ export function MedalDeliveryBatchReconciliationPanel({ supabase, canManage }: P
                 {row.state_code ? ` - ${row.state_code}` : ""} · {row.method}
               </span>
               <span>
-                Total {row.total_deliveries} · Confirmadas {row.confirmed_count} · Canceladas {row.cancelled_count} · Problemas {row.issue_count} · Em aberto {row.open_count}
+                Total {row.total_deliveries} · Confirmadas {row.confirmed_count}{" "}
+                · Canceladas {row.cancelled_count} · Problemas {row.issue_count}{" "}
+                · Em aberto {row.open_count}
               </span>
               <span>
                 {row.status === "CLOSED"
