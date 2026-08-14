@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(7);
+select plan(8);
 
 select ok(
   to_regprocedure('public.get_public_registration_catalog()') is not null,
