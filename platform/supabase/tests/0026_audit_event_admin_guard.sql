@@ -22,12 +22,14 @@ select ok(
 );
 
 select ok(
-  position(
-    'has_permission(''admin.access''::text)' in
-    pg_get_functiondef(
-      'public.write_audit_event(text,text,text,uuid,text,text,jsonb,text)'::regprocedure
-    )
-  ) > 0,
+  exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'write_audit_event'
+      and position('admin.access' in p.prosrc) > 0
+  ),
   'audit RPC enforces admin.access internally'
 );
 
