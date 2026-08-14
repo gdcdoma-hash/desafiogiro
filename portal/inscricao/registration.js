@@ -31,7 +31,9 @@
 
   const normalizePhone = (value) => {
     const digits = value.replace(/\D/g, "");
-    const brazilian = digits.startsWith("55") ? digits : `55${digits}`;
+    const hasCountryCode =
+      digits.startsWith("55") && (digits.length === 12 || digits.length === 13);
+    const brazilian = hasCountryCode ? digits : `55${digits}`;
     return `+${brazilian}`;
   };
 
@@ -96,8 +98,12 @@
 
     try {
       const response = await fetch(
-        `${config.supabaseUrl}/rest/v1/public_registration_catalog?select=*&order=reference_year.desc,reference_month.desc,display_order.asc`,
-        { headers: headers() },
+        `${config.supabaseUrl}/rest/v1/rpc/get_public_registration_catalog`,
+        {
+          method: "POST",
+          headers: headers(),
+          body: "{}",
+        },
       );
       if (!response.ok) throw new Error("catalog");
       catalog = await response.json();
@@ -157,7 +163,9 @@
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        const duplicate = String(error.message ?? "").toLowerCase().includes("pendente");
+        const duplicate = String(error.message ?? "")
+          .toLowerCase()
+          .includes("pendente");
         setNotice(
           duplicate
             ? "Já existe uma pré-inscrição pendente para este celular nesta opção."
