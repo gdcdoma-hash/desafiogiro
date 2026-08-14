@@ -96,7 +96,7 @@ export function InventoryReservationReconciliationPanel({
     setBusyChallengeId(null);
   }
 
-  if (!challenges.length) return null;
+  if (!challenges.length && !message) return null;
 
   return (
     <section
@@ -119,34 +119,36 @@ export function InventoryReservationReconciliationPanel({
           {message}
         </p>
       ) : null}
-      <div className="audit-list">
-        {challenges.map((challenge) => (
-          <article className="audit-item" key={challenge.challengeId}>
-            <div>
-              <strong>{challenge.challengeName}</strong>
-              <span>
-                {challenge.withoutReservation} inscrição(ões) confirmada(s) sem
-                reserva física
-              </span>
-              <span>
-                {challenge.available} medalha(s) disponível(is) no total
-              </span>
-            </div>
-            {canManage ? (
-              <button
-                type="button"
-                className="compact"
-                disabled={busyChallengeId === challenge.challengeId}
-                onClick={() => void reconcile(challenge)}
-              >
-                {busyChallengeId === challenge.challengeId
-                  ? "Reconciliando…"
-                  : "Reconciliar reservas"}
-              </button>
-            ) : null}
-          </article>
-        ))}
-      </div>
+      {challenges.length ? (
+        <div className="audit-list">
+          {challenges.map((challenge) => (
+            <article className="audit-item" key={challenge.challengeId}>
+              <div>
+                <strong>{challenge.challengeName}</strong>
+                <span>
+                  {challenge.withoutReservation} inscrição(ões) confirmada(s) sem
+                  reserva física
+                </span>
+                <span>
+                  {challenge.available} medalha(s) disponível(is) no total
+                </span>
+              </div>
+              {canManage ? (
+                <button
+                  type="button"
+                  className="compact"
+                  disabled={busyChallengeId === challenge.challengeId}
+                  onClick={() => void reconcile(challenge)}
+                >
+                  {busyChallengeId === challenge.challengeId
+                    ? "Reconciliando…"
+                    : "Reconciliar reservas"}
+                </button>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
