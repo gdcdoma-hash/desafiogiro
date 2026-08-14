@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import "./medal-purchase-planning.css";
 
 type PlanningRow = {
   challenge_id: string;
@@ -23,32 +24,26 @@ export function MedalPurchasePlanningPanel({ supabase }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let active = true;
+  async function load() {
+    setLoading(true);
+    setError("");
+    const { data, error: queryError } = await supabase
+      .from("medal_purchase_planning")
+      .select("*")
+      .order("challenge_name")
+      .order("goal_label");
 
-    async function load() {
-      setLoading(true);
-      setError("");
-      const { data, error: queryError } = await supabase
-        .from("medal_purchase_planning")
-        .select("*")
-        .order("challenge_name")
-        .order("goal_label");
-
-      if (!active) return;
-      if (queryError) {
-        setError(queryError.message);
-        setRows([]);
-      } else {
-        setRows((data ?? []) as PlanningRow[]);
-      }
-      setLoading(false);
+    if (queryError) {
+      setError(queryError.message);
+      setRows([]);
+    } else {
+      setRows((data ?? []) as PlanningRow[]);
     }
+    setLoading(false);
+  }
 
+  useEffect(() => {
     void load();
-    return () => {
-      active = false;
-    };
   }, [supabase]);
 
   const totals = useMemo(
@@ -76,6 +71,14 @@ export function MedalPurchasePlanningPanel({ supabase }: Props) {
             abertos para evitar compra duplicada.
           </p>
         </div>
+        <button
+          type="button"
+          className="compact"
+          disabled={loading}
+          onClick={() => void load()}
+        >
+          {loading ? "Atualizando…" : "Atualizar"}
+        </button>
       </div>
 
       {loading ? <p className="muted">Carregando planejamento...</p> : null}
