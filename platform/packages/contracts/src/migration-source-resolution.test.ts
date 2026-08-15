@@ -59,14 +59,15 @@ describe("legacy migration source resolution", () => {
     );
   });
 
-  it("keeps legacy pricing ambiguous instead of manufacturing an offer price", () => {
+  it("records PixLotes as a partial source without manufacturing a fixed offer price", () => {
     expect(
       migrationSourceResolutionFor("public.challenge_offers.price"),
     ).toEqual(
       expect.objectContaining({
-        status: "AMBIGUOUS_SOURCE",
-        sourceSheet: null,
-        sourceField: null,
+        status: "PARTIAL_SOURCE",
+        sourceSheet: "PixLotes",
+        sourceField: "valor_unitario",
+        semanticRole: "LOT_BASED_OFFER_PRICING",
       }),
     );
   });
