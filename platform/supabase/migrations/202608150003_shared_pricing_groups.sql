@@ -136,19 +136,21 @@ set search_path = ''
 as $$
 begin
   if new.pricing_mode = 'FIXED'
-    and (
-      exists (
-        select 1
-        from public.challenge_offer_price_lots lot
-        where lot.offer_id = new.id
-      )
-      or exists (
-        select 1
-        from public.challenge_pricing_group_offers link
-        where link.offer_id = new.id
-      )
+    and exists (
+      select 1
+      from public.challenge_offer_price_lots lot
+      where lot.offer_id = new.id
     ) then
-    raise exception 'Cannot switch an offer with lot pricing to FIXED pricing';
+    raise exception 'Cannot switch an offer with price lots to FIXED pricing';
+  end if;
+
+  if new.pricing_mode = 'FIXED'
+    and exists (
+      select 1
+      from public.challenge_pricing_group_offers link
+      where link.offer_id = new.id
+    ) then
+    raise exception 'Cannot switch an offer with shared price lots to FIXED pricing';
   end if;
 
   return new;
