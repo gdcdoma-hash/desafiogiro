@@ -45,3 +45,4 @@ export * from "./migration";
 export * from "./migration-payments";
 export * from "./migration-plan";
 export * from "./migration-manifest";
+export * from "./migration-dto";
