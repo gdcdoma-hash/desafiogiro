@@ -61,7 +61,7 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
       sourceField: "Data_Fim",
       semanticRole: "REGISTRATION_ELIGIBILITY_END",
       remainingBlocker:
-        "Resolved by the deterministic inclusive end-of-day America/Fortaleza normalizer.",
+        "Resolved by the deterministic inclusive end-of-day America/Fortaleza registration-window normalizer.",
     },
     {
       destinationField: "public.challenge_offers.category_code",
@@ -74,12 +74,12 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
     },
     {
       destinationField: "public.challenge_offers.price",
-      status: "AMBIGUOUS_SOURCE",
-      sourceSheet: null,
-      sourceField: null,
-      semanticRole: "OFFER_PRICE",
+      status: "PARTIAL_SOURCE",
+      sourceSheet: "PixLotes",
+      sourceField: "valor_unitario",
+      semanticRole: "LOT_BASED_OFFER_PRICING",
       remainingBlocker:
-        "Legacy pricing is selected through PixLotes and can vary by active lot and pending-registration quantity; registration rows also preserve valor_unitario_pagamento. A single offer price cannot be inferred safely yet.",
+        "The legacy code proves pricing windows and POR_QTD/POR_LOTE selection in PixLotes, with monthly lot prefixes derived from Periodo. The destination model now supports LOTS pricing without a manufactured fixed price. A deterministic mapping from a monthly PixLotes row to a specific challenge offer is still required before price lots can be staged.",
     },
     {
       destinationField: "public.registrations.goal_id",
