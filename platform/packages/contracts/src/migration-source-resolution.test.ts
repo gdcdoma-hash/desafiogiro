@@ -72,7 +72,7 @@ describe("legacy migration source resolution", () => {
     );
   });
 
-  it("confirms Meta_KM and occurrence derivation while payment method remains blocked", () => {
+  it("confirms Meta_KM, occurrence derivation and conservative payment-method policy", () => {
     expect(
       migrationSourceResolutionFor("public.registrations.goal_id"),
     ).toEqual(
@@ -94,9 +94,15 @@ describe("legacy migration source resolution", () => {
       }),
     );
     expect(
-      migrationSourceResolutionFor("public.registration_payments.method_code")
-        ?.status,
-    ).toBe("POLICY_REQUIRED");
+      migrationSourceResolutionFor("public.registration_payments.method_code"),
+    ).toEqual(
+      expect.objectContaining({
+        status: "POLICY_CONFIRMED",
+        sourceSheet: "dgmbDesafios",
+        sourceField: null,
+        semanticRole: "UNKNOWN_PAYMENT_METHOD_PRESERVATION",
+      }),
+    );
   });
 
   it("contains one source-resolution record per tracked destination field", () => {

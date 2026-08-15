@@ -140,6 +140,7 @@ describe("legacy migration staging DTOs", () => {
       batchName: "Lote Teste",
       externalReference: "dgmb-payment:v1:legacy-registration-1:legacy-batch-1",
       amount: 44.9,
+      methodCode: "LEGACY_UNSPECIFIED",
       category: "SETTLED",
     });
     expect(result.inventory[0]).toEqual({
@@ -151,14 +152,13 @@ describe("legacy migration staging DTOs", () => {
     });
   });
 
-  it("reduces unresolved destination requirements to four fields", () => {
+  it("reduces unresolved destination requirements to three fields", () => {
     const result = transformLegacySnapshotToStagingDtos(fixture());
 
     expect(result.unresolvedDestinationFields).toEqual([
       "public.challenges.sports_starts_at",
       "public.challenges.sports_ends_at",
       "public.challenge_offers.price",
-      "public.registration_payments.method_code",
     ]);
   });
 

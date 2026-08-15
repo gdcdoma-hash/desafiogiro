@@ -31,6 +31,8 @@ import {
   normalizeLegacyChallengePeriod,
 } from "./migration-period";
 
+export const LEGACY_UNSPECIFIED_PAYMENT_METHOD = "LEGACY_UNSPECIFIED" as const;
+
 export type ChallengeMigrationDto = {
   legacyChallengeKey: string;
   legacyIdDesafioBase: string;
@@ -83,6 +85,7 @@ export type PaymentMigrationDto = {
   batchName: string | null;
   externalReference: string;
   amount: number;
+  methodCode: typeof LEGACY_UNSPECIFIED_PAYMENT_METHOD;
   category: Exclude<LegacyPaymentCategory, "EXEMPT" | "UNKNOWN">;
 };
 
@@ -177,7 +180,6 @@ export const unresolvedDestinationFields = [
   "public.challenges.sports_starts_at",
   "public.challenges.sports_ends_at",
   "public.challenge_offers.price",
-  "public.registration_payments.method_code",
 ] as const;
 
 export function transformLegacySnapshotToStagingDtos(
@@ -371,6 +373,7 @@ export function transformLegacySnapshotToStagingDtos(
       amount: decimal(
         value(registrationSheet, row, ["valor_unitario_pagamento"]),
       ),
+      methodCode: LEGACY_UNSPECIFIED_PAYMENT_METHOD,
       category,
     };
   });
