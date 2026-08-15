@@ -6,7 +6,7 @@ import {
 } from "./migration-source-resolution";
 
 describe("legacy migration source resolution", () => {
-  it("confirms only source semantics established by trusted evidence", () => {
+  it("confirms only direct source semantics established by trusted evidence", () => {
     expect(confirmedLegacySourceFields()).toEqual([
       "ListaDesafios.Data_Inicio",
       "ListaDesafios.Data_Fim",
@@ -15,7 +15,17 @@ describe("legacy migration source resolution", () => {
     ]);
   });
 
-  it("does not reinterpret registration dates as sports dates", () => {
+  it("derives reference year from Periodo without inventing sports boundaries", () => {
+    expect(
+      migrationSourceResolutionFor("public.challenges.reference_year"),
+    ).toEqual(
+      expect.objectContaining({
+        status: "DERIVATION_CONFIRMED",
+        sourceSheet: "ListaDesafios",
+        sourceField: "Periodo",
+        semanticRole: "MONTHLY_CHALLENGE_EDITION",
+      }),
+    );
     expect(
       migrationSourceResolutionFor("public.challenges.sports_starts_at"),
     ).toEqual(
@@ -24,6 +34,17 @@ describe("legacy migration source resolution", () => {
         sourceField: "Periodo",
       }),
     );
+    expect(
+      migrationSourceResolutionFor("public.challenges.sports_ends_at"),
+    ).toEqual(
+      expect.objectContaining({
+        status: "UNRESOLVED",
+        sourceField: "Periodo",
+      }),
+    );
+  });
+
+  it("does not reinterpret registration dates as sports dates", () => {
     expect(
       migrationSourceResolutionFor(
         "public.challenge_offers.registration_starts_at",
