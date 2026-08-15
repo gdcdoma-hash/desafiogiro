@@ -161,8 +161,10 @@ describe("migration dry-run plan", () => {
   it("stays read-only and not ready when payment metadata is ambiguous", () => {
     const fixture = validFixture();
     if (fixture.dgmbDesafios) {
-      const statusIndex = fixture.dgmbDesafios.headers.indexOf("Status_Pagamento");
-      fixture.dgmbDesafios.rows[0][statusIndex] = "estado financeiro desconhecido";
+      const statusIndex =
+        fixture.dgmbDesafios.headers.indexOf("Status_Pagamento");
+      fixture.dgmbDesafios.rows[0][statusIndex] =
+        "estado financeiro desconhecido";
     }
 
     const plan = buildLegacyMigrationDryRunPlan(fixture);
@@ -178,6 +180,8 @@ describe("migration dry-run plan", () => {
         },
       ]),
     );
-    expect(JSON.stringify(plan)).not.toContain("estado financeiro desconhecido");
+    expect(JSON.stringify(plan)).not.toContain(
+      "estado financeiro desconhecido",
+    );
   });
 });
