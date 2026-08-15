@@ -10,7 +10,8 @@ export type LegacyPaymentCategory =
 export type LegacyPaymentIssueCode =
   | "MISSING_PAYMENT_HEADER"
   | "INVALID_PAYMENT_AMOUNT"
-  | "UNKNOWN_PAYMENT_STATUS";
+  | "UNKNOWN_PAYMENT_STATUS"
+  | "EXEMPT_PAYMENT_REQUIRES_MAPPING";
 
 export type LegacyPaymentIssue = {
   code: LegacyPaymentIssueCode;
@@ -182,6 +183,13 @@ export function validateLegacyPaymentSnapshot(
         code: "UNKNOWN_PAYMENT_STATUS",
         field: paymentFields.status.field,
         count: categories.UNKNOWN,
+      });
+    }
+    if (categories.EXEMPT > 0) {
+      issues.push({
+        code: "EXEMPT_PAYMENT_REQUIRES_MAPPING",
+        field: paymentFields.status.field,
+        count: categories.EXEMPT,
       });
     }
   }
