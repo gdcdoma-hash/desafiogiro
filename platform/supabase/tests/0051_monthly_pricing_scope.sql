@@ -156,7 +156,8 @@ select throws_ok(
       'Invalid dual scope'
     )
   $$,
-  new null,
+  '23514',
+  null,
   'pricing group rejects simultaneous challenge and monthly scope'
 );
 
@@ -170,7 +171,8 @@ select throws_ok(
       'Invalid empty scope'
     )
   $$,
-  new null,
+  '23514',
+  null,
   'pricing group requires exactly one scope'
 );
 
