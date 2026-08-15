@@ -124,6 +124,7 @@ describe("legacy migration staging DTOs", () => {
       legacyParticipantId: "legacy-user-1",
       legacyChallengeOfferId: "legacy-list-1",
       targetKm: 300,
+      occurrenceNumber: 1,
     });
     expect(result.payments[0]).toEqual({
       legacyRegistrationId: "legacy-registration-1",
@@ -142,7 +143,7 @@ describe("legacy migration staging DTOs", () => {
     });
   });
 
-  it("reduces unresolved destination requirements to six fields", () => {
+  it("reduces unresolved destination requirements to five fields", () => {
     const result = transformLegacySnapshotToStagingDtos(fixture());
 
     expect(result.unresolvedDestinationFields).toEqual([
@@ -150,12 +151,11 @@ describe("legacy migration staging DTOs", () => {
       "public.challenges.sports_starts_at",
       "public.challenges.sports_ends_at",
       "public.challenge_offers.price",
-      "public.registrations.occurrence_number",
       "public.registration_payments.method_code",
     ]);
   });
 
-  it("deduplicates goals by challenge and offer-goal links by offer", () => {
+  it("deduplicates goals and derives repeated occurrence ordinals in source order", () => {
     const snapshot = fixture();
     snapshot.dgmbDesafios?.rows.push([
       "legacy-user-1",
@@ -173,6 +173,9 @@ describe("legacy migration staging DTOs", () => {
     const result = transformLegacySnapshotToStagingDtos(snapshot);
     expect(result.challengeGoals).toHaveLength(1);
     expect(result.challengeOfferGoals).toHaveLength(1);
+    expect(result.registrations.map((item) => item.occurrenceNumber)).toEqual([
+      1, 2,
+    ]);
   });
 
   it("never carries temporary PIX secrets into staging DTOs", () => {
