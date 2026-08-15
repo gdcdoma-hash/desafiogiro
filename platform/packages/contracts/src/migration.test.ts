@@ -26,8 +26,14 @@ function validFixture(): LegacyMigrationSnapshot {
       ],
     },
     DesafioKMEstoque: {
-      headers: ["id_item_estoque", "Quantidade"],
-      rows: [["fixture-stock-1", "10"]],
+      headers: [
+        "id_item_estoque",
+        "id_desafio_lista",
+        "distancia_km",
+        "Quantidade",
+        "Status",
+      ],
+      rows: [["fixture-stock-1", "fixture-list-1", "300", "10", "Ativo"]],
     },
     DesafiosBase: {
       headers: ["id_desafio_base", "nome_exibicao"],
@@ -105,7 +111,7 @@ describe("migration preflight contract", () => {
       rows: [
         ["fixture-user-1", "fixture-registration-1", "fixture-list-1"],
         ["fixture-user-2", "", "fixture-list-1"],
-        ["fixture-user-3", "FIXTURE-REGISTRATION-1", "fixture-list-1"],
+        ["fixture-user-1", "FIXTURE-REGISTRATION-1", "fixture-list-1"],
       ],
     };
 
@@ -124,6 +130,99 @@ describe("migration preflight contract", () => {
           code: "DUPLICATE_REGISTRATION_ID",
           sheet: "dgmbDesafios",
           field: "ID_INSCRICAO",
+          count: 1,
+        },
+      ]),
+    );
+  });
+
+  it("detects orphan references without exposing the orphan identifiers", () => {
+    const fixture = validFixture();
+    fixture.dgmbDesafios?.rows.push([
+      "private-orphan-participant",
+      "fixture-registration-3",
+      "private-orphan-challenge",
+    ]);
+    fixture.ListaDesafios?.rows.push([
+      "fixture-list-2",
+      "private-orphan-base",
+      "Desafio órfão fictício",
+    ]);
+    fixture.DesafioKMEstoque?.rows.push([
+      "fixture-stock-2",
+      "private-orphan-inventory-challenge",
+      "500",
+      "4",
+      "Ativo",
+    ]);
+
+    const report = validateLegacyMigrationSnapshot(fixture);
+
+    expect(report.ok).toBe(false);
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        {
+          code: "ORPHAN_REGISTRATION_PARTICIPANT",
+          sheet: "dgmbDesafios",
+          field: "ID_DGMB",
+          count: 1,
+        },
+        {
+          code: "ORPHAN_REGISTRATION_CHALLENGE",
+          sheet: "dgmbDesafios",
+          field: "ID_DESAFIO_LISTA",
+          count: 1,
+        },
+        {
+          code: "ORPHAN_CHALLENGE_BASE",
+          sheet: "ListaDesafios",
+          field: "ID_DESAFIO_BASE",
+          count: 1,
+        },
+        {
+          code: "ORPHAN_INVENTORY_CHALLENGE",
+          sheet: "DesafioKMEstoque",
+          field: "ID_DESAFIO_LISTA",
+          count: 1,
+        },
+      ]),
+    );
+    expect(JSON.stringify(report)).not.toContain("private-orphan");
+  });
+
+  it("requires the confirmed legacy stock relationship fields", () => {
+    const fixture = validFixture();
+    fixture.DesafioKMEstoque = {
+      headers: ["id_item_estoque"],
+      rows: [["fixture-stock-1"]],
+    };
+
+    const report = validateLegacyMigrationSnapshot(fixture);
+
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        {
+          code: "MISSING_HEADER",
+          sheet: "DesafioKMEstoque",
+          field: "ID_DESAFIO_LISTA",
+          count: 1,
+        },
+        {
+          code: "MISSING_HEADER",
+          sheet: "DesafioKMEstoque",
+          field: "DISTANCIA_KM",
+          count: 1,
+        },
+        {
+          code: "MISSING_HEADER",
+          sheet: "DesafioKMEstoque",
+          field: "QUANTIDADE",
+          count: 1,
+        },
+        {
+          code: "MISSING_HEADER",
+          sheet: "DesafioKMEstoque",
+          field: "STATUS",
           count: 1,
         },
       ]),
