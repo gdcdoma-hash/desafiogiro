@@ -9,6 +9,7 @@ export type LegacyPaymentCategory =
 
 export type LegacyPaymentIssueCode =
   | "MISSING_PAYMENT_HEADER"
+  | "MISSING_PAYMENT_BATCH_ID"
   | "INVALID_PAYMENT_AMOUNT"
   | "UNKNOWN_PAYMENT_STATUS"
   | "EXEMPT_PAYMENT_REQUIRES_MAPPING";
@@ -128,9 +129,9 @@ function emptyCategories(): Record<LegacyPaymentCategory, number> {
 
 function isValidLegacyAmount(value: string): boolean {
   const normalized = value.trim().replace(",", ".");
-  if (!normalized) return true;
+  if (!normalized) return false;
   const parsed = Number(normalized);
-  return Number.isFinite(parsed) && parsed >= 0;
+  return Number.isFinite(parsed) && parsed > 0;
 }
 
 export function validateLegacyPaymentSnapshot(
@@ -190,6 +191,19 @@ export function validateLegacyPaymentSnapshot(
         code: "EXEMPT_PAYMENT_REQUIRES_MAPPING",
         field: paymentFields.status.field,
         count: categories.EXEMPT,
+      });
+    }
+  }
+
+  if (indexes.batchId >= 0) {
+    const missingBatchIds = sheet.rows.filter(
+      (row) => !(row[indexes.batchId] ?? "").trim(),
+    ).length;
+    if (missingBatchIds > 0) {
+      issues.push({
+        code: "MISSING_PAYMENT_BATCH_ID",
+        field: paymentFields.batchId.field,
+        count: missingBatchIds,
       });
     }
   }

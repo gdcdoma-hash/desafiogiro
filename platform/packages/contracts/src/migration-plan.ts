@@ -4,6 +4,7 @@ import {
   type LegacySheetName,
   type MigrationIssue,
 } from "./migration";
+import { legacyKeyTargetsForDomain } from "./migration-manifest";
 import {
   validateLegacyPaymentSnapshot,
   type LegacyPaymentIssue,
@@ -19,6 +20,7 @@ export type MigrationDryRunStep = {
   destinationTables: readonly string[];
   candidateRows: number;
   idempotencyKeys: readonly string[];
+  idempotencyTargets: readonly string[];
   dependsOn: readonly MigrationDomain[];
 };
 
@@ -58,6 +60,7 @@ export function buildLegacyMigrationDryRunPlan(
         rowCount(snapshot, "DesafiosBase") +
         rowCount(snapshot, "ListaDesafios"),
       idempotencyKeys: ["ID_DESAFIO_BASE", "ID_DESAFIO_LISTA"],
+      idempotencyTargets: legacyKeyTargetsForDomain("CHALLENGES"),
       dependsOn: [],
     },
     {
@@ -67,6 +70,7 @@ export function buildLegacyMigrationDryRunPlan(
       destinationTables: ["public.participants"],
       candidateRows: rowCount(snapshot, "DadosPessoais"),
       idempotencyKeys: ["ID_DGMB"],
+      idempotencyTargets: legacyKeyTargetsForDomain("PARTICIPANTS"),
       dependsOn: [],
     },
     {
@@ -76,6 +80,7 @@ export function buildLegacyMigrationDryRunPlan(
       destinationTables: ["public.registrations"],
       candidateRows: rowCount(snapshot, "dgmbDesafios"),
       idempotencyKeys: ["ID_INSCRICAO"],
+      idempotencyTargets: legacyKeyTargetsForDomain("REGISTRATIONS"),
       dependsOn: ["CHALLENGES", "PARTICIPANTS"],
     },
     {
@@ -85,6 +90,7 @@ export function buildLegacyMigrationDryRunPlan(
       destinationTables: ["public.registration_payments"],
       candidateRows: rowCount(snapshot, "dgmbDesafios"),
       idempotencyKeys: ["ID_INSCRICAO", "ID_LOTE_PAGAMENTO"],
+      idempotencyTargets: legacyKeyTargetsForDomain("PAYMENTS"),
       dependsOn: ["REGISTRATIONS"],
     },
     {
@@ -98,6 +104,7 @@ export function buildLegacyMigrationDryRunPlan(
       ],
       candidateRows: rowCount(snapshot, "DesafioKMEstoque"),
       idempotencyKeys: ["ID_ITEM_ESTOQUE"],
+      idempotencyTargets: legacyKeyTargetsForDomain("INVENTORY"),
       dependsOn: ["CHALLENGES", "REGISTRATIONS"],
     },
   ];
