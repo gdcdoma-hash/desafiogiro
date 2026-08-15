@@ -7,11 +7,13 @@ import {
   normalizeLegacyOfferCategory,
   normalizeLegacyRegistrationWindow,
 } from "./migration-offer-normalization";
+import { normalizeLegacyChallengePeriod } from "./migration-period";
 
 export type LegacyOfferIssueCode =
   | "MISSING_OFFER_HEADER"
   | "UNKNOWN_OFFER_CATEGORY"
-  | "INVALID_REGISTRATION_WINDOW";
+  | "INVALID_REGISTRATION_WINDOW"
+  | "INVALID_CHALLENGE_PERIOD";
 
 export type LegacyOfferIssue = {
   code: LegacyOfferIssueCode;
@@ -34,6 +36,10 @@ const offerFields = {
   type: {
     field: "TIPO",
     aliases: ["Tipo", "tipo"],
+  },
+  period: {
+    field: "PERIODO",
+    aliases: ["Periodo", "Período", "periodo"],
   },
   registrationStart: {
     field: "DATA_INICIO",
@@ -77,6 +83,7 @@ export function validateLegacyOfferSnapshot(
 
   const indexes = {
     type: findFieldIndex(sheet, offerFields.type),
+    period: findFieldIndex(sheet, offerFields.period),
     registrationStart: findFieldIndex(sheet, offerFields.registrationStart),
     registrationEnd: findFieldIndex(sheet, offerFields.registrationEnd),
   };
@@ -105,6 +112,24 @@ export function validateLegacyOfferSnapshot(
         code: "UNKNOWN_OFFER_CATEGORY",
         field: offerFields.type.field,
         count: invalidCategories,
+      });
+    }
+  }
+
+  if (indexes.period >= 0) {
+    let invalidPeriods = 0;
+    for (const row of sheet.rows) {
+      try {
+        normalizeLegacyChallengePeriod(row[indexes.period] ?? "");
+      } catch {
+        invalidPeriods += 1;
+      }
+    }
+    if (invalidPeriods > 0) {
+      issues.push({
+        code: "INVALID_CHALLENGE_PERIOD",
+        field: offerFields.period.field,
+        count: invalidPeriods,
       });
     }
   }
