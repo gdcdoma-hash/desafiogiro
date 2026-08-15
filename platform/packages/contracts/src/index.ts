@@ -43,3 +43,4 @@ export function isPermission(value: string): value is Permission {
 
 export * from "./migration";
 export * from "./migration-payments";
+export * from "./migration-plan";
