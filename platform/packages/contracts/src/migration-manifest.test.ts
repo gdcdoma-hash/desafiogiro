@@ -52,9 +52,7 @@ describe("migration legacy key manifest", () => {
         " registration/legacy 1 ",
         " batch:legacy 2 ",
       ),
-    ).toBe(
-      "dgmb-payment:v1:registration%2Flegacy%201:batch%3Alegacy%202",
-    );
+    ).toBe("dgmb-payment:v1:registration%2Flegacy%201:batch%3Alegacy%202");
     expect(
       buildLegacyPaymentExternalReference(
         "registration/legacy 1",
