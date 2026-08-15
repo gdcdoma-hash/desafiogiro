@@ -49,20 +49,23 @@ export function normalizeLegacyChallengePeriod(
   const namedMonth = Object.entries(monthByName).find(([name]) =>
     normalized.includes(name),
   );
-  if (yearMatch && namedMonth) {
+  if (yearMatch?.[1] && namedMonth) {
     return buildPeriod(Number(yearMatch[1]), namedMonth[1]);
   }
 
   const numbers = text.match(/\d+/g) ?? [];
-  if (numbers.length >= 2) {
-    if (numbers[0].length === 4) {
-      return buildPeriod(Number(numbers[0]), Number(numbers[1]));
+  const first = numbers[0];
+  const second = numbers[1];
+  const third = numbers[2];
+  if (first && second) {
+    if (first.length === 4) {
+      return buildPeriod(Number(first), Number(second));
     }
-    if (numbers.length >= 3 && numbers[2].length === 4) {
-      return buildPeriod(Number(numbers[2]), Number(numbers[1]));
+    if (third && third.length === 4) {
+      return buildPeriod(Number(third), Number(second));
     }
-    if (numbers[1].length === 4) {
-      return buildPeriod(Number(numbers[1]), Number(numbers[0]));
+    if (second.length === 4) {
+      return buildPeriod(Number(second), Number(first));
     }
   }
 
