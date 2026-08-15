@@ -6,32 +6,32 @@ describe("legacy registration occurrence derivation", () => {
     expect(
       assignLegacyOccurrenceNumbers([
         {
-          legacyRegistrationId: "registration-a",
+          legacyIdInscricao: "registration-a",
           legacyParticipantId: "participant-1",
           legacyChallengeOfferId: "offer-1",
         },
         {
-          legacyRegistrationId: "registration-b",
+          legacyIdInscricao: "registration-b",
           legacyParticipantId: "participant-1",
           legacyChallengeOfferId: "offer-1",
         },
         {
-          legacyRegistrationId: "registration-c",
+          legacyIdInscricao: "registration-c",
           legacyParticipantId: "participant-1",
           legacyChallengeOfferId: "offer-2",
         },
       ]),
     ).toEqual([
       expect.objectContaining({
-        legacyRegistrationId: "registration-a",
+        legacyIdInscricao: "registration-a",
         occurrenceNumber: 1,
       }),
       expect.objectContaining({
-        legacyRegistrationId: "registration-b",
+        legacyIdInscricao: "registration-b",
         occurrenceNumber: 2,
       }),
       expect.objectContaining({
-        legacyRegistrationId: "registration-c",
+        legacyIdInscricao: "registration-c",
         occurrenceNumber: 1,
       }),
     ]);
@@ -40,12 +40,12 @@ describe("legacy registration occurrence derivation", () => {
   it("keeps participants independent within the same offer", () => {
     const result = assignLegacyOccurrenceNumbers([
       {
-        legacyRegistrationId: "registration-a",
+        legacyIdInscricao: "registration-a",
         legacyParticipantId: "participant-1",
         legacyChallengeOfferId: "offer-1",
       },
       {
-        legacyRegistrationId: "registration-b",
+        legacyIdInscricao: "registration-b",
         legacyParticipantId: "participant-2",
         legacyChallengeOfferId: "offer-1",
       },
@@ -58,7 +58,7 @@ describe("legacy registration occurrence derivation", () => {
     expect(() =>
       assignLegacyOccurrenceNumbers([
         {
-          legacyRegistrationId: "registration-a",
+          legacyIdInscricao: "registration-a",
           legacyParticipantId: "",
           legacyChallengeOfferId: "offer-1",
         },
