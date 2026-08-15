@@ -242,7 +242,10 @@ export function transformLegacySnapshotToStagingDtos(
   });
 
   const offerByLegacyId = new Map(
-    challengeOffers.map((offerDto) => [offerDto.legacyIdDesafioLista, offerDto]),
+    challengeOffers.map((offerDto) => [
+      offerDto.legacyIdDesafioLista,
+      offerDto,
+    ]),
   );
 
   const participants = participantSheet.rows.map((row) => ({
