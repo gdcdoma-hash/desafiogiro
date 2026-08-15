@@ -85,7 +85,7 @@ create or replace function public.guard_challenge_offer_pricing_mode()
 returns trigger
 language plpgsql
 set search_path = ''
-as $$;
+as $$
 begin
   if new.pricing_mode = 'FIXED'
     and exists (
