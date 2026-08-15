@@ -25,6 +25,7 @@ import {
   validateLegacyGoalSnapshot,
   type LegacyGoalIssue,
 } from "./migration-goals";
+import { assignLegacyOccurrenceNumbers } from "./migration-occurrences";
 
 export type ChallengeMigrationDto = {
   legacyIdDesafioBase: string;
@@ -63,6 +64,7 @@ export type RegistrationMigrationDto = {
   legacyParticipantId: string;
   legacyChallengeOfferId: string;
   targetKm: number;
+  occurrenceNumber: number;
 };
 
 export type PaymentMigrationDto = {
@@ -166,7 +168,6 @@ export const unresolvedDestinationFields = [
   "public.challenges.sports_starts_at",
   "public.challenges.sports_ends_at",
   "public.challenge_offers.price",
-  "public.registrations.occurrence_number",
   "public.registration_payments.method_code",
 ] as const;
 
@@ -263,7 +264,7 @@ export function transformLegacySnapshotToStagingDtos(
     ),
   }));
 
-  const registrations = registrationSheet.rows.map((row) => ({
+  const registrationSources = registrationSheet.rows.map((row) => ({
     legacyIdInscricao: value(registrationSheet, row, [
       "ID_INSCRICAO",
       "ID_Inscricao",
@@ -283,6 +284,14 @@ export function transformLegacySnapshotToStagingDtos(
       value(registrationSheet, row, ["Meta_KM", "meta_km"]),
     ),
   }));
+
+  const occurrences = assignLegacyOccurrenceNumbers(registrationSources);
+  const registrations: RegistrationMigrationDto[] = occurrences.map(
+    (registration, index) => ({
+      ...registrationSources[index],
+      occurrenceNumber: registration.occurrenceNumber,
+    }),
+  );
 
   const goalMap = new Map<string, ChallengeGoalMigrationDto>();
   const offerGoalMap = new Map<string, ChallengeOfferGoalMigrationDto>();

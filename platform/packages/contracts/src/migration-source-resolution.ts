@@ -1,6 +1,7 @@
 export type MigrationSourceResolutionStatus =
   | "SOURCE_CONFIRMED"
   | "PARTIAL_SOURCE"
+  | "DERIVATION_CONFIRMED"
   | "DERIVATION_REQUIRED"
   | "AMBIGUOUS_SOURCE"
   | "POLICY_REQUIRED"
@@ -91,12 +92,12 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
     },
     {
       destinationField: "public.registrations.occurrence_number",
-      status: "DERIVATION_REQUIRED",
+      status: "DERIVATION_CONFIRMED",
       sourceSheet: "dgmbDesafios",
       sourceField: null,
       semanticRole: "OFFER_OCCURRENCE_ORDINAL",
       remainingBlocker:
-        "No direct occurrence field was found. A deterministic ordering rule per participant and offer must be defined before assigning occurrence numbers.",
+        "Resolved deterministically from physical source-row order inside participant + offer. New registrations append rows, cancelled registrations are reactivated in place, and the legacy flow blocks a new active or cancelled registration for the same offer.",
     },
     {
       destinationField: "public.registration_payments.method_code",

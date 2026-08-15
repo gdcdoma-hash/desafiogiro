@@ -50,7 +50,7 @@ describe("legacy migration source resolution", () => {
     );
   });
 
-  it("confirms Meta_KM while occurrence and payment method remain blocked", () => {
+  it("confirms Meta_KM and occurrence derivation while payment method remains blocked", () => {
     expect(
       migrationSourceResolutionFor("public.registrations.goal_id"),
     ).toEqual(
@@ -62,9 +62,15 @@ describe("legacy migration source resolution", () => {
       }),
     );
     expect(
-      migrationSourceResolutionFor("public.registrations.occurrence_number")
-        ?.status,
-    ).toBe("DERIVATION_REQUIRED");
+      migrationSourceResolutionFor("public.registrations.occurrence_number"),
+    ).toEqual(
+      expect.objectContaining({
+        status: "DERIVATION_CONFIRMED",
+        sourceSheet: "dgmbDesafios",
+        sourceField: null,
+        semanticRole: "OFFER_OCCURRENCE_ORDINAL",
+      }),
+    );
     expect(
       migrationSourceResolutionFor("public.registration_payments.method_code")
         ?.status,
