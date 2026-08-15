@@ -10,11 +10,7 @@ import {
 } from "./migration-payments";
 
 export type MigrationDomain =
-  | "CHALLENGES"
-  | "PARTICIPANTS"
-  | "REGISTRATIONS"
-  | "PAYMENTS"
-  | "INVENTORY";
+  "CHALLENGES" | "PARTICIPANTS" | "REGISTRATIONS" | "PAYMENTS" | "INVENTORY";
 
 export type MigrationDryRunStep = {
   order: number;
@@ -34,7 +30,10 @@ export type MigrationDryRunPlan = {
   paymentIssues: LegacyPaymentIssue[];
 };
 
-function rowCount(snapshot: LegacyMigrationSnapshot, sheet: LegacySheetName): number {
+function rowCount(
+  snapshot: LegacyMigrationSnapshot,
+  sheet: LegacySheetName,
+): number {
   return snapshot[sheet]?.rows.length ?? 0;
 }
 
@@ -56,7 +55,8 @@ export function buildLegacyMigrationDryRunPlan(
         "public.challenge_offer_goals",
       ],
       candidateRows:
-        rowCount(snapshot, "DesafiosBase") + rowCount(snapshot, "ListaDesafios"),
+        rowCount(snapshot, "DesafiosBase") +
+        rowCount(snapshot, "ListaDesafios"),
       idempotencyKeys: ["ID_DESAFIO_BASE", "ID_DESAFIO_LISTA"],
       dependsOn: [],
     },
