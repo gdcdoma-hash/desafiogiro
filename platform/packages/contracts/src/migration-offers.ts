@@ -45,10 +45,7 @@ const offerFields = {
   },
 } as const satisfies Record<string, OfferField>;
 
-function findFieldIndex(
-  sheet: LegacySheetSnapshot,
-  field: OfferField,
-): number {
+function findFieldIndex(sheet: LegacySheetSnapshot, field: OfferField): number {
   const normalizedHeaders = sheet.headers.map(normalizeLegacyHeader);
   return (
     field.aliases
