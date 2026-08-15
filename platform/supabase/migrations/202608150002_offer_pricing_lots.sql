@@ -158,6 +158,4 @@ where c.is_public = true
   and now() >= o.registration_starts_at
   and now() < o.registration_ends_at;
 
-grant select on public.public_registration_catalog to anon, authenticated;
-
 commit;
