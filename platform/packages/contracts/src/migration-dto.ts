@@ -69,7 +69,10 @@ export type LegacyMigrationStagingBundle = {
   inventory: InventoryMigrationDto[];
 };
 
-function fieldIndex(sheet: LegacySheetSnapshot, aliases: readonly string[]): number {
+function fieldIndex(
+  sheet: LegacySheetSnapshot,
+  aliases: readonly string[],
+): number {
   const normalizedHeaders = sheet.headers.map(normalizeLegacyHeader);
   return (
     aliases
@@ -179,10 +182,18 @@ export function transformLegacySnapshotToStagingDtos(
   }));
 
   const participants = participantSheet.rows.map((row) => ({
-    legacyIdDgmb: value(participantSheet, row, ["ID_DGMB", "id_dgmb", "idDgmb"]),
-    fullName: nullable(value(participantSheet, row, ["Nome", "nome", "Nome_Completo"])),
+    legacyIdDgmb: value(participantSheet, row, [
+      "ID_DGMB",
+      "id_dgmb",
+      "idDgmb",
+    ]),
+    fullName: nullable(
+      value(participantSheet, row, ["Nome", "nome", "Nome_Completo"]),
+    ),
     city: nullable(value(participantSheet, row, ["Cidade", "cidade"])),
-    stateCode: nullable(value(participantSheet, row, ["UF", "uf"]).toUpperCase()),
+    stateCode: nullable(
+      value(participantSheet, row, ["UF", "uf"]).toUpperCase(),
+    ),
   }));
 
   const registrations = registrationSheet.rows.map((row) => ({
@@ -222,12 +233,16 @@ export function transformLegacySnapshotToStagingDtos(
     return {
       legacyRegistrationId,
       legacyBatchId,
-      batchName: nullable(value(registrationSheet, row, ["nome_lote_pagamento"])),
+      batchName: nullable(
+        value(registrationSheet, row, ["nome_lote_pagamento"]),
+      ),
       externalReference: buildLegacyPaymentExternalReference(
         legacyRegistrationId,
         legacyBatchId,
       ),
-      amount: decimal(value(registrationSheet, row, ["valor_unitario_pagamento"])),
+      amount: decimal(
+        value(registrationSheet, row, ["valor_unitario_pagamento"]),
+      ),
       category,
     };
   });
@@ -243,16 +258,16 @@ export function transformLegacySnapshotToStagingDtos(
       "ID_Desafio_Lista",
       "id_Desafio_lista",
     ]),
-    targetKm: integer(value(inventorySheet, row, [
-      "distancia_km",
-      "Distancia_KM",
-      "DISTANCIA_KM",
-    ])),
-    quantity: integer(value(inventorySheet, row, [
-      "quantidade",
-      "Quantidade",
-      "QUANTIDADE",
-    ])),
+    targetKm: integer(
+      value(inventorySheet, row, [
+        "distancia_km",
+        "Distancia_KM",
+        "DISTANCIA_KM",
+      ]),
+    ),
+    quantity: integer(
+      value(inventorySheet, row, ["quantidade", "Quantidade", "QUANTIDADE"]),
+    ),
     legacyStatus: value(inventorySheet, row, ["status", "Status", "STATUS"]),
   }));
 
