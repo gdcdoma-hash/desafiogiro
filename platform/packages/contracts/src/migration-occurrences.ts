@@ -1,5 +1,5 @@
 export type LegacyOccurrenceInput = {
-  legacyRegistrationId: string;
+  legacyIdInscricao: string;
   legacyParticipantId: string;
   legacyChallengeOfferId: string;
 };
@@ -16,7 +16,7 @@ export function assignLegacyOccurrenceNumbers(
   return registrationsInSourceOrder.map((registration) => {
     const participant = registration.legacyParticipantId.trim();
     const offer = registration.legacyChallengeOfferId.trim();
-    const registrationId = registration.legacyRegistrationId.trim();
+    const registrationId = registration.legacyIdInscricao.trim();
 
     if (!participant || !offer || !registrationId) {
       throw new Error("Cannot derive legacy occurrence from an incomplete key");
