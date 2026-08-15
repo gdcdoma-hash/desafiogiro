@@ -184,4 +184,41 @@ describe("migration dry-run plan", () => {
       "estado financeiro desconhecido",
     );
   });
+
+  it("stays blocked when an exempt legacy registration has no target mapping", () => {
+    const fixture = validFixture();
+    fixture.DadosPessoais?.rows.push([
+      "private-exempt-user",
+      "PESSOA ISENTA TESTE",
+      "Cidade C",
+      "MA",
+    ]);
+    fixture.dgmbDesafios?.rows.push([
+      "private-exempt-user",
+      "private-exempt-registration",
+      "private-list-1",
+      "Isento",
+      "private-batch-2",
+      "Cortesia fictícia",
+      "0",
+      "",
+      "",
+    ]);
+
+    const plan = buildLegacyMigrationDryRunPlan(fixture);
+
+    expect(plan.writeMode).toBe("NONE");
+    expect(plan.ready).toBe(false);
+    expect(plan.paymentIssues).toEqual(
+      expect.arrayContaining([
+        {
+          code: "EXEMPT_PAYMENT_REQUIRES_MAPPING",
+          field: "STATUS_PAGAMENTO",
+          count: 1,
+        },
+      ]),
+    );
+    expect(JSON.stringify(plan)).not.toContain("private-exempt-user");
+    expect(JSON.stringify(plan)).not.toContain("PESSOA ISENTA TESTE");
+  });
 });
