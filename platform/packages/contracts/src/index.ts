@@ -48,3 +48,4 @@ export * from "./migration-manifest";
 export * from "./migration-dto";
 export * from "./migration-source-resolution";
 export * from "./migration-offer-normalization";
+export * from "./migration-offers";

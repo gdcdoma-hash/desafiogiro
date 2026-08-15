@@ -13,8 +13,24 @@ function fixture(): LegacyMigrationSnapshot {
       rows: [["legacy-base-1", "Desafio Teste"]],
     },
     ListaDesafios: {
-      headers: ["id_Desafio_lista", "id_desafio_base", "Nome_Desafio"],
-      rows: [["legacy-list-1", "legacy-base-1", "Oferta Teste"]],
+      headers: [
+        "id_Desafio_lista",
+        "id_desafio_base",
+        "Nome_Desafio",
+        "Tipo",
+        "Data_Inicio",
+        "Data_Fim",
+      ],
+      rows: [
+        [
+          "legacy-list-1",
+          "legacy-base-1",
+          "Oferta Teste",
+          "Normal",
+          "01/08/2026",
+          "10/08/2026",
+        ],
+      ],
     },
     dgmbDesafios: {
       headers: [
@@ -64,6 +80,7 @@ describe("legacy migration staging DTOs", () => {
     expect(result.insertReady).toBe(false);
     expect(result.structuralIssues).toEqual([]);
     expect(result.paymentIssues).toEqual([]);
+    expect(result.offerIssues).toEqual([]);
 
     expect(result.challenges).toEqual([
       {
@@ -76,6 +93,9 @@ describe("legacy migration staging DTOs", () => {
         legacyIdDesafioLista: "legacy-list-1",
         legacyChallengeBaseId: "legacy-base-1",
         publicName: "Oferta Teste",
+        categoryCode: "NORMAL",
+        registrationStartsAt: "2026-08-01T03:00:00.000Z",
+        registrationEndsAt: "2026-08-11T02:59:59.999Z",
       },
     ]);
     expect(result.participants).toEqual([
@@ -108,17 +128,18 @@ describe("legacy migration staging DTOs", () => {
     });
   });
 
-  it("keeps unresolved destination requirements explicit", () => {
+  it("reduces unresolved destination requirements to seven fields", () => {
     const result = transformLegacySnapshotToStagingDtos(fixture());
 
-    expect(result.unresolvedDestinationFields).toEqual(
-      expect.arrayContaining([
-        "public.challenges.reference_year",
-        "public.challenge_offers.registration_starts_at",
-        "public.registrations.goal_id",
-        "public.registration_payments.method_code",
-      ]),
-    );
+    expect(result.unresolvedDestinationFields).toEqual([
+      "public.challenges.reference_year",
+      "public.challenges.sports_starts_at",
+      "public.challenges.sports_ends_at",
+      "public.challenge_offers.price",
+      "public.registrations.goal_id",
+      "public.registrations.occurrence_number",
+      "public.registration_payments.method_code",
+    ]);
   });
 
   it("never carries temporary PIX secrets into staging DTOs", () => {
@@ -131,7 +152,7 @@ describe("legacy migration staging DTOs", () => {
     expect(serialized).not.toContain("chave_pix_lote");
   });
 
-  it("returns no DTO rows when preflight blocks the snapshot", () => {
+  it("returns no DTO rows when structural preflight blocks the snapshot", () => {
     const invalid = fixture();
     invalid.dgmbDesafios?.rows.push([
       "missing-user",
@@ -157,6 +178,33 @@ describe("legacy migration staging DTOs", () => {
     expect(result.structuralIssues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: "ORPHAN_REGISTRATION_PARTICIPANT" }),
+      ]),
+    );
+  });
+
+  it("returns no DTO rows when offer category or window is invalid", () => {
+    const invalid = fixture();
+    if (invalid.ListaDesafios) {
+      invalid.ListaDesafios.rows[0][3] = "tipo desconhecido";
+      invalid.ListaDesafios.rows[0][4] = "31/02/2026";
+    }
+
+    const result = transformLegacySnapshotToStagingDtos(invalid);
+
+    expect(result.ready).toBe(false);
+    expect(result.challengeOffers).toEqual([]);
+    expect(result.offerIssues).toEqual(
+      expect.arrayContaining([
+        {
+          code: "UNKNOWN_OFFER_CATEGORY",
+          field: "TIPO",
+          count: 1,
+        },
+        {
+          code: "INVALID_REGISTRATION_WINDOW",
+          field: "DATA_INICIO/DATA_FIM",
+          count: 1,
+        },
       ]),
     );
   });
