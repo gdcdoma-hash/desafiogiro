@@ -181,10 +181,9 @@ describe("legacy migration staging DTOs", () => {
       "legacy-base-1:2026-08",
       "legacy-base-1:2026-09",
     ]);
-    expect(result.challengeOffers.map((item) => item.legacyChallengeKey)).toEqual([
-      "legacy-base-1:2026-08",
-      "legacy-base-1:2026-09",
-    ]);
+    expect(
+      result.challengeOffers.map((item) => item.legacyChallengeKey),
+    ).toEqual(["legacy-base-1:2026-08", "legacy-base-1:2026-09"]);
   });
 
   it("deduplicates goals and derives repeated occurrence ordinals in source order", () => {
