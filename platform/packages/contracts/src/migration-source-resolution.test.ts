@@ -6,11 +6,12 @@ import {
 } from "./migration-source-resolution";
 
 describe("legacy migration source resolution", () => {
-  it("confirms only source semantics established by trusted legacy code", () => {
+  it("confirms only source semantics established by trusted evidence", () => {
     expect(confirmedLegacySourceFields()).toEqual([
       "ListaDesafios.Data_Inicio",
       "ListaDesafios.Data_Fim",
       "ListaDesafios.Tipo",
+      "dgmbDesafios.Meta_KM",
     ]);
   });
 
@@ -49,10 +50,17 @@ describe("legacy migration source resolution", () => {
     );
   });
 
-  it("keeps target, occurrence and payment method blocked until evidence or policy exists", () => {
+  it("confirms Meta_KM while occurrence and payment method remain blocked", () => {
     expect(
-      migrationSourceResolutionFor("public.registrations.goal_id")?.status,
-    ).toBe("PARTIAL_SOURCE");
+      migrationSourceResolutionFor("public.registrations.goal_id"),
+    ).toEqual(
+      expect.objectContaining({
+        status: "SOURCE_CONFIRMED",
+        sourceSheet: "dgmbDesafios",
+        sourceField: "Meta_KM",
+        semanticRole: "REGISTRATION_TARGET_KM",
+      }),
+    );
     expect(
       migrationSourceResolutionFor("public.registrations.occurrence_number")
         ?.status,
@@ -63,7 +71,7 @@ describe("legacy migration source resolution", () => {
     ).toBe("POLICY_REQUIRED");
   });
 
-  it("contains one resolution record for every current unresolved destination field", () => {
+  it("contains one source-resolution record per tracked destination field", () => {
     const destinations = legacyMigrationSourceResolution.map(
       (item) => item.destinationField,
     );

@@ -51,7 +51,7 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
       sourceField: "Data_Inicio",
       semanticRole: "REGISTRATION_ELIGIBILITY_START",
       remainingBlocker:
-        "A deterministic legacy-date to timestamptz conversion with the platform timezone still needs to be implemented and tested.",
+        "Resolved by the deterministic America/Fortaleza registration-window normalizer.",
     },
     {
       destinationField: "public.challenge_offers.registration_ends_at",
@@ -60,7 +60,7 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
       sourceField: "Data_Fim",
       semanticRole: "REGISTRATION_ELIGIBILITY_END",
       remainingBlocker:
-        "A deterministic legacy-date to timestamptz conversion with inclusive end-of-day semantics still needs to be implemented and tested.",
+        "Resolved by the deterministic inclusive end-of-day America/Fortaleza normalizer.",
     },
     {
       destinationField: "public.challenge_offers.category_code",
@@ -69,7 +69,7 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
       sourceField: "Tipo",
       semanticRole: "OFFER_TYPE",
       remainingBlocker:
-        "Legacy Tipo values need an explicit normalization vocabulary before they can satisfy the target category_code constraint.",
+        "Resolved by the explicit NORMAL/REPESCAGEM normalization vocabulary.",
     },
     {
       destinationField: "public.challenge_offers.price",
@@ -82,12 +82,12 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
     },
     {
       destinationField: "public.registrations.goal_id",
-      status: "PARTIAL_SOURCE",
+      status: "SOURCE_CONFIRMED",
       sourceSheet: "dgmbDesafios",
-      sourceField: null,
+      sourceField: "Meta_KM",
       semanticRole: "REGISTRATION_TARGET_KM",
       remainingBlocker:
-        "Legacy code reads and writes the registration target at the fourth column, but the trusted code does not establish a header alias for that position. Header-based migration must remain blocked until the column name is confirmed.",
+        "The physical audit confirms Meta_KM at historical column 4. Staging resolves the destination goal by the natural key challenge + target_km and emits the observed offer-goal link; UUID resolution belongs to the later persistence phase.",
     },
     {
       destinationField: "public.registrations.occurrence_number",
