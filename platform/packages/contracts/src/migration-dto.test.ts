@@ -28,17 +28,19 @@ function fixture(): LegacyMigrationSnapshot {
         "chave_pix_lote",
         "validade_pix_lote",
       ],
-      rows: [[
-        "legacy-user-1",
-        "legacy-registration-1",
-        "legacy-list-1",
-        "Pago",
-        "legacy-batch-1",
-        "Lote Teste",
-        "44,90",
-        "PIX-NAO-DEVE-SAIR",
-        "2099-01-01",
-      ]],
+      rows: [
+        [
+          "legacy-user-1",
+          "legacy-registration-1",
+          "legacy-list-1",
+          "Pago",
+          "legacy-batch-1",
+          "Lote Teste",
+          "44,90",
+          "PIX-NAO-DEVE-SAIR",
+          "2099-01-01",
+        ],
+      ],
     },
     DesafioKMEstoque: {
       headers: [
@@ -93,8 +95,7 @@ describe("legacy migration staging DTOs", () => {
       legacyRegistrationId: "legacy-registration-1",
       legacyBatchId: "legacy-batch-1",
       batchName: "Lote Teste",
-      externalReference:
-        "dgmb-payment:v1:legacy-registration-1:legacy-batch-1",
+      externalReference: "dgmb-payment:v1:legacy-registration-1:legacy-batch-1",
       amount: 44.9,
       category: "SETTLED",
     });
@@ -121,7 +122,9 @@ describe("legacy migration staging DTOs", () => {
   });
 
   it("never carries temporary PIX secrets into staging DTOs", () => {
-    const serialized = JSON.stringify(transformLegacySnapshotToStagingDtos(fixture()));
+    const serialized = JSON.stringify(
+      transformLegacySnapshotToStagingDtos(fixture()),
+    );
 
     expect(serialized).not.toContain("PIX-NAO-DEVE-SAIR");
     expect(serialized).not.toContain("validade_pix_lote");
