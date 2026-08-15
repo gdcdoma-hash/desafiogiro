@@ -75,6 +75,8 @@ describe("legacy offer migration preflight", () => {
         },
       ]),
     );
-    expect(JSON.stringify(report)).not.toContain("categoria privada desconhecida");
+    expect(JSON.stringify(report)).not.toContain(
+      "categoria privada desconhecida",
+    );
   });
 });
