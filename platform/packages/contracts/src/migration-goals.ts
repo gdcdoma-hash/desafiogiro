@@ -5,8 +5,7 @@ import {
 } from "./migration";
 
 export type LegacyGoalIssueCode =
-  | "MISSING_GOAL_HEADER"
-  | "INVALID_REGISTRATION_TARGET_KM";
+  "MISSING_GOAL_HEADER" | "INVALID_REGISTRATION_TARGET_KM";
 
 export type LegacyGoalIssue = {
   code: LegacyGoalIssueCode;
