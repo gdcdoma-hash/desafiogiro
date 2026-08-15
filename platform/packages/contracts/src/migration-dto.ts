@@ -12,6 +12,14 @@ import {
   type LegacyPaymentIssue,
 } from "./migration-payments";
 import { buildLegacyPaymentExternalReference } from "./migration-manifest";
+import {
+  normalizeLegacyOfferSource,
+  type LegacyOfferCategoryCode,
+} from "./migration-offer-normalization";
+import {
+  validateLegacyOfferSnapshot,
+  type LegacyOfferIssue,
+} from "./migration-offers";
 
 export type ChallengeMigrationDto = {
   legacyIdDesafioBase: string;
@@ -22,6 +30,9 @@ export type ChallengeOfferMigrationDto = {
   legacyIdDesafioLista: string;
   legacyChallengeBaseId: string;
   publicName: string | null;
+  categoryCode: LegacyOfferCategoryCode;
+  registrationStartsAt: string;
+  registrationEndsAt: string;
 };
 
 export type ParticipantMigrationDto = {
@@ -61,6 +72,7 @@ export type LegacyMigrationStagingBundle = {
   unresolvedDestinationFields: readonly string[];
   structuralIssues: MigrationIssue[];
   paymentIssues: LegacyPaymentIssue[];
+  offerIssues: LegacyOfferIssue[];
   challenges: ChallengeMigrationDto[];
   challengeOffers: ChallengeOfferMigrationDto[];
   participants: ParticipantMigrationDto[];
@@ -106,6 +118,7 @@ function integer(value: string): number {
 function blockedBundle(
   structuralIssues: MigrationIssue[],
   paymentIssues: LegacyPaymentIssue[],
+  offerIssues: LegacyOfferIssue[],
 ): LegacyMigrationStagingBundle {
   return {
     ready: false,
@@ -114,6 +127,7 @@ function blockedBundle(
     unresolvedDestinationFields: unresolvedDestinationFields,
     structuralIssues,
     paymentIssues,
+    offerIssues,
     challenges: [],
     challengeOffers: [],
     participants: [],
@@ -127,9 +141,6 @@ export const unresolvedDestinationFields = [
   "public.challenges.reference_year",
   "public.challenges.sports_starts_at",
   "public.challenges.sports_ends_at",
-  "public.challenge_offers.registration_starts_at",
-  "public.challenge_offers.registration_ends_at",
-  "public.challenge_offers.category_code",
   "public.challenge_offers.price",
   "public.registrations.goal_id",
   "public.registrations.occurrence_number",
@@ -141,9 +152,10 @@ export function transformLegacySnapshotToStagingDtos(
 ): LegacyMigrationStagingBundle {
   const structural = validateLegacyMigrationSnapshot(snapshot);
   const payment = validateLegacyPaymentSnapshot(snapshot);
+  const offer = validateLegacyOfferSnapshot(snapshot);
 
-  if (!structural.ok || !payment.ok) {
-    return blockedBundle(structural.issues, payment.issues);
+  if (!structural.ok || !payment.ok || !offer.ok) {
+    return blockedBundle(structural.issues, payment.issues, offer.issues);
   }
 
   const challengeBaseSheet = snapshot.DesafiosBase!;
@@ -166,20 +178,39 @@ export function transformLegacySnapshotToStagingDtos(
     ),
   }));
 
-  const challengeOffers = challengeOfferSheet.rows.map((row) => ({
-    legacyIdDesafioLista: value(challengeOfferSheet, row, [
-      "id_Desafio_lista",
-      "ID_Desafio_Lista",
-      "id_desafio_lista",
-    ]),
-    legacyChallengeBaseId: value(challengeOfferSheet, row, [
-      "id_desafio_base",
-      "ID_Desafio_Base",
-    ]),
-    publicName: nullable(
-      value(challengeOfferSheet, row, ["Nome_Desafio", "nome_desafio"]),
-    ),
-  }));
+  const challengeOffers = challengeOfferSheet.rows.map((row) => {
+    const normalized = normalizeLegacyOfferSource({
+      tipo: value(challengeOfferSheet, row, ["Tipo", "tipo"]),
+      dataInicio: value(challengeOfferSheet, row, [
+        "Data_Inicio",
+        "data_inicio",
+        "Data Inicio",
+      ]),
+      dataFim: value(challengeOfferSheet, row, [
+        "Data_Fim",
+        "data_fim",
+        "Data Fim",
+      ]),
+    });
+
+    return {
+      legacyIdDesafioLista: value(challengeOfferSheet, row, [
+        "id_Desafio_lista",
+        "ID_Desafio_Lista",
+        "id_desafio_lista",
+      ]),
+      legacyChallengeBaseId: value(challengeOfferSheet, row, [
+        "id_desafio_base",
+        "ID_Desafio_Base",
+      ]),
+      publicName: nullable(
+        value(challengeOfferSheet, row, ["Nome_Desafio", "nome_desafio"]),
+      ),
+      categoryCode: normalized.categoryCode,
+      registrationStartsAt: normalized.registrationStartsAt,
+      registrationEndsAt: normalized.registrationEndsAt,
+    };
+  });
 
   const participants = participantSheet.rows.map((row) => ({
     legacyIdDgmb: value(participantSheet, row, [
@@ -278,6 +309,7 @@ export function transformLegacySnapshotToStagingDtos(
     unresolvedDestinationFields,
     structuralIssues: [],
     paymentIssues: [],
+    offerIssues: [],
     challenges,
     challengeOffers,
     participants,
