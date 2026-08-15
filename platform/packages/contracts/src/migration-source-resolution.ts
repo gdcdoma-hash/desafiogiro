@@ -4,6 +4,7 @@ export type MigrationSourceResolutionStatus =
   | "DERIVATION_CONFIRMED"
   | "DERIVATION_REQUIRED"
   | "AMBIGUOUS_SOURCE"
+  | "POLICY_CONFIRMED"
   | "POLICY_REQUIRED"
   | "UNRESOLVED";
 
@@ -101,12 +102,12 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
     },
     {
       destinationField: "public.registration_payments.method_code",
-      status: "POLICY_REQUIRED",
+      status: "POLICY_CONFIRMED",
       sourceSheet: "dgmbDesafios",
       sourceField: null,
-      semanticRole: "PAYMENT_METHOD",
+      semanticRole: "UNKNOWN_PAYMENT_METHOD_PRESERVATION",
       remainingBlocker:
-        "The operational legacy flow generates PIX, but the historical row does not preserve a verified method field. Assigning PIX to every historical payment would be an inference and requires an explicit migration policy.",
+        "Resolved by the conservative migration policy LEGACY_UNSPECIFIED. The historical row has no verified payment-method field, so staging explicitly preserves that uncertainty instead of inferring PIX or MANUAL from the operational flow.",
     },
   ] as const;
 
