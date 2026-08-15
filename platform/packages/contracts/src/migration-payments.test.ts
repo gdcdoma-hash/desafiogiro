@@ -43,17 +43,6 @@ function paymentFixture(): LegacyMigrationSnapshot {
           "PIX-SENSIVEL-NAO-DEVE-APARECER-2",
           "2099-01-01",
         ],
-        [
-          "fixture-user-3",
-          "fixture-registration-3",
-          "fixture-list-1",
-          "Isento",
-          "fixture-batch-2",
-          "Cortesia fictícia",
-          "0",
-          "",
-          "",
-        ],
       ],
     },
   };
@@ -75,12 +64,12 @@ describe("legacy payment migration contract", () => {
 
     expect(report).toEqual({
       ok: true,
-      rows: 3,
+      rows: 2,
       categories: {
         PENDING: 1,
         SETTLED: 1,
         CANCELLED: 0,
-        EXEMPT: 1,
+        EXEMPT: 0,
         UNKNOWN: 0,
       },
       issues: [],
@@ -92,6 +81,37 @@ describe("legacy payment migration contract", () => {
       "chave_pix_lote",
       "validade_pix_lote",
     ]);
+  });
+
+  it("blocks exempt records until their destination mapping is defined", () => {
+    const fixture = paymentFixture();
+    fixture.dgmbDesafios?.rows.push([
+      "private-exempt-user",
+      "private-exempt-registration",
+      "fixture-list-1",
+      "Isento",
+      "fixture-batch-2",
+      "Cortesia fictícia",
+      "0",
+      "",
+      "",
+    ]);
+
+    const report = validateLegacyPaymentSnapshot(fixture);
+
+    expect(report.ok).toBe(false);
+    expect(report.categories.EXEMPT).toBe(1);
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        {
+          code: "EXEMPT_PAYMENT_REQUIRES_MAPPING",
+          field: "STATUS_PAGAMENTO",
+          count: 1,
+        },
+      ]),
+    );
+    expect(JSON.stringify(report)).not.toContain("private-exempt-user");
+    expect(JSON.stringify(report)).not.toContain("Cortesia fictícia");
   });
 
   it("blocks unknown statuses and malformed amounts without exposing values", () => {
