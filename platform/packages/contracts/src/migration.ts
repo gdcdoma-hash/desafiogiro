@@ -18,7 +18,11 @@ export type MigrationIssueCode =
   | "MISSING_SHEET"
   | "MISSING_HEADER"
   | "MISSING_REGISTRATION_ID"
-  | "DUPLICATE_REGISTRATION_ID";
+  | "DUPLICATE_REGISTRATION_ID"
+  | "ORPHAN_REGISTRATION_PARTICIPANT"
+  | "ORPHAN_REGISTRATION_CHALLENGE"
+  | "ORPHAN_CHALLENGE_BASE"
+  | "ORPHAN_INVENTORY_CHALLENGE";
 
 export type MigrationIssue = {
   code: MigrationIssueCode;
@@ -81,6 +85,19 @@ export const legacyMigrationContracts: Record<LegacySheetName, SheetContract> =
           field: "ID_ITEM_ESTOQUE",
           aliases: ["id_item_estoque", "ID_Item_Estoque", "ID_ITEM_ESTOQUE"],
         },
+        {
+          field: "ID_DESAFIO_LISTA",
+          aliases: ["id_desafio_lista", "ID_Desafio_Lista", "id_Desafio_lista"],
+        },
+        {
+          field: "DISTANCIA_KM",
+          aliases: ["distancia_km", "Distancia_KM", "DISTANCIA_KM"],
+        },
+        {
+          field: "QUANTIDADE",
+          aliases: ["quantidade", "Quantidade", "QUANTIDADE"],
+        },
+        { field: "STATUS", aliases: ["status", "Status", "STATUS"] },
       ],
     },
     DesafiosBase: {
@@ -116,6 +133,43 @@ function findHeaderIndex(
   );
 }
 
+function requiredField(
+  sheetName: LegacySheetName,
+  field: string,
+): RequiredField | undefined {
+  return legacyMigrationContracts[sheetName].required.find(
+    (required) => required.field === field,
+  );
+}
+
+function fieldIndex(
+  sheetName: LegacySheetName,
+  sheet: LegacySheetSnapshot,
+  field: string,
+): number {
+  const required = requiredField(sheetName, field);
+  return required ? findHeaderIndex(sheet.headers, required.aliases) : -1;
+}
+
+function normalizedValues(
+  sheetName: LegacySheetName,
+  sheet: LegacySheetSnapshot,
+  field: string,
+): string[] | null {
+  const index = fieldIndex(sheetName, sheet, field);
+  if (index < 0) return null;
+  return sheet.rows.map((row) => (row[index] ?? "").trim().toLowerCase());
+}
+
+function nonEmptyValueSet(
+  sheetName: LegacySheetName,
+  sheet: LegacySheetSnapshot,
+  field: string,
+): Set<string> | null {
+  const values = normalizedValues(sheetName, sheet, field);
+  return values ? new Set(values.filter(Boolean)) : null;
+}
+
 function emptyRowCounts(): Record<LegacySheetName, number> {
   return {
     DadosPessoais: 0,
@@ -127,20 +181,14 @@ function emptyRowCounts(): Record<LegacySheetName, number> {
 }
 
 function registrationIdIssues(sheet: LegacySheetSnapshot): MigrationIssue[] {
-  const idField = legacyMigrationContracts.dgmbDesafios.required.find(
-    ({ field }) => field === "ID_INSCRICAO",
-  );
-  if (!idField) return [];
-
-  const index = findHeaderIndex(sheet.headers, idField.aliases);
-  if (index < 0) return [];
+  const values = normalizedValues("dgmbDesafios", sheet, "ID_INSCRICAO");
+  if (!values) return [];
 
   let missing = 0;
   let duplicates = 0;
   const seen = new Set<string>();
 
-  for (const row of sheet.rows) {
-    const value = (row[index] ?? "").trim().toLowerCase();
+  for (const value of values) {
     if (!value) {
       missing += 1;
       continue;
@@ -169,6 +217,92 @@ function registrationIdIssues(sheet: LegacySheetSnapshot): MigrationIssue[] {
       count: duplicates,
     });
   }
+  return issues;
+}
+
+function countOrphans(values: string[] | null, targets: Set<string> | null): number {
+  if (!values || !targets) return 0;
+  return values.filter((value) => value && !targets.has(value)).length;
+}
+
+function reconciliationIssues(
+  snapshot: LegacyMigrationSnapshot,
+): MigrationIssue[] {
+  const participants = snapshot.DadosPessoais;
+  const challengeList = snapshot.ListaDesafios;
+  const registrations = snapshot.dgmbDesafios;
+  const inventory = snapshot.DesafioKMEstoque;
+  const challengeBases = snapshot.DesafiosBase;
+  const issues: MigrationIssue[] = [];
+
+  const participantIds = participants
+    ? nonEmptyValueSet("DadosPessoais", participants, "ID_DGMB")
+    : null;
+  const challengeListIds = challengeList
+    ? nonEmptyValueSet("ListaDesafios", challengeList, "ID_DESAFIO_LISTA")
+    : null;
+  const challengeBaseIds = challengeBases
+    ? nonEmptyValueSet("DesafiosBase", challengeBases, "ID_DESAFIO_BASE")
+    : null;
+
+  if (registrations) {
+    const orphanParticipants = countOrphans(
+      normalizedValues("dgmbDesafios", registrations, "ID_DGMB"),
+      participantIds,
+    );
+    if (orphanParticipants > 0) {
+      issues.push({
+        code: "ORPHAN_REGISTRATION_PARTICIPANT",
+        sheet: "dgmbDesafios",
+        field: "ID_DGMB",
+        count: orphanParticipants,
+      });
+    }
+
+    const orphanChallenges = countOrphans(
+      normalizedValues("dgmbDesafios", registrations, "ID_DESAFIO_LISTA"),
+      challengeListIds,
+    );
+    if (orphanChallenges > 0) {
+      issues.push({
+        code: "ORPHAN_REGISTRATION_CHALLENGE",
+        sheet: "dgmbDesafios",
+        field: "ID_DESAFIO_LISTA",
+        count: orphanChallenges,
+      });
+    }
+  }
+
+  if (challengeList) {
+    const orphanBases = countOrphans(
+      normalizedValues("ListaDesafios", challengeList, "ID_DESAFIO_BASE"),
+      challengeBaseIds,
+    );
+    if (orphanBases > 0) {
+      issues.push({
+        code: "ORPHAN_CHALLENGE_BASE",
+        sheet: "ListaDesafios",
+        field: "ID_DESAFIO_BASE",
+        count: orphanBases,
+      });
+    }
+  }
+
+  if (inventory) {
+    const orphanInventoryChallenges = countOrphans(
+      normalizedValues("DesafioKMEstoque", inventory, "ID_DESAFIO_LISTA"),
+      challengeListIds,
+    );
+    if (orphanInventoryChallenges > 0) {
+      issues.push({
+        code: "ORPHAN_INVENTORY_CHALLENGE",
+        sheet: "DesafioKMEstoque",
+        field: "ID_DESAFIO_LISTA",
+        count: orphanInventoryChallenges,
+      });
+    }
+  }
+
   return issues;
 }
 
@@ -203,6 +337,7 @@ export function validateLegacyMigrationSnapshot(
 
   const registrations = snapshot.dgmbDesafios;
   if (registrations) issues.push(...registrationIdIssues(registrations));
+  issues.push(...reconciliationIssues(snapshot));
 
   return {
     ok: issues.length === 0,
