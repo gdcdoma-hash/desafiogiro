@@ -5,11 +5,7 @@ import {
 } from "./migration";
 
 export type LegacyPaymentCategory =
-  | "PENDING"
-  | "SETTLED"
-  | "CANCELLED"
-  | "EXEMPT"
-  | "UNKNOWN";
+  "PENDING" | "SETTLED" | "CANCELLED" | "EXEMPT" | "UNKNOWN";
 
 export type LegacyPaymentIssueCode =
   | "MISSING_PAYMENT_HEADER"
