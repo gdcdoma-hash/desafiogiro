@@ -37,6 +37,7 @@ function fixture(): LegacyMigrationSnapshot {
         "ID_DGMB",
         "ID_Inscricao",
         "ID_Desafio_Lista",
+        "Meta_KM",
         "Status_Pagamento",
         "id_lote_pagamento",
         "nome_lote_pagamento",
@@ -49,6 +50,7 @@ function fixture(): LegacyMigrationSnapshot {
           "legacy-user-1",
           "legacy-registration-1",
           "legacy-list-1",
+          "300",
           "Pago",
           "legacy-batch-1",
           "Lote Teste",
@@ -81,12 +83,16 @@ describe("legacy migration staging DTOs", () => {
     expect(result.structuralIssues).toEqual([]);
     expect(result.paymentIssues).toEqual([]);
     expect(result.offerIssues).toEqual([]);
+    expect(result.goalIssues).toEqual([]);
 
     expect(result.challenges).toEqual([
       {
         legacyIdDesafioBase: "legacy-base-1",
         publicName: "Desafio Teste",
       },
+    ]);
+    expect(result.challengeGoals).toEqual([
+      { legacyChallengeBaseId: "legacy-base-1", targetKm: 300 },
     ]);
     expect(result.challengeOffers).toEqual([
       {
@@ -96,6 +102,13 @@ describe("legacy migration staging DTOs", () => {
         categoryCode: "NORMAL",
         registrationStartsAt: "2026-08-01T03:00:00.000Z",
         registrationEndsAt: "2026-08-11T02:59:59.999Z",
+      },
+    ]);
+    expect(result.challengeOfferGoals).toEqual([
+      {
+        legacyChallengeOfferId: "legacy-list-1",
+        legacyChallengeBaseId: "legacy-base-1",
+        targetKm: 300,
       },
     ]);
     expect(result.participants).toEqual([
@@ -110,6 +123,7 @@ describe("legacy migration staging DTOs", () => {
       legacyIdInscricao: "legacy-registration-1",
       legacyParticipantId: "legacy-user-1",
       legacyChallengeOfferId: "legacy-list-1",
+      targetKm: 300,
     });
     expect(result.payments[0]).toEqual({
       legacyRegistrationId: "legacy-registration-1",
@@ -128,7 +142,7 @@ describe("legacy migration staging DTOs", () => {
     });
   });
 
-  it("reduces unresolved destination requirements to seven fields", () => {
+  it("reduces unresolved destination requirements to six fields", () => {
     const result = transformLegacySnapshotToStagingDtos(fixture());
 
     expect(result.unresolvedDestinationFields).toEqual([
@@ -136,10 +150,29 @@ describe("legacy migration staging DTOs", () => {
       "public.challenges.sports_starts_at",
       "public.challenges.sports_ends_at",
       "public.challenge_offers.price",
-      "public.registrations.goal_id",
       "public.registrations.occurrence_number",
       "public.registration_payments.method_code",
     ]);
+  });
+
+  it("deduplicates goals by challenge and offer-goal links by offer", () => {
+    const snapshot = fixture();
+    snapshot.dgmbDesafios?.rows.push([
+      "legacy-user-1",
+      "legacy-registration-2",
+      "legacy-list-1",
+      "300",
+      "Pago",
+      "legacy-batch-2",
+      "Lote Teste",
+      "44,90",
+      "",
+      "",
+    ]);
+
+    const result = transformLegacySnapshotToStagingDtos(snapshot);
+    expect(result.challengeGoals).toHaveLength(1);
+    expect(result.challengeOfferGoals).toHaveLength(1);
   });
 
   it("never carries temporary PIX secrets into staging DTOs", () => {
@@ -158,6 +191,7 @@ describe("legacy migration staging DTOs", () => {
       "missing-user",
       "legacy-registration-2",
       "legacy-list-1",
+      "300",
       "Pago",
       "legacy-batch-2",
       "Lote Teste",
@@ -171,6 +205,8 @@ describe("legacy migration staging DTOs", () => {
     expect(result.ready).toBe(false);
     expect(result.writeMode).toBe("NONE");
     expect(result.challenges).toEqual([]);
+    expect(result.challengeGoals).toEqual([]);
+    expect(result.challengeOfferGoals).toEqual([]);
     expect(result.participants).toEqual([]);
     expect(result.registrations).toEqual([]);
     expect(result.payments).toEqual([]);
@@ -207,5 +243,21 @@ describe("legacy migration staging DTOs", () => {
         },
       ]),
     );
+  });
+
+  it("returns no DTO rows when a registration target is invalid", () => {
+    const invalid = fixture();
+    if (invalid.dgmbDesafios) invalid.dgmbDesafios.rows[0][3] = "0";
+
+    const result = transformLegacySnapshotToStagingDtos(invalid);
+    expect(result.ready).toBe(false);
+    expect(result.registrations).toEqual([]);
+    expect(result.goalIssues).toEqual([
+      {
+        code: "INVALID_REGISTRATION_TARGET_KM",
+        field: "Meta_KM",
+        count: 1,
+      },
+    ]);
   });
 });
