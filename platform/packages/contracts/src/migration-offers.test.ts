@@ -5,10 +5,10 @@ import type { LegacyMigrationSnapshot } from "./migration";
 function fixture(): LegacyMigrationSnapshot {
   return {
     ListaDesafios: {
-      headers: ["Tipo", "Data_Inicio", "Data_Fim"],
+      headers: ["Tipo", "Periodo", "Data_Inicio", "Data_Fim"],
       rows: [
-        ["Normal", "01/08/2026", "10/08/2026"],
-        ["Repescagem", "11/08/2026", "20/08/2026"],
+        ["Normal", "08/2026", "01/08/2026", "10/08/2026"],
+        ["Repescagem", "08/2026", "11/08/2026", "20/08/2026"],
       ],
     },
   };
@@ -38,6 +38,11 @@ describe("legacy offer migration preflight", () => {
       expect.arrayContaining([
         {
           code: "MISSING_OFFER_HEADER",
+          field: "PERIODO",
+          count: 1,
+        },
+        {
+          code: "MISSING_OFFER_HEADER",
           field: "DATA_INICIO",
           count: 1,
         },
@@ -50,10 +55,11 @@ describe("legacy offer migration preflight", () => {
     );
   });
 
-  it("aggregates unknown categories and invalid windows", () => {
+  it("aggregates unknown categories, periods and invalid windows", () => {
     const snapshot = fixture();
     snapshot.ListaDesafios?.rows.push([
       "categoria privada desconhecida",
+      "periodo privado",
       "31/02/2026",
       "10/03/2026",
     ]);
@@ -69,6 +75,11 @@ describe("legacy offer migration preflight", () => {
           count: 1,
         },
         {
+          code: "INVALID_CHALLENGE_PERIOD",
+          field: "PERIODO",
+          count: 1,
+        },
+        {
           code: "INVALID_REGISTRATION_WINDOW",
           field: "DATA_INICIO/DATA_FIM",
           count: 1,
@@ -78,5 +89,6 @@ describe("legacy offer migration preflight", () => {
     expect(JSON.stringify(report)).not.toContain(
       "categoria privada desconhecida",
     );
+    expect(JSON.stringify(report)).not.toContain("periodo privado");
   });
 });

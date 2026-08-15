@@ -26,20 +26,30 @@ import {
   type LegacyGoalIssue,
 } from "./migration-goals";
 import { assignLegacyOccurrenceNumbers } from "./migration-occurrences";
+import {
+  buildLegacyChallengeInstanceKey,
+  normalizeLegacyChallengePeriod,
+} from "./migration-period";
 
 export type ChallengeMigrationDto = {
+  legacyChallengeKey: string;
   legacyIdDesafioBase: string;
+  periodCode: string;
+  referenceYear: number;
+  referenceMonth: number;
   publicName: string | null;
 };
 
 export type ChallengeGoalMigrationDto = {
-  legacyChallengeBaseId: string;
+  legacyChallengeKey: string;
   targetKm: number;
 };
 
 export type ChallengeOfferMigrationDto = {
   legacyIdDesafioLista: string;
+  legacyChallengeKey: string;
   legacyChallengeBaseId: string;
+  periodCode: string;
   publicName: string | null;
   categoryCode: LegacyOfferCategoryCode;
   registrationStartsAt: string;
@@ -48,7 +58,7 @@ export type ChallengeOfferMigrationDto = {
 
 export type ChallengeOfferGoalMigrationDto = {
   legacyChallengeOfferId: string;
-  legacyChallengeBaseId: string;
+  legacyChallengeKey: string;
   targetKm: number;
 };
 
@@ -164,7 +174,6 @@ function blockedBundle(
 }
 
 export const unresolvedDestinationFields = [
-  "public.challenges.reference_year",
   "public.challenges.sports_starts_at",
   "public.challenges.sports_ends_at",
   "public.challenge_offers.price",
@@ -194,21 +203,33 @@ export function transformLegacySnapshotToStagingDtos(
   const registrationSheet = snapshot.dgmbDesafios!;
   const inventorySheet = snapshot.DesafioKMEstoque!;
 
-  const challenges = challengeBaseSheet.rows.map((row) => ({
-    legacyIdDesafioBase: value(challengeBaseSheet, row, [
-      "id_desafio_base",
-      "ID_Desafio_Base",
+  const baseNameById = new Map(
+    challengeBaseSheet.rows.map((row) => [
+      value(challengeBaseSheet, row, ["id_desafio_base", "ID_Desafio_Base"]),
+      nullable(
+        value(challengeBaseSheet, row, [
+          "nome_exibicao",
+          "Nome_Desafio",
+          "nome_desafio",
+        ]),
+      ),
     ]),
-    publicName: nullable(
-      value(challengeBaseSheet, row, [
-        "nome_exibicao",
-        "Nome_Desafio",
-        "nome_desafio",
-      ]),
-    ),
-  }));
+  );
+
+  const challengeMap = new Map<string, ChallengeMigrationDto>();
 
   const challengeOffers = challengeOfferSheet.rows.map((row) => {
+    const legacyChallengeBaseId = value(challengeOfferSheet, row, [
+      "id_desafio_base",
+      "ID_Desafio_Base",
+    ]);
+    const period = normalizeLegacyChallengePeriod(
+      value(challengeOfferSheet, row, ["Periodo", "Período", "periodo"]),
+    );
+    const legacyChallengeKey = buildLegacyChallengeInstanceKey(
+      legacyChallengeBaseId,
+      period.periodCode,
+    );
     const normalized = normalizeLegacyOfferSource({
       tipo: value(challengeOfferSheet, row, ["Tipo", "tipo"]),
       dataInicio: value(challengeOfferSheet, row, [
@@ -223,16 +244,24 @@ export function transformLegacySnapshotToStagingDtos(
       ]),
     });
 
+    challengeMap.set(legacyChallengeKey, {
+      legacyChallengeKey,
+      legacyIdDesafioBase: legacyChallengeBaseId,
+      periodCode: period.periodCode,
+      referenceYear: period.referenceYear,
+      referenceMonth: period.referenceMonth,
+      publicName: baseNameById.get(legacyChallengeBaseId) ?? null,
+    });
+
     return {
       legacyIdDesafioLista: value(challengeOfferSheet, row, [
         "id_Desafio_lista",
         "ID_Desafio_Lista",
         "id_desafio_lista",
       ]),
-      legacyChallengeBaseId: value(challengeOfferSheet, row, [
-        "id_desafio_base",
-        "ID_Desafio_Base",
-      ]),
+      legacyChallengeKey,
+      legacyChallengeBaseId,
+      periodCode: period.periodCode,
       publicName: nullable(
         value(challengeOfferSheet, row, ["Nome_Desafio", "nome_desafio"]),
       ),
@@ -242,6 +271,7 @@ export function transformLegacySnapshotToStagingDtos(
     };
   });
 
+  const challenges = [...challengeMap.values()];
   const offerByLegacyId = new Map(
     challengeOffers.map((offerDto) => [
       offerDto.legacyIdDesafioLista,
@@ -298,16 +328,16 @@ export function transformLegacySnapshotToStagingDtos(
 
   for (const registration of registrations) {
     const offerDto = offerByLegacyId.get(registration.legacyChallengeOfferId)!;
-    const goalKey = `${offerDto.legacyChallengeBaseId}:${registration.targetKm}`;
+    const goalKey = `${offerDto.legacyChallengeKey}:${registration.targetKm}`;
     goalMap.set(goalKey, {
-      legacyChallengeBaseId: offerDto.legacyChallengeBaseId,
+      legacyChallengeKey: offerDto.legacyChallengeKey,
       targetKm: registration.targetKm,
     });
 
     const offerGoalKey = `${registration.legacyChallengeOfferId}:${registration.targetKm}`;
     offerGoalMap.set(offerGoalKey, {
       legacyChallengeOfferId: registration.legacyChallengeOfferId,
-      legacyChallengeBaseId: offerDto.legacyChallengeBaseId,
+      legacyChallengeKey: offerDto.legacyChallengeKey,
       targetKm: registration.targetKm,
     });
   }

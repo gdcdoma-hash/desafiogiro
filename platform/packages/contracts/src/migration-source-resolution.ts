@@ -20,30 +20,30 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
   [
     {
       destinationField: "public.challenges.reference_year",
-      status: "UNRESOLVED",
+      status: "DERIVATION_CONFIRMED",
       sourceSheet: "ListaDesafios",
       sourceField: "Periodo",
-      semanticRole: "LEGACY_PERIOD_LABEL",
+      semanticRole: "MONTHLY_CHALLENGE_EDITION",
       remainingBlocker:
-        "Periodo is used as a legacy period label, but its format has not been proven to be a stable machine-readable source for reference_year.",
+        "Resolved by the strict monthly period normalizer. The migration challenge edition is keyed by legacy base id + normalized YYYY-MM period, and reference_year/reference_month are derived from that key.",
     },
     {
       destinationField: "public.challenges.sports_starts_at",
       status: "UNRESOLVED",
       sourceSheet: "ListaDesafios",
       sourceField: "Periodo",
-      semanticRole: "LEGACY_PERIOD_LABEL",
+      semanticRole: "MONTHLY_CHALLENGE_EDITION",
       remainingBlocker:
-        "Data_Inicio is used by the legacy code for registration eligibility, not proven as the sports start date.",
+        "Periodo proves the monthly edition identity, but not the exact sports start instant. Data_Inicio is registration eligibility and must not be reused as the sports start date.",
     },
     {
       destinationField: "public.challenges.sports_ends_at",
       status: "UNRESOLVED",
       sourceSheet: "ListaDesafios",
       sourceField: "Periodo",
-      semanticRole: "LEGACY_PERIOD_LABEL",
+      semanticRole: "MONTHLY_CHALLENGE_EDITION",
       remainingBlocker:
-        "Data_Fim is used by the legacy code for registration eligibility, not proven as the sports end date.",
+        "Periodo proves the monthly edition identity, but not the exact sports end instant. Data_Fim is registration eligibility and must not be reused as the sports end date.",
     },
     {
       destinationField: "public.challenge_offers.registration_starts_at",
@@ -88,7 +88,7 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
       sourceField: "Meta_KM",
       semanticRole: "REGISTRATION_TARGET_KM",
       remainingBlocker:
-        "The physical audit confirms Meta_KM at historical column 4. Staging resolves the destination goal by the natural key challenge + target_km and emits the observed offer-goal link; UUID resolution belongs to the later persistence phase.",
+        "The physical audit confirms Meta_KM at historical column 4. Staging resolves the destination goal by the natural key challenge edition + target_km and emits the observed offer-goal link; UUID resolution belongs to the later persistence phase.",
     },
     {
       destinationField: "public.registrations.occurrence_number",

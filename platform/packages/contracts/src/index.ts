@@ -51,3 +51,4 @@ export * from "./migration-offer-normalization";
 export * from "./migration-offers";
 export * from "./migration-goals";
 export * from "./migration-occurrences";
+export * from "./migration-period";
