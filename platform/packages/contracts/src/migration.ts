@@ -220,7 +220,10 @@ function registrationIdIssues(sheet: LegacySheetSnapshot): MigrationIssue[] {
   return issues;
 }
 
-function countOrphans(values: string[] | null, targets: Set<string> | null): number {
+function countOrphans(
+  values: string[] | null,
+  targets: Set<string> | null,
+): number {
   if (!values || !targets) return 0;
   return values.filter((value) => value && !targets.has(value)).length;
 }
