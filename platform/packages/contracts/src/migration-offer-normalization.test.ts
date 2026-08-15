@@ -15,7 +15,9 @@ describe("legacy offer normalization", () => {
   });
 
   it("normalizes Brazilian dates to the America/Fortaleza registration window", () => {
-    expect(normalizeLegacyRegistrationWindow("01/08/2026", "10/08/2026")).toEqual({
+    expect(
+      normalizeLegacyRegistrationWindow("01/08/2026", "10/08/2026"),
+    ).toEqual({
       timezone: "America/Fortaleza",
       registrationStartsAt: "2026-08-01T03:00:00.000Z",
       registrationEndsAt: "2026-08-11T02:59:59.999Z",
@@ -23,7 +25,9 @@ describe("legacy offer normalization", () => {
   });
 
   it("accepts canonical ISO calendar dates without accepting ambiguous timestamps", () => {
-    expect(normalizeLegacyRegistrationWindow("2026-08-11", "2026-08-31")).toEqual({
+    expect(
+      normalizeLegacyRegistrationWindow("2026-08-11", "2026-08-31"),
+    ).toEqual({
       timezone: "America/Fortaleza",
       registrationStartsAt: "2026-08-11T03:00:00.000Z",
       registrationEndsAt: "2026-09-01T02:59:59.999Z",
