@@ -46,3 +46,4 @@ export * from "./migration-payments";
 export * from "./migration-plan";
 export * from "./migration-manifest";
 export * from "./migration-dto";
+export * from "./migration-source-resolution";
