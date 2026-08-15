@@ -18,6 +18,7 @@ function fixture(): LegacyMigrationSnapshot {
         "id_desafio_base",
         "Nome_Desafio",
         "Tipo",
+        "Periodo",
         "Data_Inicio",
         "Data_Fim",
       ],
@@ -27,6 +28,7 @@ function fixture(): LegacyMigrationSnapshot {
           "legacy-base-1",
           "Oferta Teste",
           "Normal",
+          "08/2026",
           "01/08/2026",
           "10/08/2026",
         ],
@@ -87,17 +89,23 @@ describe("legacy migration staging DTOs", () => {
 
     expect(result.challenges).toEqual([
       {
+        legacyChallengeKey: "legacy-base-1:2026-08",
         legacyIdDesafioBase: "legacy-base-1",
+        periodCode: "2026-08",
+        referenceYear: 2026,
+        referenceMonth: 8,
         publicName: "Desafio Teste",
       },
     ]);
     expect(result.challengeGoals).toEqual([
-      { legacyChallengeBaseId: "legacy-base-1", targetKm: 300 },
+      { legacyChallengeKey: "legacy-base-1:2026-08", targetKm: 300 },
     ]);
     expect(result.challengeOffers).toEqual([
       {
         legacyIdDesafioLista: "legacy-list-1",
+        legacyChallengeKey: "legacy-base-1:2026-08",
         legacyChallengeBaseId: "legacy-base-1",
+        periodCode: "2026-08",
         publicName: "Oferta Teste",
         categoryCode: "NORMAL",
         registrationStartsAt: "2026-08-01T03:00:00.000Z",
@@ -107,7 +115,7 @@ describe("legacy migration staging DTOs", () => {
     expect(result.challengeOfferGoals).toEqual([
       {
         legacyChallengeOfferId: "legacy-list-1",
-        legacyChallengeBaseId: "legacy-base-1",
+        legacyChallengeKey: "legacy-base-1:2026-08",
         targetKm: 300,
       },
     ]);
@@ -143,15 +151,39 @@ describe("legacy migration staging DTOs", () => {
     });
   });
 
-  it("reduces unresolved destination requirements to five fields", () => {
+  it("reduces unresolved destination requirements to four fields", () => {
     const result = transformLegacySnapshotToStagingDtos(fixture());
 
     expect(result.unresolvedDestinationFields).toEqual([
-      "public.challenges.reference_year",
       "public.challenges.sports_starts_at",
       "public.challenges.sports_ends_at",
       "public.challenge_offers.price",
       "public.registration_payments.method_code",
+    ]);
+  });
+
+  it("keeps different monthly editions of the same challenge base separate", () => {
+    const snapshot = fixture();
+    snapshot.ListaDesafios?.rows.push([
+      "legacy-list-2",
+      "legacy-base-1",
+      "Oferta Setembro",
+      "Normal",
+      "09/2026",
+      "01/09/2026",
+      "10/09/2026",
+    ]);
+
+    const result = transformLegacySnapshotToStagingDtos(snapshot);
+
+    expect(result.ready).toBe(true);
+    expect(result.challenges.map((item) => item.legacyChallengeKey)).toEqual([
+      "legacy-base-1:2026-08",
+      "legacy-base-1:2026-09",
+    ]);
+    expect(result.challengeOffers.map((item) => item.legacyChallengeKey)).toEqual([
+      "legacy-base-1:2026-08",
+      "legacy-base-1:2026-09",
     ]);
   });
 
@@ -221,11 +253,12 @@ describe("legacy migration staging DTOs", () => {
     );
   });
 
-  it("returns no DTO rows when offer category or window is invalid", () => {
+  it("returns no DTO rows when offer category, period or window is invalid", () => {
     const invalid = fixture();
     if (invalid.ListaDesafios) {
       invalid.ListaDesafios.rows[0][3] = "tipo desconhecido";
-      invalid.ListaDesafios.rows[0][4] = "31/02/2026";
+      invalid.ListaDesafios.rows[0][4] = "periodo desconhecido";
+      invalid.ListaDesafios.rows[0][5] = "31/02/2026";
     }
 
     const result = transformLegacySnapshotToStagingDtos(invalid);
@@ -237,6 +270,11 @@ describe("legacy migration staging DTOs", () => {
         {
           code: "UNKNOWN_OFFER_CATEGORY",
           field: "TIPO",
+          count: 1,
+        },
+        {
+          code: "INVALID_CHALLENGE_PERIOD",
+          field: "PERIODO",
           count: 1,
         },
         {
