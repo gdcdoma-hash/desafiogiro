@@ -61,10 +61,7 @@ export const legacyMigrationPersistenceOperations = [
     destinationTable: "public.challenge_offer_goals",
     identityColumns: ["offer_id", "goal_id"],
     strategy: "INSERT_OR_VERIFY",
-    dependsOnTables: [
-      "public.challenge_offers",
-      "public.challenge_goals",
-    ],
+    dependsOnTables: ["public.challenge_offers", "public.challenge_goals"],
   },
   {
     order: 5,
