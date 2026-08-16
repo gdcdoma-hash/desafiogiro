@@ -106,6 +106,7 @@ export type RegistrationMigrationDto = {
   legacyChallengeOfferId: string;
   targetKm: number;
   occurrenceNumber: number;
+  priceSnapshot: number;
 };
 
 export type PaymentMigrationDto = {
@@ -387,6 +388,9 @@ export function transformLegacySnapshotToStagingDtos(
     ]),
     targetKm: normalizeLegacyTargetKm(
       value(registrationSheet, row, ["Meta_KM", "meta_km"]),
+    ),
+    priceSnapshot: decimal(
+      value(registrationSheet, row, ["valor_unitario_pagamento"]),
     ),
   }));
 

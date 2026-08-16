@@ -191,6 +191,7 @@ describe("legacy migration staging DTOs", () => {
       legacyChallengeOfferId: "legacy-list-1",
       targetKm: 300,
       occurrenceNumber: 1,
+      priceSnapshot: 44.9,
     });
     expect(result.payments[0]).toEqual({
       legacyRegistrationId: "legacy-registration-1",
@@ -278,6 +279,9 @@ describe("legacy migration staging DTOs", () => {
     expect(result.challengeOfferGoals).toHaveLength(1);
     expect(result.registrations.map((item) => item.occurrenceNumber)).toEqual([
       1, 2,
+    ]);
+    expect(result.registrations.map((item) => item.priceSnapshot)).toEqual([
+      44.9, 44.9,
     ]);
   });
 
