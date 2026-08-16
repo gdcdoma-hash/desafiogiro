@@ -29,7 +29,11 @@ export type SportsPeriodResolution = {
 
 function validIsoInstant(value: string): boolean {
   const text = value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/.test(text)) {
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/.test(
+      text,
+    )
+  ) {
     return false;
   }
   return Number.isFinite(Date.parse(text));
@@ -52,15 +56,27 @@ export function validateSportsPeriodManifest(
     if (counts.get(key)! > 1) continue;
 
     if (!validIsoInstant(entry.sportsStartsAt)) {
-      issues.push({ code: "INVALID_SPORTS_START", legacyChallengeKey: key, count: 1 });
+      issues.push({
+        code: "INVALID_SPORTS_START",
+        legacyChallengeKey: key,
+        count: 1,
+      });
       continue;
     }
     if (!validIsoInstant(entry.sportsEndsAt)) {
-      issues.push({ code: "INVALID_SPORTS_END", legacyChallengeKey: key, count: 1 });
+      issues.push({
+        code: "INVALID_SPORTS_END",
+        legacyChallengeKey: key,
+        count: 1,
+      });
       continue;
     }
     if (Date.parse(entry.sportsEndsAt) <= Date.parse(entry.sportsStartsAt)) {
-      issues.push({ code: "INVALID_SPORTS_RANGE", legacyChallengeKey: key, count: 1 });
+      issues.push({
+        code: "INVALID_SPORTS_RANGE",
+        legacyChallengeKey: key,
+        count: 1,
+      });
       continue;
     }
     if (!entry.sourceNote.trim()) {
@@ -83,7 +99,11 @@ export function validateSportsPeriodManifest(
   for (const key of expectedChallengeKeys) {
     const count = counts.get(key) ?? 0;
     if (count === 0) {
-      issues.push({ code: "MISSING_SPORTS_PERIOD", legacyChallengeKey: key, count: 1 });
+      issues.push({
+        code: "MISSING_SPORTS_PERIOD",
+        legacyChallengeKey: key,
+        count: 1,
+      });
     } else if (count > 1) {
       issues.push({
         code: "DUPLICATE_SPORTS_PERIOD",
