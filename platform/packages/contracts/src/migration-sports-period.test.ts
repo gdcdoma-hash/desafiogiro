@@ -55,7 +55,10 @@ describe("sports period migration manifest", () => {
       sportsEndsAt: "2026-09-01T02:59:59.999Z",
       sourceNote: "Official source",
     };
-    const result = validateSportsPeriodManifest([keys[0]], [duplicate, duplicate]);
+    const result = validateSportsPeriodManifest(
+      [keys[0]],
+      [duplicate, duplicate],
+    );
 
     expect(result.ok).toBe(false);
     expect(result.issues).toContainEqual({
