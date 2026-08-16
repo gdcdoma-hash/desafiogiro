@@ -41,9 +41,7 @@ export type MigrationWriterExecutionSummary = {
 };
 
 export type MigrationWriterBlockedReason =
-  | "STAGING_NOT_READY"
-  | "PERSISTENCE_DISABLED"
-  | "EXPLICIT_ACTIVATION_REQUIRED";
+  "STAGING_NOT_READY" | "PERSISTENCE_DISABLED" | "EXPLICIT_ACTIVATION_REQUIRED";
 
 export function migrationWriterBlockedReasons(
   contract: MigrationPersistenceContract,
