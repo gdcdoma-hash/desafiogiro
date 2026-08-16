@@ -202,10 +202,10 @@ select
   o.category_code,
   o.registration_starts_at,
   o.registration_ends_at,
-  case
+  (case
     when o.pricing_mode = 'FIXED' then o.price
     else public.resolve_challenge_offer_unit_price(o.id, 1, now())
-  end as price,
+  end)::numeric(12,2) as price,
   o.max_per_participant,
   g.id as goal_id,
   g.target_km,
