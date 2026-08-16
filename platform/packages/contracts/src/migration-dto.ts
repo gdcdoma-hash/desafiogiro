@@ -27,6 +27,11 @@ import {
 } from "./migration-goals";
 import { assignLegacyOccurrenceNumbers } from "./migration-occurrences";
 import {
+  normalizeLegacyPricingLot,
+  validateLegacyPricingSnapshot,
+  type LegacyPricingIssue,
+} from "./migration-pricing";
+import {
   buildLegacyChallengeInstanceKey,
   normalizeLegacyChallengePeriod,
 } from "./migration-period";
@@ -62,6 +67,30 @@ export type ChallengeOfferGoalMigrationDto = {
   legacyChallengeOfferId: string;
   legacyChallengeKey: string;
   targetKm: number;
+};
+
+export type PricingGroupMigrationDto = {
+  periodCode: string;
+  externalReference: string;
+  internalName: string;
+};
+
+export type PricingGroupOfferMigrationDto = {
+  periodCode: string;
+  legacyChallengeOfferId: string;
+};
+
+export type PricingLotMigrationDto = {
+  periodCode: string;
+  externalReference: string;
+  internalName: string;
+  startsAt: string;
+  endsAt: string | null;
+  selectionMode: "ANY" | "REGISTRATION_COUNT";
+  registrationCount: number | null;
+  unitPrice: number;
+  totalPrice: number | null;
+  status: "ACTIVE" | "INACTIVE";
 };
 
 export type ParticipantMigrationDto = {
@@ -106,10 +135,14 @@ export type LegacyMigrationStagingBundle = {
   paymentIssues: LegacyPaymentIssue[];
   offerIssues: LegacyOfferIssue[];
   goalIssues: LegacyGoalIssue[];
+  pricingIssues: LegacyPricingIssue[];
   challenges: ChallengeMigrationDto[];
   challengeGoals: ChallengeGoalMigrationDto[];
   challengeOffers: ChallengeOfferMigrationDto[];
   challengeOfferGoals: ChallengeOfferGoalMigrationDto[];
+  pricingGroups: PricingGroupMigrationDto[];
+  pricingGroupOffers: PricingGroupOfferMigrationDto[];
+  pricingLots: PricingLotMigrationDto[];
   participants: ParticipantMigrationDto[];
   registrations: RegistrationMigrationDto[];
   payments: PaymentMigrationDto[];
@@ -155,6 +188,7 @@ function blockedBundle(
   paymentIssues: LegacyPaymentIssue[],
   offerIssues: LegacyOfferIssue[],
   goalIssues: LegacyGoalIssue[],
+  pricingIssues: LegacyPricingIssue[],
 ): LegacyMigrationStagingBundle {
   return {
     ready: false,
@@ -165,10 +199,14 @@ function blockedBundle(
     paymentIssues,
     offerIssues,
     goalIssues,
+    pricingIssues,
     challenges: [],
     challengeGoals: [],
     challengeOffers: [],
     challengeOfferGoals: [],
+    pricingGroups: [],
+    pricingGroupOffers: [],
+    pricingLots: [],
     participants: [],
     registrations: [],
     payments: [],
@@ -179,7 +217,6 @@ function blockedBundle(
 export const unresolvedDestinationFields = [
   "public.challenges.sports_starts_at",
   "public.challenges.sports_ends_at",
-  "public.challenge_offers.price",
 ] as const;
 
 export function transformLegacySnapshotToStagingDtos(
@@ -189,13 +226,21 @@ export function transformLegacySnapshotToStagingDtos(
   const payment = validateLegacyPaymentSnapshot(snapshot);
   const offer = validateLegacyOfferSnapshot(snapshot);
   const goal = validateLegacyGoalSnapshot(snapshot);
+  const pricing = validateLegacyPricingSnapshot(snapshot);
 
-  if (!structural.ok || !payment.ok || !offer.ok || !goal.ok) {
+  if (
+    !structural.ok ||
+    !payment.ok ||
+    !offer.ok ||
+    !goal.ok ||
+    !pricing.ok
+  ) {
     return blockedBundle(
       structural.issues,
       payment.issues,
       offer.issues,
       goal.issues,
+      pricing.issues,
     );
   }
 
@@ -204,6 +249,7 @@ export function transformLegacySnapshotToStagingDtos(
   const participantSheet = snapshot.DadosPessoais!;
   const registrationSheet = snapshot.dgmbDesafios!;
   const inventorySheet = snapshot.DesafioKMEstoque!;
+  const pricingSheet = snapshot.PixLotes!;
 
   const baseNameById = new Map(
     challengeBaseSheet.rows.map((row) => [
@@ -279,6 +325,28 @@ export function transformLegacySnapshotToStagingDtos(
       offerDto.legacyIdDesafioLista,
       offerDto,
     ]),
+  );
+
+  const normalizedPricingLots = pricingSheet.rows.map((row) =>
+    normalizeLegacyPricingLot(pricingSheet, row),
+  );
+  const pricingGroupMap = new Map<string, PricingGroupMigrationDto>();
+  for (const lot of normalizedPricingLots) {
+    pricingGroupMap.set(lot.periodCode, {
+      periodCode: lot.periodCode,
+      externalReference: lot.monthlyPrefix,
+      internalName: `Legacy pricing ${lot.monthlyPrefix}`,
+    });
+  }
+  const pricingGroups = [...pricingGroupMap.values()];
+  const pricingGroupOffers = challengeOffers
+    .filter((offerDto) => pricingGroupMap.has(offerDto.periodCode))
+    .map((offerDto) => ({
+      periodCode: offerDto.periodCode,
+      legacyChallengeOfferId: offerDto.legacyIdDesafioLista,
+    }));
+  const pricingLots: PricingLotMigrationDto[] = normalizedPricingLots.map(
+    ({ monthlyPrefix: _monthlyPrefix, ...lot }) => lot,
   );
 
   const participants = participantSheet.rows.map((row) => ({
@@ -411,10 +479,14 @@ export function transformLegacySnapshotToStagingDtos(
     paymentIssues: [],
     offerIssues: [],
     goalIssues: [],
+    pricingIssues: [],
     challenges,
     challengeGoals: [...goalMap.values()],
     challengeOffers,
     challengeOfferGoals: [...offerGoalMap.values()],
+    pricingGroups,
+    pricingGroupOffers,
+    pricingLots,
     participants,
     registrations,
     payments,
