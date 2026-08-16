@@ -340,7 +340,18 @@ export function transformLegacySnapshotToStagingDtos(
       legacyChallengeOfferId: offerDto.legacyIdDesafioLista,
     }));
   const pricingLots: PricingLotMigrationDto[] = normalizedPricingLots.map(
-    ({ monthlyPrefix: _monthlyPrefix, ...lot }) => lot,
+    (lot) => ({
+      periodCode: lot.periodCode,
+      externalReference: lot.externalReference,
+      internalName: lot.internalName,
+      startsAt: lot.startsAt,
+      endsAt: lot.endsAt,
+      selectionMode: lot.selectionMode,
+      registrationCount: lot.registrationCount,
+      unitPrice: lot.unitPrice,
+      totalPrice: lot.totalPrice,
+      status: lot.status,
+    }),
   );
 
   const participants = participantSheet.rows.map((row) => ({
