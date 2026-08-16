@@ -23,9 +23,8 @@ export function resolveLegacyRegistrationStatus(
   userChallengeStatus: string,
   paymentCategory: LegacyPaymentCategory,
 ): LegacyRegistrationStatusResolution {
-  const normalized = normalizeLegacyRegistrationStatus(
-    userChallengeStatus.trim(),
-  );
+  const rawStatus = userChallengeStatus.trim();
+  const normalized = normalizeLegacyRegistrationStatus(rawStatus);
 
   if (normalized === "CONCLUIDO" || normalized === "CONCLUIDA") {
     return { ok: true, status: "COMPLETED" };
