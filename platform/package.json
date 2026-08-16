@@ -8,7 +8,7 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "dev": "pnpm --parallel --filter './apps/*' dev",
     "format": "prettier --write .",
-    "format:check": "prettier --write packages/contracts/src/migration-sports-period.ts packages/contracts/src/migration-sports-period.test.ts && git diff -- packages/contracts/src/migration-sports-period.ts packages/contracts/src/migration-sports-period.test.ts && exit 1",
+    "format:check": "prettier --check .",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
