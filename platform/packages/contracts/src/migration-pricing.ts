@@ -236,9 +236,7 @@ export function validateLegacyPricingSnapshot(
   if (!sheet) {
     return {
       ok: false,
-      issues: [
-        { code: "MISSING_PRICING_SHEET", field: "PixLotes", count: 1 },
-      ],
+      issues: [{ code: "MISSING_PRICING_SHEET", field: "PixLotes", count: 1 }],
     };
   }
 
