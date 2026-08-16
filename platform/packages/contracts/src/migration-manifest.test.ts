@@ -83,9 +83,9 @@ describe("migration legacy key manifest", () => {
   });
 
   it("produces a deterministic inventory opening reference", () => {
-    expect(buildLegacyInventoryOpeningExternalReference(" stock/legacy 1 ")).toBe(
-      "dgmb-inventory-opening:v1:stock%2Flegacy%201",
-    );
+    expect(
+      buildLegacyInventoryOpeningExternalReference(" stock/legacy 1 "),
+    ).toBe("dgmb-inventory-opening:v1:stock%2Flegacy%201");
   });
 
   it("rejects incomplete external reference inputs", () => {
