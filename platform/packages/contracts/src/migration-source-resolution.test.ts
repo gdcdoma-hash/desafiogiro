@@ -15,7 +15,7 @@ describe("legacy migration source resolution", () => {
     ]);
   });
 
-  it("derives reference year from Periodo without inventing sports boundaries", () => {
+  it("derives edition identity from Periodo but requires external evidence for exact sports instants", () => {
     expect(
       migrationSourceResolutionFor("public.challenges.reference_year"),
     ).toEqual(
@@ -30,16 +30,20 @@ describe("legacy migration source resolution", () => {
       migrationSourceResolutionFor("public.challenges.sports_starts_at"),
     ).toEqual(
       expect.objectContaining({
-        status: "UNRESOLVED",
-        sourceField: "Periodo",
+        status: "EXTERNAL_INPUT_REQUIRED",
+        sourceSheet: null,
+        sourceField: null,
+        semanticRole: "SPORTS_PERIOD_MANIFEST",
       }),
     );
     expect(
       migrationSourceResolutionFor("public.challenges.sports_ends_at"),
     ).toEqual(
       expect.objectContaining({
-        status: "UNRESOLVED",
-        sourceField: "Periodo",
+        status: "EXTERNAL_INPUT_REQUIRED",
+        sourceSheet: null,
+        sourceField: null,
+        semanticRole: "SPORTS_PERIOD_MANIFEST",
       }),
     );
   });
