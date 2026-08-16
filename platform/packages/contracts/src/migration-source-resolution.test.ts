@@ -59,15 +59,15 @@ describe("legacy migration source resolution", () => {
     );
   });
 
-  it("records PixLotes as a partial source without manufacturing a fixed offer price", () => {
+  it("confirms PixLotes as monthly shared lot pricing without manufacturing a fixed offer price", () => {
     expect(
       migrationSourceResolutionFor("public.challenge_offers.price"),
     ).toEqual(
       expect.objectContaining({
-        status: "PARTIAL_SOURCE",
+        status: "DERIVATION_CONFIRMED",
         sourceSheet: "PixLotes",
         sourceField: "valor_unitario",
-        semanticRole: "LOT_BASED_OFFER_PRICING",
+        semanticRole: "MONTHLY_SHARED_LOT_PRICING",
       }),
     );
   });
