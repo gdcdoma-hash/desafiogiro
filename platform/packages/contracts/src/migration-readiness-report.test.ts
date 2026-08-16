@@ -125,7 +125,9 @@ describe("consolidated migration readiness report", () => {
       pricing: 0,
       sportsPeriods: 0,
     });
-    expect(report.steps.map(({ order, domain }) => ({ order, domain }))).toEqual([
+    expect(
+      report.steps.map(({ order, domain }) => ({ order, domain })),
+    ).toEqual([
       { order: 1, domain: "CHALLENGES" },
       { order: 2, domain: "PRICING" },
       { order: 3, domain: "PARTICIPANTS" },
