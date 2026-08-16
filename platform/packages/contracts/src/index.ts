@@ -58,3 +58,4 @@ export * from "./migration-occurrences";
 export * from "./migration-period";
 export * from "./migration-pricing";
 export * from "./migration-sports-period";
+export * from "./migration-registration-status";
