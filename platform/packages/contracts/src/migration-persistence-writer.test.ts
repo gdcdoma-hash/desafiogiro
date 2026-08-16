@@ -5,9 +5,7 @@ import {
   type ActivatedMigrationPersistenceContract,
   type MigrationWriterAdapter,
 } from "./migration-persistence-writer";
-import {
-  buildLegacyMigrationPersistenceContract,
-} from "./migration-persistence-contract";
+import { buildLegacyMigrationPersistenceContract } from "./migration-persistence-contract";
 import type { MigrationReadinessReport } from "./migration-readiness-report";
 
 function readiness(stagingReady: boolean): MigrationReadinessReport {
@@ -39,18 +37,15 @@ describe("migration persistence writer", () => {
     ]);
   });
 
-  it(
-    "also reports staging as a blocker when reconciliation is incomplete",
-    () => {
-      const contract = buildLegacyMigrationPersistenceContract(readiness(false));
+  it("also reports staging as a blocker when reconciliation is incomplete", () => {
+    const contract = buildLegacyMigrationPersistenceContract(readiness(false));
 
-      expect(migrationWriterBlockedReasons(contract)).toEqual([
-        "STAGING_NOT_READY",
-        "PERSISTENCE_DISABLED",
-        "EXPLICIT_ACTIVATION_REQUIRED",
-      ]);
-    },
-  );
+    expect(migrationWriterBlockedReasons(contract)).toEqual([
+      "STAGING_NOT_READY",
+      "PERSISTENCE_DISABLED",
+      "EXPLICIT_ACTIVATION_REQUIRED",
+    ]);
+  });
 
   it("runs activated rows in one transaction and operation order", async () => {
     const calls: string[] = [];
@@ -117,36 +112,33 @@ describe("migration persistence writer", () => {
     });
   });
 
-  it(
-    "rejects blank activation identifiers before opening a transaction",
-    async () => {
-      let transactionOpened = false;
-      const adapter: MigrationWriterAdapter = {
-        async transaction(work) {
-          transactionOpened = true;
-          return work({
-            async insertOrVerify() {
-              return "INSERTED";
-            },
-          });
-        },
-      };
-      const contract = {
-        stagingReady: true,
-        eligibleForWriterImplementation: true,
-        persistenceEnabled: true,
-        writeMode: "IDEMPOTENT_WRITE",
-        transactionPolicy: "SINGLE_TRANSACTION_REQUIRED",
-        conflictPolicy: "VERIFY_EQUAL_OR_BLOCK",
-        requiresExplicitActivation: false,
-        activationId: "   ",
-        operations: [],
-      } as ActivatedMigrationPersistenceContract;
+  it("rejects blank activation identifiers before opening a transaction", async () => {
+    let transactionOpened = false;
+    const adapter: MigrationWriterAdapter = {
+      async transaction(work) {
+        transactionOpened = true;
+        return work({
+          async insertOrVerify() {
+            return "INSERTED";
+          },
+        });
+      },
+    };
+    const contract = {
+      stagingReady: true,
+      eligibleForWriterImplementation: true,
+      persistenceEnabled: true,
+      writeMode: "IDEMPOTENT_WRITE",
+      transactionPolicy: "SINGLE_TRANSACTION_REQUIRED",
+      conflictPolicy: "VERIFY_EQUAL_OR_BLOCK",
+      requiresExplicitActivation: false,
+      activationId: "   ",
+      operations: [],
+    } as ActivatedMigrationPersistenceContract;
 
-      await expect(
-        executeActivatedLegacyMigrationWriter(contract, {}, adapter),
-      ).rejects.toThrow("activationId must be nonblank");
-      expect(transactionOpened).toBe(false);
-    },
-  );
+    await expect(
+      executeActivatedLegacyMigrationWriter(contract, {}, adapter),
+    ).rejects.toThrow("activationId must be nonblank");
+    expect(transactionOpened).toBe(false);
+  });
 });
