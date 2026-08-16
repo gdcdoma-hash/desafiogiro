@@ -6,6 +6,7 @@ export type MigrationSourceResolutionStatus =
   | "AMBIGUOUS_SOURCE"
   | "POLICY_CONFIRMED"
   | "POLICY_REQUIRED"
+  | "EXTERNAL_INPUT_REQUIRED"
   | "UNRESOLVED";
 
 export type MigrationSourceResolution = {
@@ -30,21 +31,21 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
     },
     {
       destinationField: "public.challenges.sports_starts_at",
-      status: "UNRESOLVED",
-      sourceSheet: "ListaDesafios",
-      sourceField: "Periodo",
-      semanticRole: "MONTHLY_CHALLENGE_EDITION",
+      status: "EXTERNAL_INPUT_REQUIRED",
+      sourceSheet: null,
+      sourceField: null,
+      semanticRole: "SPORTS_PERIOD_MANIFEST",
       remainingBlocker:
-        "Periodo proves the monthly edition identity, but not the exact sports start instant. Data_Inicio is registration eligibility and must not be reused as the sports start date.",
+        "The trusted legacy application does not preserve a verified exact sports start instant. ListaDesafios.Data_Inicio is registration eligibility and Periodo proves only monthly edition identity. Migration therefore requires an explicit, source-noted sports-period manifest entry for each challenge edition instead of deriving calendar-month boundaries.",
     },
     {
       destinationField: "public.challenges.sports_ends_at",
-      status: "UNRESOLVED",
-      sourceSheet: "ListaDesafios",
-      sourceField: "Periodo",
-      semanticRole: "MONTHLY_CHALLENGE_EDITION",
+      status: "EXTERNAL_INPUT_REQUIRED",
+      sourceSheet: null,
+      sourceField: null,
+      semanticRole: "SPORTS_PERIOD_MANIFEST",
       remainingBlocker:
-        "Periodo proves the monthly edition identity, but not the exact sports end instant. Data_Fim is registration eligibility and must not be reused as the sports end date.",
+        "The trusted legacy application does not preserve a verified exact sports end instant. ListaDesafios.Data_Fim is registration eligibility and Periodo proves only monthly edition identity. Migration therefore requires an explicit, source-noted sports-period manifest entry for each challenge edition instead of deriving calendar-month boundaries.",
     },
     {
       destinationField: "public.challenge_offers.registration_starts_at",
