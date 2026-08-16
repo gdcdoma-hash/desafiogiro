@@ -228,13 +228,7 @@ export function transformLegacySnapshotToStagingDtos(
   const goal = validateLegacyGoalSnapshot(snapshot);
   const pricing = validateLegacyPricingSnapshot(snapshot);
 
-  if (
-    !structural.ok ||
-    !payment.ok ||
-    !offer.ok ||
-    !goal.ok ||
-    !pricing.ok
-  ) {
+  if (!structural.ok || !payment.ok || !offer.ok || !goal.ok || !pricing.ok) {
     return blockedBundle(
       structural.issues,
       payment.issues,
