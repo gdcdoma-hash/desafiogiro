@@ -179,10 +179,7 @@ describe("consolidated migration readiness report", () => {
       "44,90",
     ]);
 
-    const report = buildLegacyMigrationReadinessReport(
-      invalid,
-      sportsManifest,
-    );
+    const report = buildLegacyMigrationReadinessReport(invalid, sportsManifest);
 
     expect(report.stagingReady).toBe(false);
     expect(report.issueCounts.structural).toBeGreaterThan(0);
