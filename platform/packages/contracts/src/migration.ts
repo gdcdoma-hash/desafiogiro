@@ -97,7 +97,7 @@ export const legacyMigrationContracts: Record<LegacySheetName, SheetContract> =
         },
         {
           field: "QUANTIDADE",
-          aliases: ["quantidade", "Quantidade", "QUANTIDADE"] ,
+          aliases: ["quantidade", "Quantidade", "QUANTIDADE"],
         },
         { field: "STATUS", aliases: ["status", "Status", "STATUS"] },
       ],
