@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { resolveLegacyRegistrationStatus } from "./migration-registration-status";
+import {
+  resolveLegacyRegistrationStatus,
+} from "./migration-registration-status";
 
 describe("legacy registration status migration contract", () => {
   it("maps terminal participant statuses without depending on payment state", () => {
@@ -15,7 +17,9 @@ describe("legacy registration status migration contract", () => {
       ok: true,
       status: "CANCELLED",
     });
-    expect(resolveLegacyRegistrationStatus("Não concluído", "SETTLED")).toEqual({
+    expect(
+      resolveLegacyRegistrationStatus("Não concluído", "SETTLED"),
+    ).toEqual({
       ok: true,
       status: "EXPIRED",
     });
@@ -30,14 +34,18 @@ describe("legacy registration status migration contract", () => {
       ok: true,
       status: "CONFIRMED",
     });
-    expect(resolveLegacyRegistrationStatus("Em andamento", "CANCELLED")).toEqual({
+    expect(
+      resolveLegacyRegistrationStatus("Em andamento", "CANCELLED"),
+    ).toEqual({
       ok: true,
       status: "CANCELLED",
     });
   });
 
   it("keeps pendente pagamento pending and follows the legacy blank default", () => {
-    expect(resolveLegacyRegistrationStatus("Pendente pagamento", "SETTLED")).toEqual({
+    expect(
+      resolveLegacyRegistrationStatus("Pendente pagamento", "SETTLED"),
+    ).toEqual({
       ok: true,
       status: "PENDING",
     });
@@ -51,14 +59,21 @@ describe("legacy registration status migration contract", () => {
     });
   });
 
-  it("blocks unknown status vocabulary instead of inventing a destination state", () => {
-    expect(resolveLegacyRegistrationStatus("estado improvisado", "SETTLED")).toEqual({
-      ok: false,
-      reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
-    });
-    expect(resolveLegacyRegistrationStatus("Em andamento", "UNKNOWN")).toEqual({
-      ok: false,
-      reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
-    });
-  });
+  it(
+    "blocks unknown status vocabulary instead of inventing a destination state",
+    () => {
+      expect(
+        resolveLegacyRegistrationStatus("estado improvisado", "SETTLED"),
+      ).toEqual({
+        ok: false,
+        reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
+      });
+      expect(
+        resolveLegacyRegistrationStatus("Em andamento", "UNKNOWN"),
+      ).toEqual({
+        ok: false,
+        reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
+      });
+    },
+  );
 });
