@@ -5,9 +5,7 @@ import type {
 
 export type ActivatedMigrationPersistenceContract = Omit<
   MigrationPersistenceContract,
-  | "persistenceEnabled"
-  | "writeMode"
-  | "requiresExplicitActivation"
+  "persistenceEnabled" | "writeMode" | "requiresExplicitActivation"
 > & {
   persistenceEnabled: true;
   writeMode: "IDEMPOTENT_WRITE";
