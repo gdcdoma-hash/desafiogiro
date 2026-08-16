@@ -69,14 +69,17 @@ describe("sports period migration manifest", () => {
   });
 
   it("rejects invalid or reversed sports ranges", () => {
-    const result = validateSportsPeriodManifest([keys[0]], [
-      {
-        legacyChallengeKey: keys[0],
-        sportsStartsAt: "2026-09-01T03:00:00.000Z",
-        sportsEndsAt: "2026-08-01T03:00:00.000Z",
-        sourceNote: "Official source",
-      },
-    ]);
+    const result = validateSportsPeriodManifest(
+      [keys[0]],
+      [
+        {
+          legacyChallengeKey: keys[0],
+          sportsStartsAt: "2026-09-01T03:00:00.000Z",
+          sportsEndsAt: "2026-08-01T03:00:00.000Z",
+          sourceNote: "Official source",
+        },
+      ],
+    );
 
     expect(result.ok).toBe(false);
     expect(result.issues).toContainEqual({
@@ -87,14 +90,17 @@ describe("sports period migration manifest", () => {
   });
 
   it("requires a traceable source note for every manually supplied period", () => {
-    const result = validateSportsPeriodManifest([keys[0]], [
-      {
-        legacyChallengeKey: keys[0],
-        sportsStartsAt: "2026-08-01T03:00:00.000Z",
-        sportsEndsAt: "2026-09-01T02:59:59.999Z",
-        sourceNote: "",
-      },
-    ]);
+    const result = validateSportsPeriodManifest(
+      [keys[0]],
+      [
+        {
+          legacyChallengeKey: keys[0],
+          sportsStartsAt: "2026-08-01T03:00:00.000Z",
+          sportsEndsAt: "2026-09-01T02:59:59.999Z",
+          sourceNote: "",
+        },
+      ],
+    );
 
     expect(result.ok).toBe(false);
     expect(result.issues).toContainEqual({
