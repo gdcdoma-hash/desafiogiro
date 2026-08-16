@@ -47,7 +47,10 @@ const requiredHeaders = [
   ["nome_lote", ["nome_lote", "nome lote"]],
 ] as const;
 
-function fieldIndex(sheet: LegacySheetSnapshot, aliases: readonly string[]): number {
+function fieldIndex(
+  sheet: LegacySheetSnapshot,
+  aliases: readonly string[],
+): number {
   const headers = sheet.headers.map(normalizeLegacyHeader);
   return (
     aliases
@@ -67,11 +70,19 @@ function value(
 }
 
 function parseDecimal(input: string): number {
-  const normalized = input.trim().replace(/\./g, "").replace(",", ".");
+  const text = input.trim();
+  if (!text) return Number.NaN;
+  const normalized = text.includes(",")
+    ? text.replace(/\./g, "").replace(",", ".")
+    : text;
   return Number(normalized);
 }
 
-function parseDateParts(input: string): { year: number; month: number; day: number } {
+function parseDateParts(input: string): {
+  year: number;
+  month: number;
+  day: number;
+} {
   const text = input.trim();
   const br = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text);
   const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
@@ -95,7 +106,9 @@ function parseDateParts(input: string): { year: number; month: number; day: numb
 
 function startOfFortalezaDay(input: string): string {
   const date = parseDateParts(input);
-  return new Date(Date.UTC(date.year, date.month - 1, date.day, 3)).toISOString();
+  return new Date(
+    Date.UTC(date.year, date.month - 1, date.day, 3),
+  ).toISOString();
 }
 
 function endOfFortalezaDay(input: string): string {
@@ -175,10 +188,13 @@ export function normalizeLegacyPricingLot(
     "quantidade_inscricoes",
     "qtd inscrições",
   ]);
-  const registrationCount = selectionMode === "REGISTRATION_COUNT" ? Number(quantityRaw) : null;
+  const registrationCount =
+    selectionMode === "REGISTRATION_COUNT" ? Number(quantityRaw) : null;
   if (
     selectionMode === "REGISTRATION_COUNT" &&
-    (!Number.isInteger(registrationCount) || (registrationCount ?? 0) <= 0)
+    (registrationCount === null ||
+      !Number.isInteger(registrationCount) ||
+      registrationCount <= 0)
   ) {
     throw new Error("invalid pricing quantity");
   }
@@ -196,10 +212,13 @@ export function normalizeLegacyPricingLot(
     throw new Error("invalid pricing value");
   }
 
+  const internalName = value(sheet, row, ["nome_lote", "nome lote"]);
+  if (!internalName) throw new Error("invalid pricing value");
+
   return {
     ...period,
     externalReference: idLote,
-    internalName: value(sheet, row, ["nome_lote", "nome lote"]),
+    internalName,
     startsAt,
     endsAt,
     selectionMode,
@@ -217,7 +236,9 @@ export function validateLegacyPricingSnapshot(
   if (!sheet) {
     return {
       ok: false,
-      issues: [{ code: "MISSING_PRICING_SHEET", field: "PixLotes", count: 1 }],
+      issues: [
+        { code: "MISSING_PRICING_SHEET", field: "PixLotes", count: 1 },
+      ],
     };
   }
 
@@ -232,7 +253,9 @@ export function validateLegacyPricingSnapshot(
   const counts = new Map<LegacyPricingIssueCode, number>();
   for (const row of sheet.rows) {
     try {
-      normalizeLegacyPricingPeriodReference(value(sheet, row, ["id_lote", "id lote"]));
+      normalizeLegacyPricingPeriodReference(
+        value(sheet, row, ["id_lote", "id lote"]),
+      );
     } catch {
       counts.set(
         "INVALID_PRICING_PERIOD_REFERENCE",
