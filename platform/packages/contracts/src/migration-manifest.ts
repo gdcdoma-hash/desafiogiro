@@ -5,7 +5,7 @@ export type MigrationLegacyKeyBinding = {
   sourceField: string;
   destinationTable: string;
   destinationColumn: string;
-  uniqueness: "UNIQUE_WHEN_PRESENT";
+  uniqueness: "UNIQUE_WHEN_PRESENT" | "LOOKUP_ONLY";
 };
 
 export const legacyMigrationKeyManifest: readonly MigrationLegacyKeyBinding[] =
@@ -15,6 +15,13 @@ export const legacyMigrationKeyManifest: readonly MigrationLegacyKeyBinding[] =
       sourceField: "ID_DESAFIO_BASE",
       destinationTable: "public.challenges",
       destinationColumn: "legacy_id_desafio_base",
+      uniqueness: "LOOKUP_ONLY",
+    },
+    {
+      domain: "CHALLENGES",
+      sourceField: "ID_DESAFIO_BASE + PERIODO",
+      destinationTable: "public.challenges",
+      destinationColumn: "legacy_challenge_key",
       uniqueness: "UNIQUE_WHEN_PRESENT",
     },
     {
@@ -52,6 +59,13 @@ export const legacyMigrationKeyManifest: readonly MigrationLegacyKeyBinding[] =
       destinationColumn: "legacy_id_item_estoque",
       uniqueness: "UNIQUE_WHEN_PRESENT",
     },
+    {
+      domain: "INVENTORY",
+      sourceField: "ID_ITEM_ESTOQUE (SALDO_INICIAL)",
+      destinationTable: "public.inventory_movements",
+      destinationColumn: "external_reference",
+      uniqueness: "UNIQUE_WHEN_PRESENT",
+    },
   ] as const;
 
 export function buildLegacyPaymentExternalReference(
@@ -70,9 +84,26 @@ export function buildLegacyPaymentExternalReference(
   return `dgmb-payment:v1:${encodeURIComponent(normalizedRegistrationId)}:${encodeURIComponent(normalizedBatchId)}`;
 }
 
+export function buildLegacyInventoryOpeningExternalReference(
+  inventoryItemId: string,
+): string {
+  const normalizedInventoryItemId = inventoryItemId.trim();
+  if (!normalizedInventoryItemId) {
+    throw new Error(
+      "Legacy inventory opening reference requires an inventory item identifier",
+    );
+  }
+
+  return `dgmb-inventory-opening:v1:${encodeURIComponent(normalizedInventoryItemId)}`;
+}
+
 export function legacyKeyTargetsForDomain(domain: MigrationDomain): string[] {
   return legacyMigrationKeyManifest
-    .filter((binding) => binding.domain === domain)
+    .filter(
+      (binding) =>
+        binding.domain === domain &&
+        binding.uniqueness === "UNIQUE_WHEN_PRESENT",
+    )
     .map(
       (binding) => `${binding.destinationTable}.${binding.destinationColumn}`,
     );
