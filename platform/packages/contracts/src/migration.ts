@@ -12,7 +12,9 @@ export type LegacySheetSnapshot = {
 
 export type LegacyMigrationSnapshot = Partial<
   Record<LegacySheetName, LegacySheetSnapshot>
->;
+> & {
+  PixLotes?: LegacySheetSnapshot;
+};
 
 export type MigrationIssueCode =
   | "MISSING_SHEET"

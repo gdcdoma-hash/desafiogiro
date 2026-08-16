@@ -75,12 +75,12 @@ export const legacyMigrationSourceResolution: readonly MigrationSourceResolution
     },
     {
       destinationField: "public.challenge_offers.price",
-      status: "PARTIAL_SOURCE",
+      status: "DERIVATION_CONFIRMED",
       sourceSheet: "PixLotes",
       sourceField: "valor_unitario",
-      semanticRole: "LOT_BASED_OFFER_PRICING",
+      semanticRole: "MONTHLY_SHARED_LOT_PRICING",
       remainingBlocker:
-        "The legacy code proves pricing windows and POR_QTD/POR_LOTE selection in PixLotes, with monthly lot prefixes derived from Periodo. The destination model now supports LOTS pricing without a manufactured fixed price. A deterministic mapping from a monthly PixLotes row to a specific challenge offer is still required before price lots can be staged.",
+        "Resolved as LOTS pricing rather than a manufactured fixed offer price. The legacy id_lote monthly prefix deterministically yields YYYY-MM; all offers in that period link to the same monthly pricing group, while status, pricing window, POR_QTD/POR_LOTE selection, quantity and raw unit/total values are staged from PixLotes. Prefixless rows are blocked by pricing preflight instead of being guessed.",
     },
     {
       destinationField: "public.registrations.goal_id",

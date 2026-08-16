@@ -34,6 +34,36 @@ function fixture(): LegacyMigrationSnapshot {
         ],
       ],
     },
+    PixLotes: {
+      headers: [
+        "status",
+        "data_inicio_sistema",
+        "data_fim_sistema",
+        "modo_pix",
+        "qtd_inscricoes",
+        "valor_total",
+        "valor_unitario",
+        "id_lote",
+        "nome_lote",
+        "chave_pix",
+        "validade_pix",
+      ],
+      rows: [
+        [
+          "Ativo",
+          "01/08/2026",
+          "31/08/2026",
+          "POR_QTD",
+          "1",
+          "44,90",
+          "44,90",
+          "AGO26_QTD_1",
+          "Lote Agosto",
+          "PIX-CATALOGO-NAO-DEVE-SAIR",
+          "31/08/2026",
+        ],
+      ],
+    },
     dgmbDesafios: {
       headers: [
         "ID_DGMB",
@@ -86,6 +116,7 @@ describe("legacy migration staging DTOs", () => {
     expect(result.paymentIssues).toEqual([]);
     expect(result.offerIssues).toEqual([]);
     expect(result.goalIssues).toEqual([]);
+    expect(result.pricingIssues).toEqual([]);
 
     expect(result.challenges).toEqual([
       {
@@ -110,6 +141,33 @@ describe("legacy migration staging DTOs", () => {
         categoryCode: "NORMAL",
         registrationStartsAt: "2026-08-01T03:00:00.000Z",
         registrationEndsAt: "2026-08-11T02:59:59.999Z",
+      },
+    ]);
+    expect(result.pricingGroups).toEqual([
+      {
+        periodCode: "2026-08",
+        externalReference: "AGO26",
+        internalName: "Legacy pricing AGO26",
+      },
+    ]);
+    expect(result.pricingGroupOffers).toEqual([
+      {
+        periodCode: "2026-08",
+        legacyChallengeOfferId: "legacy-list-1",
+      },
+    ]);
+    expect(result.pricingLots).toEqual([
+      {
+        periodCode: "2026-08",
+        externalReference: "AGO26_QTD_1",
+        internalName: "Lote Agosto",
+        startsAt: "2026-08-01T03:00:00.000Z",
+        endsAt: "2026-09-01T02:59:59.999Z",
+        selectionMode: "REGISTRATION_COUNT",
+        registrationCount: 1,
+        unitPrice: 44.9,
+        totalPrice: 44.9,
+        status: "ACTIVE",
       },
     ]);
     expect(result.challengeOfferGoals).toEqual([
@@ -152,13 +210,12 @@ describe("legacy migration staging DTOs", () => {
     });
   });
 
-  it("reduces unresolved destination requirements to three fields", () => {
+  it("reduces unresolved destination requirements to sports dates only", () => {
     const result = transformLegacySnapshotToStagingDtos(fixture());
 
     expect(result.unresolvedDestinationFields).toEqual([
       "public.challenges.sports_starts_at",
       "public.challenges.sports_ends_at",
-      "public.challenge_offers.price",
     ]);
   });
 
@@ -173,6 +230,19 @@ describe("legacy migration staging DTOs", () => {
       "01/09/2026",
       "10/09/2026",
     ]);
+    snapshot.PixLotes?.rows.push([
+      "Ativo",
+      "01/09/2026",
+      "30/09/2026",
+      "POR_LOTE",
+      "",
+      "49,90",
+      "49,90",
+      "SET26_LOTE_1",
+      "Lote Setembro",
+      "",
+      "",
+    ]);
 
     const result = transformLegacySnapshotToStagingDtos(snapshot);
 
@@ -181,9 +251,11 @@ describe("legacy migration staging DTOs", () => {
       "legacy-base-1:2026-08",
       "legacy-base-1:2026-09",
     ]);
-    expect(
-      result.challengeOffers.map((item) => item.legacyChallengeKey),
-    ).toEqual(["legacy-base-1:2026-08", "legacy-base-1:2026-09"]);
+    expect(result.pricingGroups.map((item) => item.periodCode)).toEqual([
+      "2026-08",
+      "2026-09",
+    ]);
+    expect(result.pricingGroupOffers).toHaveLength(2);
   });
 
   it("deduplicates goals and derives repeated occurrence ordinals in source order", () => {
@@ -209,14 +281,33 @@ describe("legacy migration staging DTOs", () => {
     ]);
   });
 
-  it("never carries temporary PIX secrets into staging DTOs", () => {
+  it("never carries PIX secrets into staging DTOs", () => {
     const serialized = JSON.stringify(
       transformLegacySnapshotToStagingDtos(fixture()),
     );
 
     expect(serialized).not.toContain("PIX-NAO-DEVE-SAIR");
+    expect(serialized).not.toContain("PIX-CATALOGO-NAO-DEVE-SAIR");
     expect(serialized).not.toContain("validade_pix_lote");
     expect(serialized).not.toContain("chave_pix_lote");
+    expect(serialized).not.toContain("chave_pix");
+    expect(serialized).not.toContain("validade_pix");
+  });
+
+  it("blocks the bundle when a pricing row has no deterministic monthly prefix", () => {
+    const invalid = fixture();
+    if (invalid.PixLotes) invalid.PixLotes.rows[0][7] = "LOTE_SEM_PERIODO";
+
+    const result = transformLegacySnapshotToStagingDtos(invalid);
+    expect(result.ready).toBe(false);
+    expect(result.pricingLots).toEqual([]);
+    expect(result.pricingIssues).toEqual([
+      {
+        code: "INVALID_PRICING_PERIOD_REFERENCE",
+        field: "PixLotes",
+        count: 1,
+      },
+    ]);
   });
 
   it("returns no DTO rows when structural preflight blocks the snapshot", () => {
@@ -241,6 +332,8 @@ describe("legacy migration staging DTOs", () => {
     expect(result.challenges).toEqual([]);
     expect(result.challengeGoals).toEqual([]);
     expect(result.challengeOfferGoals).toEqual([]);
+    expect(result.pricingGroups).toEqual([]);
+    expect(result.pricingLots).toEqual([]);
     expect(result.participants).toEqual([]);
     expect(result.registrations).toEqual([]);
     expect(result.payments).toEqual([]);

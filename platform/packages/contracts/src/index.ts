@@ -52,3 +52,4 @@ export * from "./migration-offers";
 export * from "./migration-goals";
 export * from "./migration-occurrences";
 export * from "./migration-period";
+export * from "./migration-pricing";
