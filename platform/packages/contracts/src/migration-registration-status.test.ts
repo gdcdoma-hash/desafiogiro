@@ -1,79 +1,66 @@
 import { describe, expect, it } from "vitest";
 import {
-  resolveLegacyRegistrationStatus,
+  resolveLegacyRegistrationStatus as resolve,
 } from "./migration-registration-status";
 
 describe("legacy registration status migration contract", () => {
-  it("maps terminal participant statuses without depending on payment state", () => {
-    expect(resolveLegacyRegistrationStatus("Concluído", "SETTLED")).toEqual({
+  it("maps terminal participant statuses", () => {
+    expect(resolve("Concluído", "SETTLED")).toEqual({
       ok: true,
       status: "COMPLETED",
     });
-    expect(resolveLegacyRegistrationStatus("Cancelado", "PENDING")).toEqual({
+    expect(resolve("Cancelado", "PENDING")).toEqual({
       ok: true,
       status: "CANCELLED",
     });
-    expect(resolveLegacyRegistrationStatus("Desistente", "SETTLED")).toEqual({
+    expect(resolve("Desistente", "SETTLED")).toEqual({
       ok: true,
       status: "CANCELLED",
     });
-    expect(
-      resolveLegacyRegistrationStatus("Não concluído", "SETTLED"),
-    ).toEqual({
+    expect(resolve("Não concluído", "SETTLED")).toEqual({
       ok: true,
       status: "EXPIRED",
     });
   });
 
-  it("uses payment state only to disambiguate em andamento", () => {
-    expect(resolveLegacyRegistrationStatus("Em andamento", "PENDING")).toEqual({
+  it("uses payment state for em andamento", () => {
+    expect(resolve("Em andamento", "PENDING")).toEqual({
       ok: true,
       status: "PENDING",
     });
-    expect(resolveLegacyRegistrationStatus("Em andamento", "SETTLED")).toEqual({
+    expect(resolve("Em andamento", "SETTLED")).toEqual({
       ok: true,
       status: "CONFIRMED",
     });
-    expect(
-      resolveLegacyRegistrationStatus("Em andamento", "CANCELLED"),
-    ).toEqual({
+    expect(resolve("Em andamento", "CANCELLED")).toEqual({
       ok: true,
       status: "CANCELLED",
     });
   });
 
-  it("keeps pendente pagamento pending and follows the legacy blank default", () => {
-    expect(
-      resolveLegacyRegistrationStatus("Pendente pagamento", "SETTLED"),
-    ).toEqual({
+  it("keeps pending payment and follows the blank default", () => {
+    expect(resolve("Pendente pagamento", "SETTLED")).toEqual({
       ok: true,
       status: "PENDING",
     });
-    expect(resolveLegacyRegistrationStatus("", "PENDING")).toEqual({
+    expect(resolve("", "PENDING")).toEqual({
       ok: true,
       status: "PENDING",
     });
-    expect(resolveLegacyRegistrationStatus("", "SETTLED")).toEqual({
+    expect(resolve("", "SETTLED")).toEqual({
       ok: true,
       status: "CONFIRMED",
     });
   });
 
-  it(
-    "blocks unknown status vocabulary instead of inventing a destination state",
-    () => {
-      expect(
-        resolveLegacyRegistrationStatus("estado improvisado", "SETTLED"),
-      ).toEqual({
-        ok: false,
-        reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
-      });
-      expect(
-        resolveLegacyRegistrationStatus("Em andamento", "UNKNOWN"),
-      ).toEqual({
-        ok: false,
-        reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
-      });
-    },
-  );
+  it("blocks unknown status vocabulary", () => {
+    expect(resolve("estado improvisado", "SETTLED")).toEqual({
+      ok: false,
+      reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
+    });
+    expect(resolve("Em andamento", "UNKNOWN")).toEqual({
+      ok: false,
+      reason: "UNKNOWN_LEGACY_REGISTRATION_STATUS",
+    });
+  });
 });
