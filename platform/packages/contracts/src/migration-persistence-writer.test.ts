@@ -5,7 +5,9 @@ import {
   type ActivatedMigrationPersistenceContract,
   type MigrationWriterAdapter,
 } from "./migration-persistence-writer";
-import { buildLegacyMigrationPersistenceContract } from "./migration-persistence-contract";
+import {
+  buildLegacyMigrationPersistenceContract,
+} from "./migration-persistence-contract";
 import type { MigrationReadinessReport } from "./migration-readiness-report";
 
 function readiness(stagingReady: boolean): MigrationReadinessReport {
@@ -102,12 +104,7 @@ describe("migration persistence writer", () => {
       adapter,
     );
 
-    expect(calls).toEqual([
-      "BEGIN",
-      "1:new",
-      "2:existing",
-      "COMMIT",
-    ]);
+    expect(calls).toEqual(["BEGIN", "1:new", "2:existing", "COMMIT"]);
     expect(result).toEqual({
       activationId: "controlled-test-run",
       insertedRows: 1,
@@ -122,7 +119,11 @@ describe("migration persistence writer", () => {
     const adapter: MigrationWriterAdapter = {
       async transaction(work) {
         transactionOpened = true;
-        return work({ async insertOrVerify() { return "INSERTED"; } });
+        return work({
+          async insertOrVerify() {
+            return "INSERTED";
+          },
+        });
       },
     };
     const contract = {
