@@ -49,6 +49,7 @@ export * from "./migration-dto";
 export * from "./migration-dto-sports";
 export * from "./migration-readiness-report";
 export * from "./migration-persistence-contract";
+export * from "./migration-persistence-writer";
 export * from "./migration-source-resolution";
 export * from "./migration-offer-normalization";
 export * from "./migration-offers";
