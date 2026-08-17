@@ -1,0 +1,76 @@
+.meu-giro-heading,
+.focus-card > div:first-child,
+.activity-list article {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+.meu-giro-heading button { width: auto; }
+.focus-card {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #e9f6ed;
+}
+.status-pill {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 2rem;
+  background: white;
+  color: #176b36;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+.progress-number { text-align: right; }
+.progress-number strong {
+  display: block;
+  color: #176b36;
+  font-size: 2rem;
+}
+.progress-number span,
+.activity-list span,
+.activity-list time {
+  display: block;
+  color: #647168;
+  font-size: 0.82rem;
+}
+.focus-card progress {
+  width: 100%;
+  height: 1rem;
+  margin: 1.25rem 0;
+  accent-color: #176b36;
+}
+.progress-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem !important;
+}
+.progress-grid div {
+  padding: 0.8rem;
+  border-radius: 0.7rem;
+  background: white;
+}
+.progress-grid span,
+.progress-grid strong { display: block; }
+.progress-grid span {
+  color: #647168;
+  font-size: 0.82rem;
+}
+.activity-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.activity-list article {
+  padding: 0.85rem;
+  border: 1px solid #d2e0d6;
+  border-radius: 0.7rem;
+}
+@media (max-width: 36rem) {
+  .progress-grid { grid-template-columns: 1fr; }
+  .activity-list article {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
