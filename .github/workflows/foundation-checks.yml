@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - 'platform/**'
-      - '.github/workflows/foundation-checks.yml'
+      - '.github/workflows/**'
   push:
     branches:
       - 'foundation/**'
     paths:
       - 'platform/**'
-      - '.github/workflows/foundation-checks.yml'
+      - '.github/workflows/**'
 
 permissions:
   contents: read

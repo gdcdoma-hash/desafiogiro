@@ -29,7 +29,6 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      VITE_API_URL: ${{ vars.VITE_API_URL }}
       VITE_PORTAL_GIRO_ENV: preview
       VITE_APP_VERSION: ${{ github.sha }}
 
@@ -48,6 +47,26 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: platform/pnpm-lock.yaml
+
+      - name: Resolve staging API URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl -fsS \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain")"
+          subdomain="$(printf '%s' "$response" | node -e '
+            let input = "";
+            process.stdin.on("data", (chunk) => (input += chunk));
+            process.stdin.on("end", () => {
+              const payload = JSON.parse(input);
+              if (!payload.success || !payload.result?.subdomain) process.exit(1);
+              process.stdout.write(payload.result.subdomain);
+            });
+          ')"
+          test -n "$subdomain"
+          echo "VITE_API_URL=https://portal-giro-api-staging.${subdomain}.workers.dev" >> "$GITHUB_ENV"
 
       - name: Validate deployment configuration
         shell: bash

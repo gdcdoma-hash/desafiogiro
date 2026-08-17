@@ -31,7 +31,7 @@ jobs:
       SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      ADMIN_WEB_ORIGIN: ${{ vars.ADMIN_WEB_ORIGIN }}
+      ADMIN_WEB_ORIGIN: https://dev.portal-giro-admin.pages.dev
 
     steps:
       - name: Checkout
