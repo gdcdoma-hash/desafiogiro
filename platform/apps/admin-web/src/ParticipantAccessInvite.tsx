@@ -20,6 +20,8 @@ export function ParticipantAccessInvite({
   participantStatus,
   apiUrl,
 }: Props) {
+  const resolvedApiUrl =
+    apiUrl ?? (import.meta.env.VITE_API_URL as string | undefined);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -28,7 +30,7 @@ export function ParticipantAccessInvite({
   async function inviteParticipant(event: React.FormEvent) {
     event.preventDefault();
 
-    if (!apiUrl) {
+    if (!resolvedApiUrl) {
       setMessage("A API de convites ainda não está configurada neste ambiente.");
       return;
     }
@@ -46,7 +48,7 @@ export function ParticipantAccessInvite({
 
     try {
       const response = await fetch(
-        `${apiUrl.replace(/\/$/, "")}/admin/participants/${participantId}/invite`,
+        `${resolvedApiUrl.replace(/\/$/, "")}/admin/participants/${participantId}/invite`,
         {
           method: "POST",
           headers: {
