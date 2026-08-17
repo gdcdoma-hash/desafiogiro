@@ -15,7 +15,7 @@ values ('75555555-5555-5555-5555-555555555555','71111111-1111-1111-1111-11111111
 
 update public.registrations set status='CONFIRMED' where id='75555555-5555-5555-5555-555555555555';
 select is((select status from public.registrations where id='75555555-5555-5555-5555-555555555555'),'CONFIRMED','pending can confirm');
-select throws_ok($$update public.registrations set status='COMPLETED' where id='75555555-5555-5555-5555-555555555555'$$,'Invalid registration status transition: CONFIRMED -> COMPLETED','confirmed cannot complete without validated flow');
+select throws_ok($$update public.registrations set status='COMPLETED' where id='75555555-5555-5555-5555-555555555555'$$,'Goal not reached: 0 of 300 km','confirmed cannot complete below target');
 update public.registrations set status='CANCELLED' where id='75555555-5555-5555-5555-555555555555';
 select is((select status from public.registrations where id='75555555-5555-5555-5555-555555555555'),'CANCELLED','confirmed can cancel');
 
