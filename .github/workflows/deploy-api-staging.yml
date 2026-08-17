@@ -1,0 +1,80 @@
+name: Deploy API staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'platform/apps/api/**'
+      - 'platform/packages/**'
+      - 'platform/package.json'
+      - 'platform/pnpm-lock.yaml'
+      - '.github/workflows/deploy-api-staging.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portal-giro-api-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ADMIN_WEB_ORIGIN: ${{ vars.ADMIN_WEB_ORIGIN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}" || { echo 'CLOUDFLARE_ACCOUNT_ID ausente'; exit 1; }
+          test -n "${CLOUDFLARE_API_TOKEN:-}" || { echo 'CLOUDFLARE_API_TOKEN ausente'; exit 1; }
+          test -n "${SUPABASE_URL:-}" || { echo 'SUPABASE_URL ausente'; exit 1; }
+          test -n "${SUPABASE_PUBLISHABLE_KEY:-}" || { echo 'SUPABASE_PUBLISHABLE_KEY ausente'; exit 1; }
+          test -n "${SUPABASE_SERVICE_ROLE_KEY:-}" || { echo 'SUPABASE_SERVICE_ROLE_KEY ausente'; exit 1; }
+          test -n "${ADMIN_WEB_ORIGIN:-}" || { echo 'ADMIN_WEB_ORIGIN ausente'; exit 1; }
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck API
+        run: pnpm --filter @portal-giro/api typecheck
+
+      - name: Configure service role secret
+        shell: bash
+        run: printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | pnpm --filter @portal-giro/api exec wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env staging
+
+      - name: Deploy API staging
+        shell: bash
+        run: |
+          pnpm --filter @portal-giro/api exec wrangler deploy --env staging \
+            --var "PORTAL_GIRO_ENV:staging" \
+            --var "ADMIN_WEB_ORIGIN:${ADMIN_WEB_ORIGIN}" \
+            --var "SUPABASE_URL:${SUPABASE_URL}" \
+            --var "SUPABASE_ANON_KEY:${SUPABASE_PUBLISHABLE_KEY}"
