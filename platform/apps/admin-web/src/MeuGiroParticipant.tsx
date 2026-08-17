@@ -59,11 +59,16 @@ export function MeuGiroParticipant({
             <p className="eyebrow">Área do participante</p>
             <h1>Meu Giro</h1>
           </div>
-          <button className="secondary compact" onClick={() => void onSignOut()}>
+          <button
+            className="secondary compact"
+            onClick={() => void onSignOut()}
+          >
             Sair
           </button>
         </div>
-        <p role="status" className="status">{message}</p>
+        <p role="status" className="status">
+          {message}
+        </p>
 
         {focus ? (
           <>
@@ -83,16 +88,29 @@ export function MeuGiroParticipant({
                 {focus.progress_percent}%
               </progress>
               <div className="progress-grid">
-                <div><span>Meta</span><strong>{focus.target_km} km</strong></div>
-                <div><span>Realizados</span><strong>{focus.completed_km} km</strong></div>
-                <div><span>Restantes</span><strong>{focus.remaining_km} km</strong></div>
+                <div>
+                  <span>Meta</span>
+                  <strong>{focus.target_km} km</strong>
+                </div>
+                <div>
+                  <span>Realizados</span>
+                  <strong>{focus.completed_km} km</strong>
+                </div>
+                <div>
+                  <span>Restantes</span>
+                  <strong>{focus.remaining_km} km</strong>
+                </div>
               </div>
             </section>
 
-            <section className="module-panel" aria-labelledby="activities-title">
+            <section
+              className="module-panel"
+              aria-labelledby="activities-title"
+            >
               <h2 id="activities-title">Atividades recentes</h2>
               <p className="section-description">
-                A competência considera a data e hora local em que o pedal começou.
+                A competência considera a data e hora local em que o pedal
+                começou.
               </p>
               <div className="activity-list">
                 {activities.length ? (
@@ -100,7 +118,11 @@ export function MeuGiroParticipant({
                     <article key={activity.id}>
                       <div>
                         <strong>{activity.title}</strong>
-                        <span>{activity.source_code === "MANUAL" ? "Registro manual" : "Strava"}</span>
+                        <span>
+                          {activity.source_code === "MANUAL"
+                            ? "Registro manual"
+                            : "Strava"}
+                        </span>
                       </div>
                       <div>
                         <strong>{activity.distance_km} km</strong>
@@ -114,7 +136,10 @@ export function MeuGiroParticipant({
                     </article>
                   ))
                 ) : (
-                  <p>Nenhuma atividade registrada. Sua inscrição e meta continuam visíveis acima.</p>
+                  <p>
+                    Nenhuma atividade registrada. Sua inscrição e meta continuam
+                    visíveis acima.
+                  </p>
                 )}
               </div>
             </section>
