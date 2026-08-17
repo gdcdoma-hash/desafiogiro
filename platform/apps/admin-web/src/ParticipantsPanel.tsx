@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { ParticipantAccessInvite } from "./ParticipantAccessInvite";
 
 type Participant = {
   id: string;
@@ -14,6 +15,7 @@ type Participant = {
 type Props = {
   supabase: SupabaseClient;
   canManage: boolean;
+  apiUrl?: string;
 };
 
 function normalizePhone(value: string) {
@@ -23,7 +25,7 @@ function normalizePhone(value: string) {
   return `+${withCountry}`;
 }
 
-export function ParticipantsPanel({ supabase, canManage }: Props) {
+export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
   const [items, setItems] = useState<Participant[]>([]);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -312,14 +314,23 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
                 <span>Legado: {item.legacy_id_dgmb}</span>
               ) : null}
               {canManage ? (
-                <button
-                  type="button"
-                  className="compact"
-                  disabled={busy}
-                  onClick={() => startEdit(item)}
-                >
-                  Editar cadastro
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="compact"
+                    disabled={busy}
+                    onClick={() => startEdit(item)}
+                  >
+                    Editar cadastro
+                  </button>
+                  <ParticipantAccessInvite
+                    supabase={supabase}
+                    participantId={item.id}
+                    participantName={item.full_name}
+                    participantStatus={item.status}
+                    apiUrl={apiUrl}
+                  />
+                </>
               ) : null}
             </div>
           </div>
