@@ -62,8 +62,8 @@ select throws_ok(
 );
 select throws_ok(
   $$update public.registrations set status='COMPLETED' where id='67500000-0000-0000-0000-000000000001'$$,
-  'Invalid registration status transition: CONFIRMED -> COMPLETED',
-  'direct completion is rejected'
+  'Goal not reached: 40.000 of 100 km',
+  'direct completion is also validated by the database'
 );
 
 reset role;
