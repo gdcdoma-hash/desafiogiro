@@ -44,6 +44,16 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
+function processingErrorMessage(message: string) {
+  if (message.includes("Oferta não está mais disponível")) {
+    return "A oferta desta solicitação não está mais disponível. Revise antes de continuar.";
+  }
+  if (message.includes("Participant reached the registration limit")) {
+    return "Este participante já atingiu o limite de inscrições desta oferta. Revise ou rejeite a solicitação.";
+  }
+  return "Não foi possível processar esta pré-inscrição.";
+}
+
 export function PublicRegistrationsPanel({ supabase, canManage }: Props) {
   const [requests, setRequests] = useState<RegistrationRequest[]>([]);
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "ALL">(
@@ -129,11 +139,7 @@ export function PublicRegistrationsPanel({ supabase, canManage }: Props) {
     );
 
     if (error) {
-      setMessage(
-        error.message.includes("Oferta não está mais disponível")
-          ? "A oferta desta solicitação não está mais disponível. Revise antes de continuar."
-          : "Não foi possível processar esta pré-inscrição.",
-      );
+      setMessage(processingErrorMessage(error.message));
     } else {
       setMessage(
         "Pré-inscrição processada: participante, inscrição e pagamento pendente foram vinculados.",
