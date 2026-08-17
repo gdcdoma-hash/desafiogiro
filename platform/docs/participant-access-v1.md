@@ -9,24 +9,24 @@ contas permanece desativado.
 ## Fluxo
 
 1. um administrador com `participants.manage` seleciona o participante e informa
-o e-mail que receberá o acesso;
+   o e-mail que receberá o acesso;
 2. o frontend envia a solicitação autenticada ao Worker da API;
 3. o Worker valida a sessão e a permissão administrativa usando a chave pública;
 4. somente no Worker, a `SUPABASE_SERVICE_ROLE_KEY` é usada para enviar o convite
-pelo Supabase Auth e gravar `participant_user_links`;
+   pelo Supabase Auth e gravar `participant_user_links`;
 5. o link do convite retorna para a aplicação web; depois da autenticação,
-`current_participant_id()` resolve o participante e o Meu Giro é exibido.
+   `current_participant_id()` resolve o participante e o Meu Giro é exibido.
 
 ## Segurança
 
 - `SUPABASE_SERVICE_ROLE_KEY` nunca pode ser enviada ao navegador, commitada ou
-armazenada como variável pública do Vite;
+  armazenada como variável pública do Vite;
 - a API aceita apenas sessão administrativa válida e exige
-`participants.manage`;
+  `participants.manage`;
 - um participante não pode receber dois vínculos ativos e uma conta não pode ser
-vinculada a dois participantes;
+  vinculada a dois participantes;
 - o evento de auditoria registra o participante e o resultado, mas não grava o
-e-mail do convite em metadados;
+  e-mail do convite em metadados;
 - cadastro público de usuários continua desativado na V1.
 
 ## Limites da V1
