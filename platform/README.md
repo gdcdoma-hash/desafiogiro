@@ -26,7 +26,8 @@ anônimo. As tabelas internas permanecem protegidas por RLS e permissões.
 ## Limites atuais
 
 - não migra automaticamente os dados existentes no GAS/Google Sheets;
-- não integra atividades do Strava nem substitui ainda o Meu Giro legado;
+- entrega o Meu Giro V1 básico com progresso e contingência manual, sem integrar
+  OAuth/API do Strava nem substituir ou alterar GAS/Sheets legado;
 - pagamento PIX ainda depende do fluxo administrativo existente; não há gateway
   financeiro automático;
 - não altera o domínio/redirecionador legado de produção;
