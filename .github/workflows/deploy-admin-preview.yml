@@ -1,0 +1,67 @@
+name: Deploy admin preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'platform/apps/admin-web/**'
+      - 'platform/package.json'
+      - 'platform/pnpm-lock.yaml'
+      - '.github/workflows/deploy-admin-preview.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portal-giro-admin-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_PORTAL_GIRO_ENV: preview
+      VITE_APP_VERSION: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}" || { echo 'CLOUDFLARE_ACCOUNT_ID ausente'; exit 1; }
+          test -n "${CLOUDFLARE_API_TOKEN:-}" || { echo 'CLOUDFLARE_API_TOKEN ausente'; exit 1; }
+          test -n "${VITE_SUPABASE_URL:-}" || { echo 'VITE_SUPABASE_URL ausente'; exit 1; }
+          test -n "${VITE_SUPABASE_PUBLISHABLE_KEY:-}" || { echo 'VITE_SUPABASE_PUBLISHABLE_KEY ausente'; exit 1; }
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build admin preview
+        run: pnpm --filter @portal-giro/admin-web build
+
+      - name: Deploy to Cloudflare Pages
+        run: pnpm exec wrangler pages deploy apps/admin-web/dist --project-name portal-giro-admin --branch dev
