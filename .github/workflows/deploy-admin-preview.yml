@@ -64,4 +64,4 @@ jobs:
         run: pnpm --filter @portal-giro/admin-web build
 
       - name: Deploy to Cloudflare Pages
-        run: pnpm exec wrangler pages deploy apps/admin-web/dist --project-name portal-giro-admin --branch dev
+        run: pnpm dlx wrangler@latest pages deploy apps/admin-web/dist --project-name portal-giro-admin --branch dev
