@@ -10,6 +10,8 @@ import { PaymentsPanel } from "./PaymentsPanel";
 import { InventoryPanel } from "./InventoryPanel";
 import { MedalDeliveriesPanel } from "./MedalDeliveriesPanel";
 import { OperationsPanel } from "./OperationsPanel";
+import { ActivitiesPanel } from "./ActivitiesPanel";
+import { MeuGiroParticipant } from "./MeuGiroParticipant";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 import "./module-nav.css";
@@ -37,7 +39,12 @@ const supabase = createClient(supabaseUrl, publishableKey, {
 });
 
 type ViewState =
-  "checking" | "login" | "password-update" | "authorized" | "denied";
+  | "checking"
+  | "login"
+  | "password-update"
+  | "authorized"
+  | "participant"
+  | "denied";
 
 type AuditEvent = {
   id: string;
@@ -114,6 +121,12 @@ function App() {
     void supabase.rpc("current_admin_context").then(async ({ data, error }) => {
       if (!active) return;
       if (error || !isAdminContext(data)) {
+        const participant = await supabase.rpc("current_participant_id");
+        if (!participant.error && typeof participant.data === "string") {
+          setView("participant");
+          setMessage("Área do participante carregada.");
+          return;
+        }
         setView("denied");
         setMessage("Este usuário não possui acesso administrativo.");
         await writeAudit(
@@ -355,6 +368,10 @@ function App() {
     );
   }
 
+  if (view === "participant") {
+    return <MeuGiroParticipant supabase={supabase} onSignOut={signOut} />;
+  }
+
   return (
     <main className="shell dashboard-shell">
       <section className="card dashboard">
@@ -377,6 +394,9 @@ function App() {
           ) : null}
           {context?.permissions.includes("registrations.read") ? (
             <a href="#registrations-title">Inscrições</a>
+          ) : null}
+          {context?.permissions.includes("activities.read") ? (
+            <a href="#activities-admin-title">Meu Giro</a>
           ) : null}
           {context?.permissions.includes("participants.read") ? (
             <a href="#participants-title">Participantes</a>
@@ -433,6 +453,13 @@ function App() {
           <RegistrationsPanel
             supabase={supabase}
             canManage={context.permissions.includes("registrations.manage")}
+          />
+        ) : null}
+
+        {context?.permissions.includes("activities.read") ? (
+          <ActivitiesPanel
+            supabase={supabase}
+            canManage={context.permissions.includes("activities.manage")}
           />
         ) : null}
 
