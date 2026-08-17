@@ -31,7 +31,9 @@ export function ParticipantAccessInvite({
     event.preventDefault();
 
     if (!resolvedApiUrl) {
-      setMessage("A API de convites ainda não está configurada neste ambiente.");
+      setMessage(
+        "A API de convites ainda não está configurada neste ambiente.",
+      );
       return;
     }
 
