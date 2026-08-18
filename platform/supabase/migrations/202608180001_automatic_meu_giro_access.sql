@@ -22,12 +22,13 @@ create or replace view public.public_registration_admin_queue
 with (security_invoker = true)
 as
 select
-  r.id, r.created_at, r.status, r.full_name, r.phone_e164, r.email,
+  r.id, r.created_at, r.status, r.full_name, r.phone_e164,
   r.city, r.state_code, r.referral_code,
   c.id as challenge_id, c.public_name as challenge_name,
   o.id as offer_id, o.public_name as offer_name, o.price,
   g.id as goal_id, g.target_km,
-  coalesce(g.public_label, g.target_km::text || ' km') as goal_label
+  coalesce(g.public_label, g.target_km::text || ' km') as goal_label,
+  r.email
 from public.public_registration_requests r
 join public.challenge_offers o on o.id = r.offer_id
 join public.challenges c on c.id = o.challenge_id
