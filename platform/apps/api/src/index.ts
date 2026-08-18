@@ -5,6 +5,28 @@ import { logger } from "hono/logger";
 import type { Bindings, Variables } from "./types";
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+const genericAccessMessage =
+  "Se o e-mail estiver vinculado a um participante elegível, você receberá as orientações de acesso.";
+
+function normalizeEmail(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLocaleLowerCase("en-US");
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+}
+
+function serviceClient(context: {
+  env: { SUPABASE_URL: string; SUPABASE_SERVICE_ROLE_KEY: string };
+}) {
+  return createClient(
+    context.env.SUPABASE_URL,
+    context.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+}
 
 app.use("*", logger());
 app.use("*", async (context, next) => {
@@ -33,6 +55,154 @@ app.get("/health", (context) =>
     requestId: context.get("requestId"),
   }),
 );
+
+app.post("/participant/access/request", async (context) => {
+  let body: unknown;
+  try {
+    body = await context.req.json();
+  } catch {
+    return context.json(
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
+      202,
+    );
+  }
+
+  const email =
+    body && typeof body === "object" && "email" in body
+      ? normalizeEmail((body as { email?: unknown }).email)
+      : "";
+
+  if (!isValidEmail(email)) {
+    return context.json(
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
+      202,
+    );
+  }
+
+  const admin = serviceClient(context);
+  const participant = await admin
+    .from("participants")
+    .select("id,status")
+    .ilike("email", email)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
+
+  if (participant.error || !participant.data) {
+    return context.json(
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
+      202,
+    );
+  }
+
+  const eligible = await admin
+    .from("registrations")
+    .select("id")
+    .eq("participant_id", participant.data.id)
+    .in("status", ["CONFIRMED", "COMPLETED"])
+    .limit(1);
+
+  if (eligible.error || !eligible.data?.length) {
+    return context.json(
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
+      202,
+    );
+  }
+
+  const existingLink = await admin
+    .from("participant_user_links")
+    .select("user_id")
+    .eq("participant_id", participant.data.id)
+    .maybeSingle();
+
+  if (existingLink.error) throw existingLink.error;
+
+  if (existingLink.data) {
+    await admin.auth.resetPasswordForEmail(email, {
+      redirectTo: context.env.ADMIN_WEB_ORIGIN,
+    });
+    await admin.from("audit_events").insert({
+      action: "participant.access.requested",
+      resource_type: "participant",
+      resource_id: participant.data.id,
+      outcome: "success",
+      request_id: /^[0-9a-f-]{36}$/i.test(context.get("requestId"))
+        ? context.get("requestId")
+        : crypto.randomUUID(),
+      source: "portal-api",
+      reason: "Acesso automático solicitado para conta já vinculada.",
+      metadata: { flow: "automatic", existing_link: true },
+      application_version: "automatic-meu-giro-access-v1",
+    });
+    return context.json(
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
+      202,
+    );
+  }
+
+  const invited = await admin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: context.env.ADMIN_WEB_ORIGIN,
+  });
+
+  if (invited.error || !invited.data.user) {
+    return context.json(
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
+      202,
+    );
+  }
+
+  const linked = await admin.from("participant_user_links").insert({
+    participant_id: participant.data.id,
+    user_id: invited.data.user.id,
+  });
+
+  if (linked.error) {
+    await admin.auth.admin.deleteUser(invited.data.user.id);
+    throw linked.error;
+  }
+
+  await admin.from("audit_events").insert({
+    action: "participant.access.auto_invited",
+    resource_type: "participant",
+    resource_id: participant.data.id,
+    outcome: "success",
+    request_id: /^[0-9a-f-]{36}$/i.test(context.get("requestId"))
+      ? context.get("requestId")
+      : crypto.randomUUID(),
+    source: "portal-api",
+    reason: "Primeiro acesso liberado automaticamente por inscrição válida.",
+    metadata: {
+      flow: "automatic",
+      registration_statuses: ["CONFIRMED", "COMPLETED"],
+    },
+    application_version: "automatic-meu-giro-access-v1",
+  });
+
+  return context.json(
+    {
+      data: { message: genericAccessMessage },
+      requestId: context.get("requestId"),
+    },
+    202,
+  );
+});
 
 app.use("/admin/*", async (context, next) => {
   const authorization = context.req.header("authorization");
@@ -148,12 +318,9 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
 
   const email =
     body && typeof body === "object" && "email" in body
-      ? String((body as { email?: unknown }).email ?? "")
-          .trim()
-          .toLocaleLowerCase("en-US")
+      ? normalizeEmail((body as { email?: unknown }).email)
       : "";
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+  if (!isValidEmail(email)) {
     return context.json(
       {
         error: { code: "INVALID_EMAIL", message: "Informe um e-mail válido." },
@@ -175,7 +342,6 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
   const permission = await userClient.rpc("has_permission", {
     required_permission: "participants.manage",
   });
-
   if (permission.error || permission.data !== true) {
     return context.json(
       {
@@ -189,18 +355,12 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
     );
   }
 
-  const serviceClient = createClient(
-    context.env.SUPABASE_URL,
-    context.env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
-
-  const participant = await serviceClient
+  const admin = serviceClient(context);
+  const participant = await admin
     .from("participants")
     .select("id,status")
     .eq("id", participantId)
     .maybeSingle();
-
   if (participant.error || !participant.data) {
     return context.json(
       {
@@ -213,7 +373,6 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
       404,
     );
   }
-
   if (participant.data.status !== "ACTIVE") {
     return context.json(
       {
@@ -227,15 +386,12 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
     );
   }
 
-  const existingLink = await serviceClient
+  const existingLink = await admin
     .from("participant_user_links")
     .select("user_id")
     .eq("participant_id", participantId)
     .maybeSingle();
-
-  if (existingLink.error) {
-    throw existingLink.error;
-  }
+  if (existingLink.error) throw existingLink.error;
   if (existingLink.data) {
     return context.json(
       {
@@ -249,10 +405,9 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
     );
   }
 
-  const invited = await serviceClient.auth.admin.inviteUserByEmail(email, {
+  const invited = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: context.env.ADMIN_WEB_ORIGIN,
   });
-
   if (invited.error || !invited.data.user) {
     return context.json(
       {
@@ -267,13 +422,12 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
     );
   }
 
-  const linked = await serviceClient.from("participant_user_links").insert({
+  const linked = await admin.from("participant_user_links").insert({
     participant_id: participantId,
     user_id: invited.data.user.id,
   });
-
   if (linked.error) {
-    await serviceClient.auth.admin.deleteUser(invited.data.user.id);
+    await admin.auth.admin.deleteUser(invited.data.user.id);
     throw linked.error;
   }
 
@@ -281,7 +435,7 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
   await userClient.rpc("write_audit_event", {
     event_action: "participant.access.invited",
     event_application_version: "0.1.0",
-    event_metadata: { participant_id: participantId },
+    event_metadata: { participant_id: participantId, flow: "admin_exception" },
     event_outcome: "success",
     event_request_id: /^[0-9a-f-]{36}$/i.test(requestId)
       ? requestId
@@ -291,10 +445,7 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
   });
 
   return context.json(
-    {
-      data: { participantId, status: "invited" },
-      requestId,
-    },
+    { data: { participantId, status: "invited" }, requestId },
     201,
   );
 });

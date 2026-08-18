@@ -12,6 +12,7 @@ import { MedalDeliveriesPanel } from "./MedalDeliveriesPanel";
 import { OperationsPanel } from "./OperationsPanel";
 import { ActivitiesPanel } from "./ActivitiesPanel";
 import { MeuGiroParticipant } from "./MeuGiroParticipant";
+import { ParticipantFirstAccess } from "./ParticipantFirstAccess";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 import "./module-nav.css";
@@ -19,6 +20,7 @@ import "./module-nav.css";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
   string | undefined;
+const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
 const environment =
   (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ?? "development";
 const applicationVersion =
@@ -128,11 +130,13 @@ function App() {
           return;
         }
         setView("denied");
-        setMessage("Este usuário não possui acesso administrativo.");
+        setMessage(
+          "Este usuário não possui acesso administrativo ou vínculo com participante.",
+        );
         await writeAudit(
           "admin.login.denied",
           "denied",
-          "Usuário autenticado sem permissão administrativa.",
+          "Usuário autenticado sem permissão administrativa ou vínculo com participante.",
         );
         return;
       }
@@ -251,7 +255,7 @@ function App() {
       <main className="shell">
         <section className="card" aria-busy="true">
           <p className="eyebrow">Portal Giro</p>
-          <h1>Área administrativa</h1>
+          <h1>Carregando acesso</h1>
           <p role="status" className="status">
             {message}
           </p>
@@ -265,8 +269,11 @@ function App() {
       <main className="shell">
         <section className="card">
           <p className="eyebrow">Portal Giro</p>
-          <h1>Área administrativa</h1>
-          <p>Acesso exclusivo para integrantes autorizados da equipe.</p>
+          <h1>Entrar</h1>
+          <p>
+            Acesso para participantes do Meu Giro e integrantes autorizados da
+            equipe.
+          </p>
           <form onSubmit={signIn}>
             <label>
               E-mail
@@ -303,6 +310,7 @@ function App() {
           <p role="status" className="status">
             {message}
           </p>
+          <ParticipantFirstAccess apiUrl={apiUrl} />
           <p className="environment">Ambiente: desenvolvimento</p>
         </section>
       </main>

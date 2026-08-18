@@ -1,12 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
-import { ParticipantAccessInvite } from "./ParticipantAccessInvite";
 
 type Participant = {
   id: string;
   legacy_id_dgmb: string | null;
   full_name: string;
   phone_e164: string | null;
+  email: string | null;
   city: string;
   state_code: string | null;
   status: "ACTIVE" | "INACTIVE" | "MERGED";
@@ -15,7 +15,6 @@ type Participant = {
 type Props = {
   supabase: SupabaseClient;
   canManage: boolean;
-  apiUrl?: string;
 };
 
 function normalizePhone(value: string) {
@@ -25,7 +24,12 @@ function normalizePhone(value: string) {
   return `+${withCountry}`;
 }
 
-export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
+function normalizeEmail(value: string) {
+  const normalized = value.trim().toLocaleLowerCase("en-US");
+  return normalized || null;
+}
+
+export function ParticipantsPanel({ supabase, canManage }: Props) {
   const [items, setItems] = useState<Participant[]>([]);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -34,6 +38,7 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
   const [stateCode, setStateCode] = useState("");
   const [legacyId, setLegacyId] = useState("");
@@ -46,6 +51,7 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
       [
         item.full_name,
         item.phone_e164 ?? "",
+        item.email ?? "",
         item.city,
         item.state_code ?? "",
         item.legacy_id_dgmb ?? "",
@@ -60,6 +66,7 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
     setEditingId(null);
     setFullName("");
     setPhone("");
+    setEmail("");
     setCity("");
     setStateCode("");
     setLegacyId("");
@@ -77,6 +84,7 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
     setEditingId(item.id);
     setFullName(item.full_name);
     setPhone(item.phone_e164 ?? "");
+    setEmail(item.email ?? "");
     setCity(item.city);
     setStateCode(item.state_code ?? "");
     setLegacyId(item.legacy_id_dgmb ?? "");
@@ -90,7 +98,9 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
     setMessage("Carregando participantes…");
     const { data, error } = await supabase
       .from("participants")
-      .select("id,legacy_id_dgmb,full_name,phone_e164,city,state_code,status")
+      .select(
+        "id,legacy_id_dgmb,full_name,phone_e164,email,city,state_code,status",
+      )
       .order("full_name", { ascending: true })
       .limit(500);
 
@@ -118,6 +128,16 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
       return;
     }
 
+    const normalizedEmail = normalizeEmail(email);
+    if (
+      normalizedEmail &&
+      (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) ||
+        normalizedEmail.length > 254)
+    ) {
+      setMessage("Informe um e-mail válido.");
+      return;
+    }
+
     setBusy(true);
     setMessage(
       editingId ? "Atualizando participante…" : "Salvando participante…",
@@ -126,6 +146,7 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
     const payload = {
       full_name: fullName.trim(),
       phone_e164: normalizePhone(phone),
+      email: normalizedEmail,
       city: city.trim(),
       state_code: normalizedState || null,
       legacy_id_dgmb: legacyId.trim() || null,
@@ -146,7 +167,7 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
     if (error) {
       setMessage(
         error.code === "23505"
-          ? "Esse ID legado já está vinculado a outro participante."
+          ? "Esse ID legado ou e-mail já está vinculado a outro participante."
           : "Não foi possível salvar o participante.",
       );
       setBusy(false);
@@ -155,8 +176,8 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
 
     await supabase.rpc("write_audit_event", {
       event_action: editingId ? "participant.updated" : "participant.created",
-      event_application_version: "participants-cycle-2",
-      event_metadata: {},
+      event_application_version: "participants-auto-access-v1",
+      event_metadata: { email_configured: Boolean(normalizedEmail) },
       event_outcome: "success",
       event_reason: null,
       event_request_id: crypto.randomUUID(),
@@ -192,8 +213,9 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
         ) : null}
       </div>
       <p className="section-description">
-        Cadastro-base da pessoa. Inscrições e desafios são vinculados ao ID
-        interno, não ao CPF.
+        Cadastro-base da pessoa. O Meu Giro é habilitado automaticamente para
+        participantes ativos com e-mail cadastrado e inscrição confirmada ou
+        concluída; não há liberação individual pelo administrador.
       </p>
 
       {showForm ? (
@@ -224,11 +246,13 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
               />
             </label>
             <label>
-              ID legado DGMB
+              E-mail para acesso ao Meu Giro
               <input
-                value={legacyId}
-                onChange={(event) => setLegacyId(event.target.value)}
-                placeholder="Opcional"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="participante@email.com"
+                autoComplete="email"
               />
             </label>
           </div>
@@ -250,6 +274,14 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
               />
             </label>
           </div>
+          <label>
+            ID legado DGMB
+            <input
+              value={legacyId}
+              onChange={(event) => setLegacyId(event.target.value)}
+              placeholder="Opcional"
+            />
+          </label>
           {editingId ? (
             <label>
               Situação
@@ -286,7 +318,7 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Nome, telefone, cidade ou ID legado"
+          placeholder="Nome, telefone, e-mail, cidade ou ID legado"
         />
       </label>
 
@@ -300,6 +332,9 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
                   "Localidade não informada"}
               </span>
               <span>{item.phone_e164 || "Telefone não informado"}</span>
+              <span>
+                {item.email || "E-mail do Meu Giro ainda não informado"}
+              </span>
             </div>
             <div className="offer-side">
               <strong>
@@ -313,24 +348,20 @@ export function ParticipantsPanel({ supabase, canManage, apiUrl }: Props) {
               {item.legacy_id_dgmb ? (
                 <span>Legado: {item.legacy_id_dgmb}</span>
               ) : null}
+              {item.status === "ACTIVE" && item.email ? (
+                <span>Acesso automático por inscrição válida</span>
+              ) : item.status === "ACTIVE" ? (
+                <span>Informe o e-mail para habilitar o primeiro acesso</span>
+              ) : null}
               {canManage ? (
-                <>
-                  <button
-                    type="button"
-                    className="compact"
-                    disabled={busy}
-                    onClick={() => startEdit(item)}
-                  >
-                    Editar cadastro
-                  </button>
-                  <ParticipantAccessInvite
-                    supabase={supabase}
-                    participantId={item.id}
-                    participantName={item.full_name}
-                    participantStatus={item.status}
-                    apiUrl={apiUrl}
-                  />
-                </>
+                <button
+                  type="button"
+                  className="compact"
+                  disabled={busy}
+                  onClick={() => startEdit(item)}
+                >
+                  Editar cadastro
+                </button>
               ) : null}
             </div>
           </div>
