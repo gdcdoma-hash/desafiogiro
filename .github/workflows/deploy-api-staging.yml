@@ -66,14 +66,19 @@ jobs:
       - name: Typecheck API
         run: pnpm --filter @portal-giro/api typecheck
 
-      - name: Configure service role secret
+      - name: Prepare encrypted deployment secret
         shell: bash
-        run: printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | pnpm --filter @portal-giro/api exec wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env staging
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("fs"); const p=process.env.RUNNER_TEMP+"/portal-giro-api-secrets.json"; fs.writeFileSync(p, JSON.stringify({SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY}), {mode: 0o600});'
 
       - name: Deploy API staging
         shell: bash
         run: |
+          set -euo pipefail
+          trap 'rm -f "$RUNNER_TEMP/portal-giro-api-secrets.json"' EXIT
           pnpm --filter @portal-giro/api exec wrangler deploy --env staging \
+            --secrets-file "$RUNNER_TEMP/portal-giro-api-secrets.json" \
             --var "PORTAL_GIRO_ENV:staging" \
             --var "ADMIN_WEB_ORIGIN:${ADMIN_WEB_ORIGIN}" \
             --var "SUPABASE_URL:${SUPABASE_URL}" \
