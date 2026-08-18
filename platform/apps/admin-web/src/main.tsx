@@ -12,6 +12,7 @@ import { MedalDeliveriesPanel } from "./MedalDeliveriesPanel";
 import { OperationsPanel } from "./OperationsPanel";
 import { ActivitiesPanel } from "./ActivitiesPanel";
 import { MeuGiroParticipant } from "./MeuGiroParticipant";
+import { ParticipantFirstAccess } from "./ParticipantFirstAccess";
 import { isAdminContext, type AdminContext } from "./session";
 import "./styles.css";
 import "./module-nav.css";
@@ -19,6 +20,7 @@ import "./module-nav.css";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
   string | undefined;
+const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
 const environment =
   (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ?? "development";
 const applicationVersion =
@@ -128,11 +130,11 @@ function App() {
           return;
         }
         setView("denied");
-        setMessage("Este usuário não possui acesso administrativo.");
+        setMessage("Este usuário não possui acesso administrativo ou vínculo com participante.");
         await writeAudit(
           "admin.login.denied",
           "denied",
-          "Usuário autenticado sem permissão administrativa.",
+          "Usuário autenticado sem permissão administrativa ou vínculo com participante.",
         );
         return;
       }
@@ -151,10 +153,7 @@ function App() {
     event.preventDefault();
     setBusy(true);
     setMessage("Verificando e-mail e senha…");
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setPassword("");
     if (error) {
       setMessage("E-mail ou senha inválidos.");
@@ -251,10 +250,8 @@ function App() {
       <main className="shell">
         <section className="card" aria-busy="true">
           <p className="eyebrow">Portal Giro</p>
-          <h1>Área administrativa</h1>
-          <p role="status" className="status">
-            {message}
-          </p>
+          <h1>Carregando acesso</h1>
+          <p role="status" className="status">{message}</p>
         </section>
       </main>
     );
@@ -265,8 +262,8 @@ function App() {
       <main className="shell">
         <section className="card">
           <p className="eyebrow">Portal Giro</p>
-          <h1>Área administrativa</h1>
-          <p>Acesso exclusivo para integrantes autorizados da equipe.</p>
+          <h1>Entrar</h1>
+          <p>Acesso para participantes do Meu Giro e integrantes autorizados da equipe.</p>
           <form onSubmit={signIn}>
             <label>
               E-mail
@@ -288,9 +285,7 @@ function App() {
                 required
               />
             </label>
-            <button type="submit" disabled={busy}>
-              {busy ? "Entrando…" : "Entrar"}
-            </button>
+            <button type="submit" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
           </form>
           <button
             type="button"
@@ -300,9 +295,8 @@ function App() {
           >
             Esqueci minha senha
           </button>
-          <p role="status" className="status">
-            {message}
-          </p>
+          <p role="status" className="status">{message}</p>
+          <ParticipantFirstAccess apiUrl={apiUrl} />
           <p className="environment">Ambiente: desenvolvimento</p>
         </section>
       </main>
@@ -335,19 +329,13 @@ function App() {
                 autoComplete="new-password"
                 minLength={8}
                 value={passwordConfirmation}
-                onChange={(event) =>
-                  setPasswordConfirmation(event.target.value)
-                }
+                onChange={(event) => setPasswordConfirmation(event.target.value)}
                 required
               />
             </label>
-            <button type="submit" disabled={busy}>
-              {busy ? "Salvando…" : "Salvar nova senha"}
-            </button>
+            <button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar nova senha"}</button>
           </form>
-          <p role="status" className="status">
-            {message}
-          </p>
+          <p role="status" className="status">{message}</p>
         </section>
       </main>
     );
@@ -360,9 +348,7 @@ function App() {
           <p className="eyebrow warning">Acesso restrito</p>
           <h1>Permissão necessária</h1>
           <p>{message}</p>
-          <button disabled={busy} onClick={() => void signOut()}>
-            Voltar para o login
-          </button>
+          <button disabled={busy} onClick={() => void signOut()}>Voltar para o login</button>
         </section>
       </main>
     );
@@ -381,44 +367,24 @@ function App() {
         </div>
         <p className="eyebrow">Portal Giro</p>
         <h1>Painel administrativo</h1>
-        <p role="status" className="status success">
-          {message}
-        </p>
+        <p role="status" className="status success">{message}</p>
 
         <nav className="module-nav" aria-label="Módulos administrativos">
-          {context?.permissions.includes("operations.read") ? (
-            <a href="#operations-title">Operação</a>
-          ) : null}
-          {context?.permissions.includes("public_registrations.read") ? (
-            <a href="#public-registrations-title">Pré-inscrições</a>
-          ) : null}
-          {context?.permissions.includes("registrations.read") ? (
-            <a href="#registrations-title">Inscrições</a>
-          ) : null}
-          {context?.permissions.includes("activities.read") ? (
-            <a href="#activities-admin-title">Meu Giro</a>
-          ) : null}
-          {context?.permissions.includes("participants.read") ? (
-            <a href="#participants-title">Participantes</a>
-          ) : null}
+          {context?.permissions.includes("operations.read") ? <a href="#operations-title">Operação</a> : null}
+          {context?.permissions.includes("public_registrations.read") ? <a href="#public-registrations-title">Pré-inscrições</a> : null}
+          {context?.permissions.includes("registrations.read") ? <a href="#registrations-title">Inscrições</a> : null}
+          {context?.permissions.includes("activities.read") ? <a href="#activities-admin-title">Meu Giro</a> : null}
+          {context?.permissions.includes("participants.read") ? <a href="#participants-title">Participantes</a> : null}
           {context?.permissions.includes("challenges.read") ? (
             <>
               <a href="#challenge-operations-title">Resumo dos desafios</a>
               <a href="#challenges-title">Desafios</a>
             </>
           ) : null}
-          {context?.permissions.includes("inventory.read") ? (
-            <a href="#inventory-title">Estoque</a>
-          ) : null}
-          {context?.permissions.includes("payments.read") ? (
-            <a href="#payments-title">Pagamentos</a>
-          ) : null}
-          {context?.permissions.includes("medal_deliveries.read") ? (
-            <a href="#medal-deliveries-title">Entrega de medalhas</a>
-          ) : null}
-          {context?.permissions.includes("audit.read") ? (
-            <a href="#audit-title">Auditoria</a>
-          ) : null}
+          {context?.permissions.includes("inventory.read") ? <a href="#inventory-title">Estoque</a> : null}
+          {context?.permissions.includes("payments.read") ? <a href="#payments-title">Pagamentos</a> : null}
+          {context?.permissions.includes("medal_deliveries.read") ? <a href="#medal-deliveries-title">Entrega de medalhas</a> : null}
+          {context?.permissions.includes("audit.read") ? <a href="#audit-title">Auditoria</a> : null}
         </nav>
 
         {context?.permissions.includes("public_registrations.read") ? (
@@ -435,58 +401,35 @@ function App() {
         {context?.permissions.includes("challenges.read") ? (
           <>
             <ChallengeOperationsSummary supabase={supabase} />
-            <ChallengesPanel
-              supabase={supabase}
-              canManage={context.permissions.includes("challenges.manage")}
-            />
+            <ChallengesPanel supabase={supabase} canManage={context.permissions.includes("challenges.manage")} />
           </>
         ) : null}
 
         {context?.permissions.includes("participants.read") ? (
-          <ParticipantsPanel
-            supabase={supabase}
-            canManage={context.permissions.includes("participants.manage")}
-          />
+          <ParticipantsPanel supabase={supabase} canManage={context.permissions.includes("participants.manage")} />
         ) : null}
 
         {context?.permissions.includes("registrations.read") ? (
-          <RegistrationsPanel
-            supabase={supabase}
-            canManage={context.permissions.includes("registrations.manage")}
-          />
+          <RegistrationsPanel supabase={supabase} canManage={context.permissions.includes("registrations.manage")} />
         ) : null}
 
         {context?.permissions.includes("activities.read") ? (
-          <ActivitiesPanel
-            supabase={supabase}
-            canManage={context.permissions.includes("activities.manage")}
-          />
+          <ActivitiesPanel supabase={supabase} canManage={context.permissions.includes("activities.manage")} />
         ) : null}
 
         {context?.permissions.includes("medal_deliveries.read") ? (
-          <MedalDeliveriesPanel
-            supabase={supabase}
-            canManage={context.permissions.includes("medal_deliveries.manage")}
-          />
+          <MedalDeliveriesPanel supabase={supabase} canManage={context.permissions.includes("medal_deliveries.manage")} />
         ) : null}
 
         {context?.permissions.includes("inventory.read") ? (
-          <InventoryPanel
-            supabase={supabase}
-            canManage={context.permissions.includes("inventory.manage")}
-          />
+          <InventoryPanel supabase={supabase} canManage={context.permissions.includes("inventory.manage")} />
         ) : null}
 
         {context?.permissions.includes("payments.read") ? (
-          <PaymentsPanel
-            supabase={supabase}
-            canManage={context.permissions.includes("payments.manage")}
-          />
+          <PaymentsPanel supabase={supabase} canManage={context.permissions.includes("payments.manage")} />
         ) : null}
 
-        {context?.permissions.includes("operations.read") ? (
-          <OperationsPanel supabase={supabase} />
-        ) : null}
+        {context?.permissions.includes("operations.read") ? <OperationsPanel supabase={supabase} /> : null}
 
         {context?.permissions.includes("audit.read") ? (
           <section className="audit-panel" aria-labelledby="audit-title">
@@ -501,20 +444,11 @@ function App() {
                 disabled={auditBusy}
                 onClick={() => void loadAuditEvents()}
               >
-                {auditBusy
-                  ? "Carregando…"
-                  : auditEvents.length
-                    ? "Atualizar"
-                    : "Carregar registros"}
+                {auditBusy ? "Carregando…" : auditEvents.length ? "Atualizar" : "Carregar registros"}
               </button>
             </div>
-            <p className="section-description">
-              Consulta somente leitura das 25 ações administrativas mais
-              recentes.
-            </p>
-            <p role="status" className="status">
-              {auditMessage}
-            </p>
+            <p className="section-description">Consulta somente leitura das 25 ações administrativas mais recentes.</p>
+            <p role="status" className="status">{auditMessage}</p>
             {auditEvents.length > 0 ? (
               <div className="audit-list">
                 {auditEvents.map((event) => (
@@ -525,15 +459,9 @@ function App() {
                     </div>
                     <div className="audit-meta">
                       <span className={`outcome ${event.outcome}`}>
-                        {event.outcome === "success"
-                          ? "Sucesso"
-                          : event.outcome === "denied"
-                            ? "Negado"
-                            : "Falha"}
+                        {event.outcome === "success" ? "Sucesso" : event.outcome === "denied" ? "Negado" : "Falha"}
                       </span>
-                      <time dateTime={event.occurred_at}>
-                        {formatAuditDate(event.occurred_at)}
-                      </time>
+                      <time dateTime={event.occurred_at}>{formatAuditDate(event.occurred_at)}</time>
                     </div>
                   </article>
                 ))}
@@ -566,11 +494,7 @@ function App() {
             >
               Criar ou alterar senha
             </button>
-            <button
-              className="secondary spaced"
-              disabled={busy}
-              onClick={() => void signOut()}
-            >
+            <button className="secondary spaced" disabled={busy} onClick={() => void signOut()}>
               {busy ? "Saindo…" : "Sair com segurança"}
             </button>
           </details>
