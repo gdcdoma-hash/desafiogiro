@@ -13,7 +13,9 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
     event.preventDefault();
     const normalized = email.trim().toLocaleLowerCase("en-US");
     if (!apiUrl) {
-      setMessage("O acesso do participante ainda não está disponível neste ambiente.");
+      setMessage(
+        "O acesso do participante ainda não está disponível neste ambiente.",
+      );
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
@@ -33,7 +35,9 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
         "Se este e-mail estiver vinculado a uma inscrição confirmada ou concluída, você receberá as orientações de acesso.",
       );
     } catch {
-      setMessage("Não foi possível solicitar o acesso agora. Tente novamente em instantes.");
+      setMessage(
+        "Não foi possível solicitar o acesso agora. Tente novamente em instantes.",
+      );
     } finally {
       setBusy(false);
     }

@@ -98,7 +98,9 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
     setMessage("Carregando participantes…");
     const { data, error } = await supabase
       .from("participants")
-      .select("id,legacy_id_dgmb,full_name,phone_e164,email,city,state_code,status")
+      .select(
+        "id,legacy_id_dgmb,full_name,phone_e164,email,city,state_code,status",
+      )
       .order("full_name", { ascending: true })
       .limit(500);
 
@@ -330,7 +332,9 @@ export function ParticipantsPanel({ supabase, canManage }: Props) {
                   "Localidade não informada"}
               </span>
               <span>{item.phone_e164 || "Telefone não informado"}</span>
-              <span>{item.email || "E-mail do Meu Giro ainda não informado"}</span>
+              <span>
+                {item.email || "E-mail do Meu Giro ainda não informado"}
+              </span>
             </div>
             <div className="offer-side">
               <strong>

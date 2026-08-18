@@ -9,7 +9,9 @@ const genericAccessMessage =
   "Se o e-mail estiver vinculado a um participante elegível, você receberá as orientações de acesso.";
 
 function normalizeEmail(value: unknown) {
-  return String(value ?? "").trim().toLocaleLowerCase("en-US");
+  return String(value ?? "")
+    .trim()
+    .toLocaleLowerCase("en-US");
 }
 
 function isValidEmail(email: string) {
@@ -60,7 +62,10 @@ app.post("/participant/access/request", async (context) => {
     body = await context.req.json();
   } catch {
     return context.json(
-      { data: { message: genericAccessMessage }, requestId: context.get("requestId") },
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
       202,
     );
   }
@@ -72,7 +77,10 @@ app.post("/participant/access/request", async (context) => {
 
   if (!isValidEmail(email)) {
     return context.json(
-      { data: { message: genericAccessMessage }, requestId: context.get("requestId") },
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
       202,
     );
   }
@@ -87,7 +95,10 @@ app.post("/participant/access/request", async (context) => {
 
   if (participant.error || !participant.data) {
     return context.json(
-      { data: { message: genericAccessMessage }, requestId: context.get("requestId") },
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
       202,
     );
   }
@@ -101,7 +112,10 @@ app.post("/participant/access/request", async (context) => {
 
   if (eligible.error || !eligible.data?.length) {
     return context.json(
-      { data: { message: genericAccessMessage }, requestId: context.get("requestId") },
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
       202,
     );
   }
@@ -132,7 +146,10 @@ app.post("/participant/access/request", async (context) => {
       application_version: "automatic-meu-giro-access-v1",
     });
     return context.json(
-      { data: { message: genericAccessMessage }, requestId: context.get("requestId") },
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
       202,
     );
   }
@@ -143,7 +160,10 @@ app.post("/participant/access/request", async (context) => {
 
   if (invited.error || !invited.data.user) {
     return context.json(
-      { data: { message: genericAccessMessage }, requestId: context.get("requestId") },
+      {
+        data: { message: genericAccessMessage },
+        requestId: context.get("requestId"),
+      },
       202,
     );
   }
@@ -168,12 +188,18 @@ app.post("/participant/access/request", async (context) => {
       : crypto.randomUUID(),
     source: "portal-api",
     reason: "Primeiro acesso liberado automaticamente por inscrição válida.",
-    metadata: { flow: "automatic", registration_statuses: ["CONFIRMED", "COMPLETED"] },
+    metadata: {
+      flow: "automatic",
+      registration_statuses: ["CONFIRMED", "COMPLETED"],
+    },
     application_version: "automatic-meu-giro-access-v1",
   });
 
   return context.json(
-    { data: { message: genericAccessMessage }, requestId: context.get("requestId") },
+    {
+      data: { message: genericAccessMessage },
+      requestId: context.get("requestId"),
+    },
     202,
   );
 });
@@ -207,7 +233,10 @@ app.use("/admin/*", async (context, next) => {
   if (error || !data.user) {
     return context.json(
       {
-        error: { code: "INVALID_SESSION", message: "Sessão inválida ou expirada." },
+        error: {
+          code: "INVALID_SESSION",
+          message: "Sessão inválida ou expirada.",
+        },
         requestId: context.get("requestId"),
       },
       401,
@@ -233,7 +262,10 @@ app.get("/admin/session", async (context) => {
   if (error || !data) {
     return context.json(
       {
-        error: { code: "FORBIDDEN", message: "Acesso administrativo não autorizado." },
+        error: {
+          code: "FORBIDDEN",
+          message: "Acesso administrativo não autorizado.",
+        },
         requestId: context.get("requestId"),
       },
       403,
@@ -260,7 +292,13 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
   const participantId = context.req.param("participantId");
   if (!/^[0-9a-f-]{36}$/i.test(participantId)) {
     return context.json(
-      { error: { code: "INVALID_PARTICIPANT", message: "Participante inválido." }, requestId: context.get("requestId") },
+      {
+        error: {
+          code: "INVALID_PARTICIPANT",
+          message: "Participante inválido.",
+        },
+        requestId: context.get("requestId"),
+      },
       400,
     );
   }
@@ -270,7 +308,10 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
     body = await context.req.json();
   } catch {
     return context.json(
-      { error: { code: "INVALID_BODY", message: "Dados do convite inválidos." }, requestId: context.get("requestId") },
+      {
+        error: { code: "INVALID_BODY", message: "Dados do convite inválidos." },
+        requestId: context.get("requestId"),
+      },
       400,
     );
   }
@@ -281,7 +322,10 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
       : "";
   if (!isValidEmail(email)) {
     return context.json(
-      { error: { code: "INVALID_EMAIL", message: "Informe um e-mail válido." }, requestId: context.get("requestId") },
+      {
+        error: { code: "INVALID_EMAIL", message: "Informe um e-mail válido." },
+        requestId: context.get("requestId"),
+      },
       400,
     );
   }
@@ -300,7 +344,13 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
   });
   if (permission.error || permission.data !== true) {
     return context.json(
-      { error: { code: "FORBIDDEN", message: "Permissão para gerenciar participantes é necessária." }, requestId: context.get("requestId") },
+      {
+        error: {
+          code: "FORBIDDEN",
+          message: "Permissão para gerenciar participantes é necessária.",
+        },
+        requestId: context.get("requestId"),
+      },
       403,
     );
   }
@@ -313,13 +363,25 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
     .maybeSingle();
   if (participant.error || !participant.data) {
     return context.json(
-      { error: { code: "PARTICIPANT_NOT_FOUND", message: "Participante não encontrado." }, requestId: context.get("requestId") },
+      {
+        error: {
+          code: "PARTICIPANT_NOT_FOUND",
+          message: "Participante não encontrado.",
+        },
+        requestId: context.get("requestId"),
+      },
       404,
     );
   }
   if (participant.data.status !== "ACTIVE") {
     return context.json(
-      { error: { code: "PARTICIPANT_INACTIVE", message: "O participante precisa estar ativo para receber acesso." }, requestId: context.get("requestId") },
+      {
+        error: {
+          code: "PARTICIPANT_INACTIVE",
+          message: "O participante precisa estar ativo para receber acesso.",
+        },
+        requestId: context.get("requestId"),
+      },
       409,
     );
   }
@@ -332,7 +394,13 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
   if (existingLink.error) throw existingLink.error;
   if (existingLink.data) {
     return context.json(
-      { error: { code: "PARTICIPANT_ALREADY_LINKED", message: "Este participante já possui uma conta vinculada." }, requestId: context.get("requestId") },
+      {
+        error: {
+          code: "PARTICIPANT_ALREADY_LINKED",
+          message: "Este participante já possui uma conta vinculada.",
+        },
+        requestId: context.get("requestId"),
+      },
       409,
     );
   }
@@ -342,7 +410,14 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
   });
   if (invited.error || !invited.data.user) {
     return context.json(
-      { error: { code: "INVITE_FAILED", message: "Não foi possível enviar o convite. Verifique se o e-mail já possui uma conta." }, requestId: context.get("requestId") },
+      {
+        error: {
+          code: "INVITE_FAILED",
+          message:
+            "Não foi possível enviar o convite. Verifique se o e-mail já possui uma conta.",
+        },
+        requestId: context.get("requestId"),
+      },
       409,
     );
   }
@@ -362,25 +437,44 @@ app.post("/admin/participants/:participantId/invite", async (context) => {
     event_application_version: "0.1.0",
     event_metadata: { participant_id: participantId, flow: "admin_exception" },
     event_outcome: "success",
-    event_request_id: /^[0-9a-f-]{36}$/i.test(requestId) ? requestId : crypto.randomUUID(),
+    event_request_id: /^[0-9a-f-]{36}$/i.test(requestId)
+      ? requestId
+      : crypto.randomUUID(),
     event_resource_id: participantId,
     event_resource_type: "participant",
   });
 
-  return context.json({ data: { participantId, status: "invited" }, requestId }, 201);
+  return context.json(
+    { data: { participantId, status: "invited" }, requestId },
+    201,
+  );
 });
 
 app.notFound((context) =>
   context.json(
-    { error: { code: "NOT_FOUND", message: "Recurso não encontrado." }, requestId: context.get("requestId") },
+    {
+      error: { code: "NOT_FOUND", message: "Recurso não encontrado." },
+      requestId: context.get("requestId"),
+    },
     404,
   ),
 );
 
 app.onError((error, context) => {
-  console.error(JSON.stringify({ error: error.message, requestId: context.get("requestId") }));
+  console.error(
+    JSON.stringify({
+      error: error.message,
+      requestId: context.get("requestId"),
+    }),
+  );
   return context.json(
-    { error: { code: "INTERNAL_ERROR", message: "Não foi possível concluir a operação." }, requestId: context.get("requestId") },
+    {
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Não foi possível concluir a operação.",
+      },
+      requestId: context.get("requestId"),
+    },
     500,
   );
 });
