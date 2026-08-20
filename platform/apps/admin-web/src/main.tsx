@@ -25,6 +25,8 @@ const environment =
   (import.meta.env.VITE_PORTAL_GIRO_ENV as string | undefined) ?? "development";
 const applicationVersion =
   (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "cycle-3";
+const participantEntry =
+  new URLSearchParams(window.location.search).get("area") === "meu-giro";
 
 if (!supabaseUrl || !publishableKey) {
   throw new Error(
@@ -120,23 +122,33 @@ function App() {
     setView("checking");
     setMessage("Validando permissões…");
 
-    void supabase.rpc("current_admin_context").then(async ({ data, error }) => {
-      if (!active) return;
-      if (error || !isAdminContext(data)) {
-        const participant = await supabase.rpc("current_participant_id");
-        if (!participant.error && typeof participant.data === "string") {
+    if (participantEntry) {
+      void supabase.rpc("current_participant_id").then(({ data, error }) => {
+        if (!active) return;
+        if (!error && typeof data === "string") {
           setView("participant");
           setMessage("Área do participante carregada.");
           return;
         }
         setView("denied");
         setMessage(
-          "Este usuário não possui acesso administrativo ou vínculo com participante.",
+          "Este usuário não possui vínculo com participante elegível.",
         );
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    void supabase.rpc("current_admin_context").then(async ({ data, error }) => {
+      if (!active) return;
+      if (error || !isAdminContext(data)) {
+        setView("denied");
+        setMessage("Este usuário não possui acesso administrativo.");
         await writeAudit(
           "admin.login.denied",
           "denied",
-          "Usuário autenticado sem permissão administrativa ou vínculo com participante.",
+          "Usuário autenticado sem permissão administrativa.",
         );
         return;
       }
@@ -181,8 +193,11 @@ function App() {
       return;
     }
     setBusy(true);
+    const redirectTo = participantEntry
+      ? `${window.location.origin}/?area=meu-giro`
+      : window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
+      redirectTo,
     });
     setMessage(
       error
@@ -212,7 +227,8 @@ function App() {
       setBusy(false);
       return;
     }
-    await writeAudit("admin.password.updated", "success");
+    if (!participantEntry)
+      await writeAudit("admin.password.updated", "success");
     await supabase.auth.signOut();
     setPasswordUpdateMode(false);
     setView("login");
@@ -265,15 +281,64 @@ function App() {
   }
 
   if (view === "login") {
+    if (participantEntry) {
+      return (
+        <main className="shell">
+          <section className="card">
+            <p className="eyebrow">Portal Giro</p>
+            <h1>Meu Giro</h1>
+            <p>
+              Área exclusiva de participantes com inscrição paga e confirmada.
+            </p>
+            <form onSubmit={signIn}>
+              <label>
+                E-mail
+                <input
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Senha
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+              </label>
+              <button type="submit" disabled={busy}>
+                {busy ? "Entrando…" : "Entrar no Meu Giro"}
+              </button>
+            </form>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => void requestPasswordReset()}
+              disabled={busy}
+            >
+              Esqueci minha senha
+            </button>
+            <p role="status" className="status">
+              {message}
+            </p>
+            <ParticipantFirstAccess apiUrl={apiUrl} />
+            <p className="environment">Ambiente: desenvolvimento</p>
+          </section>
+        </main>
+      );
+    }
+
     return (
       <main className="shell">
         <section className="card">
           <p className="eyebrow">Portal Giro</p>
-          <h1>Entrar</h1>
-          <p>
-            Acesso para participantes do Meu Giro e integrantes autorizados da
-            equipe.
-          </p>
+          <h1>Painel administrativo</h1>
+          <p>Acesso restrito aos integrantes autorizados da equipe.</p>
           <form onSubmit={signIn}>
             <label>
               E-mail
@@ -310,7 +375,6 @@ function App() {
           <p role="status" className="status">
             {message}
           </p>
-          <ParticipantFirstAccess apiUrl={apiUrl} />
           <p className="environment">Ambiente: desenvolvimento</p>
         </section>
       </main>
