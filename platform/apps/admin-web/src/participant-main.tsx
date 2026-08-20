@@ -6,7 +6,9 @@ import { ParticipantPortal } from "./ParticipantPortal";
 import "./styles.css";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
+  | string
+  | undefined;
 const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
 
 if (!supabaseUrl || !publishableKey) {
@@ -14,10 +16,19 @@ if (!supabaseUrl || !publishableKey) {
 }
 
 const supabase = createClient(supabaseUrl, publishableKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
 });
 
-type ViewState = "checking" | "login" | "password-update" | "participant" | "denied";
+type ViewState =
+  | "checking"
+  | "login"
+  | "password-update"
+  | "participant"
+  | "denied";
 
 function ParticipantApp() {
   const [session, setSession] = useState<Session | null>(null);
@@ -70,7 +81,9 @@ function ParticipantApp() {
         return;
       }
       setView("denied");
-      setMessage("Esta conta ainda não está vinculada a uma inscrição paga e confirmada.");
+      setMessage(
+        "Esta conta ainda não está vinculada a uma inscrição paga e confirmada.",
+      );
     });
 
     return () => {
@@ -82,7 +95,10 @@ function ParticipantApp() {
     event.preventDefault();
     setBusy(true);
     setMessage("Verificando e-mail e senha…");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     setPassword("");
     if (error) {
       setMessage("E-mail ou senha inválidos.");
@@ -107,7 +123,11 @@ function ParticipantApp() {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/?area=participante`,
     });
-    setMessage(error ? "Não foi possível solicitar a recuperação agora." : "Se o e-mail estiver cadastrado, você receberá as orientações.");
+    setMessage(
+      error
+        ? "Não foi possível solicitar a recuperação agora."
+        : "Se o e-mail estiver cadastrado, você receberá as orientações.",
+    );
     setBusy(false);
   }
 
@@ -138,7 +158,17 @@ function ParticipantApp() {
   }
 
   if (view === "checking") {
-    return <main className="shell"><section className="card" aria-busy="true"><p className="eyebrow">Portal Giro</p><h1>Carregando</h1><p role="status" className="status">{message}</p></section></main>;
+    return (
+      <main className="shell">
+        <section className="card" aria-busy="true">
+          <p className="eyebrow">Portal Giro</p>
+          <h1>Carregando</h1>
+          <p role="status" className="status">
+            {message}
+          </p>
+        </section>
+      </main>
+    );
   }
 
   if (view === "login") {
@@ -147,14 +177,46 @@ function ParticipantApp() {
         <section className="card">
           <p className="eyebrow">Área do participante</p>
           <h1>Acessar Portal Giro</h1>
-          <p>Entre para acessar suas inscrições, Meu Giro, certificados e demais recursos do participante.</p>
+          <p>
+            Entre para acessar suas inscrições, Meu Giro, certificados e demais
+            recursos do participante.
+          </p>
           <form onSubmit={signIn}>
-            <label>E-mail<input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-            <label>Senha<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
-            <button type="submit" disabled={busy}>{busy ? "Entrando…" : "Acessar sistema"}</button>
+            <label>
+              E-mail
+              <input
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Senha
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+            <button type="submit" disabled={busy}>
+              {busy ? "Entrando…" : "Acessar sistema"}
+            </button>
           </form>
-          <button type="button" className="link-button" onClick={() => void requestPasswordReset()} disabled={busy}>Esqueci minha senha</button>
-          <p role="status" className="status">{message}</p>
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => void requestPasswordReset()}
+            disabled={busy}
+          >
+            Esqueci minha senha
+          </button>
+          <p role="status" className="status">
+            {message}
+          </p>
           <ParticipantFirstAccess apiUrl={apiUrl} />
           <p className="environment">Ambiente: desenvolvimento</p>
         </section>
@@ -164,15 +226,68 @@ function ParticipantApp() {
 
   if (view === "password-update") {
     return (
-      <main className="shell"><section className="card"><p className="eyebrow">Portal Giro</p><h1>Criar senha de acesso</h1><p>Use pelo menos 8 caracteres.</p><form onSubmit={updatePassword}><label>Nova senha<input type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><label>Confirmar nova senha<input type="password" autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required /></label><button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar senha e continuar"}</button></form><p role="status" className="status">{message}</p></section></main>
+      <main className="shell">
+        <section className="card">
+          <p className="eyebrow">Portal Giro</p>
+          <h1>Criar senha de acesso</h1>
+          <p>Use pelo menos 8 caracteres.</p>
+          <form onSubmit={updatePassword}>
+            <label>
+              Nova senha
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Confirmar nova senha
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                value={passwordConfirmation}
+                onChange={(event) =>
+                  setPasswordConfirmation(event.target.value)
+                }
+                required
+              />
+            </label>
+            <button type="submit" disabled={busy}>
+              {busy ? "Salvando…" : "Salvar senha e continuar"}
+            </button>
+          </form>
+          <p role="status" className="status">
+            {message}
+          </p>
+        </section>
+      </main>
     );
   }
 
   if (view === "denied") {
-    return <main className="shell"><section className="card"><p className="eyebrow warning">Acesso não localizado</p><h1>Inscrição necessária</h1><p>{message}</p><button disabled={busy} onClick={() => void signOut()}>Voltar</button></section></main>;
+    return (
+      <main className="shell">
+        <section className="card">
+          <p className="eyebrow warning">Acesso não localizado</p>
+          <h1>Inscrição necessária</h1>
+          <p>{message}</p>
+          <button disabled={busy} onClick={() => void signOut()}>
+            Voltar
+          </button>
+        </section>
+      </main>
+    );
   }
 
   return <ParticipantPortal supabase={supabase} onSignOut={signOut} />;
 }
 
-createRoot(document.getElementById("root")!).render(<StrictMode><ParticipantApp /></StrictMode>);
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <ParticipantApp />
+  </StrictMode>,
+);
