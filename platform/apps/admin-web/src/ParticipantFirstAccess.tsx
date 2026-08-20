@@ -9,6 +9,11 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
+  const participantEntry =
+    new URLSearchParams(window.location.search).get("area") === "meu-giro";
+
+  if (!participantEntry) return null;
+
   async function requestAccess(event: React.FormEvent) {
     event.preventDefault();
     const normalized = email.trim().toLocaleLowerCase("en-US");
@@ -26,13 +31,17 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
     setBusy(true);
     setMessage("Verificando sua inscrição…");
     try {
-      await fetch(`${apiUrl.replace(/\/$/, "")}/participant/access/request`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalized }),
-      });
+      const response = await fetch(
+        `${apiUrl.replace(/\/$/, "")}/participant/access/request`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalized }),
+        },
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       setMessage(
-        "Se este e-mail estiver vinculado a uma inscrição confirmada ou concluída, você receberá as orientações de acesso.",
+        "Se este e-mail estiver vinculado a uma inscrição paga e confirmada, você receberá as orientações de acesso.",
       );
     } catch {
       setMessage(
@@ -44,13 +53,14 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
   }
 
   return (
-    <section aria-labelledby="participant-first-access-title">
+    <section aria-labelledby="participant-access-title">
       <hr />
-      <p className="eyebrow">Participante</p>
-      <h2 id="participant-first-access-title">Primeiro acesso ao Meu Giro</h2>
+      <p className="eyebrow">Meu Giro</p>
+      <h2 id="participant-access-title">Receber acesso por e-mail</h2>
       <p>
-        Quem possui inscrição confirmada ou concluída não precisa de liberação
-        manual. Informe o mesmo e-mail cadastrado na inscrição.
+        Participantes com inscrição paga e confirmada já têm direito ao Meu
+        Giro. Informe o mesmo e-mail cadastrado na inscrição para receber as
+        orientações de acesso.
       </p>
       <form onSubmit={requestAccess}>
         <label>
@@ -64,7 +74,7 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
           />
         </label>
         <button type="submit" disabled={busy}>
-          {busy ? "Verificando…" : "Solicitar primeiro acesso"}
+          {busy ? "Verificando…" : "Receber acesso"}
         </button>
       </form>
       <p role="status" className="status">
