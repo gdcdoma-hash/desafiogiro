@@ -131,7 +131,9 @@ function App() {
           return;
         }
         setView("denied");
-        setMessage("Este usuário não possui vínculo com participante elegível.");
+        setMessage(
+          "Este usuário não possui vínculo com participante elegível.",
+        );
       });
       return () => {
         active = false;
@@ -225,7 +227,8 @@ function App() {
       setBusy(false);
       return;
     }
-    if (!participantEntry) await writeAudit("admin.password.updated", "success");
+    if (!participantEntry)
+      await writeAudit("admin.password.updated", "success");
     await supabase.auth.signOut();
     setPasswordUpdateMode(false);
     setView("login");
