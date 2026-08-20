@@ -54,14 +54,19 @@ export function MeuGiroParticipant({
   }, [supabase]);
 
   const content = (
-    <section className={embedded ? "meu-giro embedded" : "card dashboard meu-giro"}>
+    <section
+      className={embedded ? "meu-giro embedded" : "card dashboard meu-giro"}
+    >
       <div className="meu-giro-heading">
         <div>
           <p className="eyebrow">Acompanhamento</p>
           <h2>Meu Giro</h2>
         </div>
         {!embedded ? (
-          <button className="secondary compact" onClick={() => void onSignOut()}>
+          <button
+            className="secondary compact"
+            onClick={() => void onSignOut()}
+          >
             Sair
           </button>
         ) : null}
