@@ -33,6 +33,7 @@ function ParticipantApp() {
   const [newPassword, setNewPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [passwordUpdateMode, setPasswordUpdateMode] = useState(false);
+  const [showFirstAccess, setShowFirstAccess] = useState(false);
   const [message, setMessage] = useState("Verificando acesso…");
   const [busy, setBusy] = useState(false);
 
@@ -209,10 +210,17 @@ function ParticipantApp() {
           >
             Esqueci minha senha
           </button>
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => setShowFirstAccess((current) => !current)}
+          >
+            {showFirstAccess ? "Voltar ao acesso" : "Primeiro acesso"}
+          </button>
           <p role="status" className="status">
             {message}
           </p>
-          <ParticipantFirstAccess apiUrl={apiUrl} />
+          {showFirstAccess ? <ParticipantFirstAccess apiUrl={apiUrl} /> : null}
           <p className="environment">Ambiente: desenvolvimento</p>
         </section>
       </main>
