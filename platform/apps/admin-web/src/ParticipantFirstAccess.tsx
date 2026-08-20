@@ -9,8 +9,8 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
-  const participantEntry =
-    new URLSearchParams(window.location.search).get("area") === "meu-giro";
+  const area = new URLSearchParams(window.location.search).get("area");
+  const participantEntry = area === "participante" || area === "meu-giro";
 
   if (!participantEntry) return null;
 
@@ -41,7 +41,7 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       setMessage(
-        "Se este e-mail estiver vinculado a uma inscrição paga e confirmada, você receberá as orientações de acesso.",
+        "Se este e-mail estiver vinculado a uma inscrição paga e confirmada, você receberá as orientações para criar seu acesso ao Portal Giro.",
       );
     } catch {
       setMessage(
@@ -55,12 +55,11 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
   return (
     <section aria-labelledby="participant-access-title">
       <hr />
-      <p className="eyebrow">Meu Giro</p>
-      <h2 id="participant-access-title">Receber acesso por e-mail</h2>
+      <p className="eyebrow">Primeiro acesso</p>
+      <h2 id="participant-access-title">Criar acesso ao Portal Giro</h2>
       <p>
-        Participantes com inscrição paga e confirmada já têm direito ao Meu
-        Giro. Informe o mesmo e-mail cadastrado na inscrição para receber as
-        orientações de acesso.
+        Se sua inscrição já foi paga e confirmada, use o mesmo e-mail cadastrado
+        na inscrição para criar sua senha de acesso ao sistema.
       </p>
       <form onSubmit={requestAccess}>
         <label>
@@ -74,7 +73,7 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
           />
         </label>
         <button type="submit" disabled={busy}>
-          {busy ? "Verificando…" : "Receber acesso"}
+          {busy ? "Verificando…" : "Criar meu acesso"}
         </button>
       </form>
       <p role="status" className="status">
