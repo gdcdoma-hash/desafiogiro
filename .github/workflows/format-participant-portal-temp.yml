@@ -1,0 +1,40 @@
+name: Format participant portal temp
+
+on:
+  push:
+    branches:
+      - feature/participant-portal-shell-v1
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: "!contains(github.event.head_commit.message, 'chore: apply prettier participant portal')"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/participant-portal-shell-v1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write apps/admin-web/src/MeuGiroParticipant.tsx apps/admin-web/src/participant-main.tsx apps/admin-web/src/ParticipantPortal.tsx
+      - name: Commit formatting
+        working-directory: .
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add platform/apps/admin-web/src/MeuGiroParticipant.tsx platform/apps/admin-web/src/participant-main.tsx platform/apps/admin-web/src/ParticipantPortal.tsx
+          git commit -m "chore: apply prettier participant portal"
+          git push origin HEAD:feature/participant-portal-shell-v1
