@@ -8,11 +8,7 @@ import {
 } from "./meu-giro";
 import "./participant-portal.css";
 
-type ParticipantModule =
-  | "inicio"
-  | "inscricoes"
-  | "meu-giro"
-  | "certificados";
+type ParticipantModule = "inicio" | "inscricoes" | "meu-giro" | "certificados";
 
 export function ParticipantPortal({
   supabase,
@@ -119,10 +115,7 @@ export function ParticipantPortal({
                 <strong>{registrations.length}</strong>
                 <small>Consultar participações</small>
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveModule("meu-giro")}
-              >
+              <button type="button" onClick={() => setActiveModule("meu-giro")}>
                 <span>Meu Giro</span>
                 <strong>{focus ? `${focus.progress_percent}%` : "—"}</strong>
                 <small>
@@ -145,7 +138,8 @@ export function ParticipantPortal({
                   <p className="eyebrow">Desafio em foco</p>
                   <h3>{focus.challenge_name}</h3>
                   <span className="status-pill">
-                    Inscrição {registrationStatusLabel(focus.registration_status)}
+                    Inscrição{" "}
+                    {registrationStatusLabel(focus.registration_status)}
                   </span>
                 </div>
                 <div>

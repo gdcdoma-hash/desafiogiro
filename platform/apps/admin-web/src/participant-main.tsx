@@ -7,8 +7,7 @@ import "./styles.css";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as
-  | string
-  | undefined;
+  string | undefined;
 const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
 
 if (!supabaseUrl || !publishableKey) {
@@ -24,11 +23,7 @@ const supabase = createClient(supabaseUrl, publishableKey, {
 });
 
 type ViewState =
-  | "checking"
-  | "login"
-  | "password-update"
-  | "participant"
-  | "denied";
+  "checking" | "login" | "password-update" | "participant" | "denied";
 
 function ParticipantApp() {
   const [session, setSession] = useState<Session | null>(null);

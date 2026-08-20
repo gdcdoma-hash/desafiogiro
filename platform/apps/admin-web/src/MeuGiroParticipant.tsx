@@ -111,7 +111,8 @@ export function MeuGiroParticipant({
           <section className="module-panel" aria-labelledby="activities-title">
             <h2 id="activities-title">Atividades recentes</h2>
             <p className="section-description">
-              A competência considera a data e hora local em que o pedal começou.
+              A competência considera a data e hora local em que o pedal
+              começou.
             </p>
             <div className="activity-list">
               {activities.length ? (
