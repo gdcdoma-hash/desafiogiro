@@ -8,7 +8,11 @@ import {
 } from "./meu-giro";
 import "./participant-portal.css";
 
-type ParticipantModule = "inicio" | "inscricoes" | "meu-giro" | "certificados";
+type ParticipantModule =
+  | "inicio"
+  | "inscricoes"
+  | "meu-giro"
+  | "certificados";
 
 export function ParticipantPortal({
   supabase,
@@ -20,7 +24,10 @@ export function ParticipantPortal({
   const [activeModule, setActiveModule] = useState<ParticipantModule>("inicio");
   const [registrations, setRegistrations] = useState<MeuGiroProgress[]>([]);
   const [message, setMessage] = useState("Carregando seu Portal Giro…");
-  const focus = useMemo(() => selectMeuGiroFocus(registrations), [registrations]);
+  const focus = useMemo(
+    () => selectMeuGiroFocus(registrations),
+    [registrations],
+  );
   const completed = registrations.filter(
     (registration) => registration.registration_status === "COMPLETED",
   );
@@ -32,7 +39,9 @@ export function ParticipantPortal({
         return;
       }
       setRegistrations((data ?? []) as MeuGiroProgress[]);
-      setMessage(data?.length ? "Dados atualizados." : "Nenhuma inscrição encontrada.");
+      setMessage(
+        data?.length ? "Dados atualizados." : "Nenhuma inscrição encontrada.",
+      );
     });
   }, [supabase]);
 
@@ -47,7 +56,10 @@ export function ParticipantPortal({
               Inscrições, evolução no desafio e conquistas em um só lugar.
             </p>
           </div>
-          <button className="secondary compact" onClick={() => void onSignOut()}>
+          <button
+            className="secondary compact"
+            onClick={() => void onSignOut()}
+          >
             Sair
           </button>
         </header>
@@ -84,7 +96,10 @@ export function ParticipantPortal({
         </nav>
 
         {activeModule === "inicio" ? (
-          <section className="participant-module" aria-labelledby="participant-home-title">
+          <section
+            className="participant-module"
+            aria-labelledby="participant-home-title"
+          >
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Visão geral</p>
@@ -96,17 +111,28 @@ export function ParticipantPortal({
             </p>
 
             <div className="participant-summary-grid">
-              <button type="button" onClick={() => setActiveModule("inscricoes")}>
+              <button
+                type="button"
+                onClick={() => setActiveModule("inscricoes")}
+              >
                 <span>Inscrições</span>
                 <strong>{registrations.length}</strong>
                 <small>Consultar participações</small>
               </button>
-              <button type="button" onClick={() => setActiveModule("meu-giro")}>
+              <button
+                type="button"
+                onClick={() => setActiveModule("meu-giro")}
+              >
                 <span>Meu Giro</span>
                 <strong>{focus ? `${focus.progress_percent}%` : "—"}</strong>
-                <small>{focus ? "Progresso da meta atual" : "Sem desafio em foco"}</small>
+                <small>
+                  {focus ? "Progresso da meta atual" : "Sem desafio em foco"}
+                </small>
               </button>
-              <button type="button" onClick={() => setActiveModule("certificados")}>
+              <button
+                type="button"
+                onClick={() => setActiveModule("certificados")}
+              >
                 <span>Certificados</span>
                 <strong>{completed.length}</strong>
                 <small>Conclusões elegíveis</small>
@@ -132,7 +158,10 @@ export function ParticipantPortal({
         ) : null}
 
         {activeModule === "inscricoes" ? (
-          <section className="participant-module" aria-labelledby="participant-registrations-title">
+          <section
+            className="participant-module"
+            aria-labelledby="participant-registrations-title"
+          >
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Participações</p>
@@ -155,7 +184,9 @@ export function ParticipantPortal({
                     </div>
                     <div>
                       <span className="status-pill">
-                        {registrationStatusLabel(registration.registration_status)}
+                        {registrationStatusLabel(
+                          registration.registration_status,
+                        )}
                       </span>
                       <small>Meta: {registration.target_km} km</small>
                     </div>
@@ -166,19 +197,28 @@ export function ParticipantPortal({
               )}
             </div>
             <p className="participant-note">
-              A criação de nova inscrição será conectada a este módulo sem alterar o fluxo atual que continua em funcionamento durante a migração.
+              A criação de nova inscrição será conectada a este módulo sem
+              alterar o fluxo atual que continua em funcionamento durante a
+              migração.
             </p>
           </section>
         ) : null}
 
         {activeModule === "meu-giro" ? (
           <section className="participant-module participant-meu-giro">
-            <MeuGiroParticipant supabase={supabase} onSignOut={onSignOut} embedded />
+            <MeuGiroParticipant
+              supabase={supabase}
+              onSignOut={onSignOut}
+              embedded
+            />
           </section>
         ) : null}
 
         {activeModule === "certificados" ? (
-          <section className="participant-module" aria-labelledby="participant-certificates-title">
+          <section
+            className="participant-module"
+            aria-labelledby="participant-certificates-title"
+          >
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Conquistas</p>
@@ -186,7 +226,8 @@ export function ParticipantPortal({
               </div>
             </div>
             <p className="section-description">
-              Os desafios concluídos aparecem aqui como elegíveis. A geração e o download do certificado serão conectados neste módulo.
+              Os desafios concluídos aparecem aqui como elegíveis. A geração e o
+              download do certificado serão conectados neste módulo.
             </p>
             <div className="participant-registration-list">
               {completed.length ? (
