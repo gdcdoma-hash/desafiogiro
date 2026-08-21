@@ -258,11 +258,77 @@
 }
 
 @media (max-width: 48rem) {
+  .participant-shell {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .participant-portal {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: 0;
+    padding: 1rem;
+    overflow-x: hidden;
+  }
+
+  .participant-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .participant-header h1 {
+    font-size: clamp(1.7rem, 8vw, 2.15rem);
+    line-height: 1.05;
+  }
+
+  .participant-subtitle {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .participant-header button {
+    align-self: start;
+    white-space: nowrap;
+  }
+
+  .participant-nav {
+    width: 100%;
+    max-width: 100%;
+    margin: 1.1rem 0;
+    gap: 0.4rem;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .participant-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .participant-nav button {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    padding-inline: 0.9rem;
+  }
+
+  .participant-module {
+    min-width: 0;
+    padding-top: 1rem;
+  }
+
   .participant-summary-grid {
     grid-template-columns: 1fr;
   }
 
-  .participant-header,
+  .participant-summary-grid button {
+    width: 100%;
+    min-height: 0;
+  }
+
   .participant-focus,
   .participant-registration-list article {
     align-items: flex-start;
@@ -271,6 +337,53 @@
 
   .participant-focus > div:last-child,
   .participant-registration-list article > div:last-child {
+    width: 100%;
     text-align: left;
+  }
+
+  .participant-registration-form,
+  .participant-registration-form label,
+  .participant-registration-form select,
+  .registration-upload,
+  .registration-payment-card,
+  .participant-registration-form button {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .registration-step {
+    align-items: flex-start;
+  }
+
+  .registration-step > div {
+    min-width: 0;
+  }
+
+  .registration-payment-card code,
+  .registration-upload small,
+  .participant-registration-list strong,
+  .participant-registration-list span,
+  .participant-registration-list small {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 24rem) {
+  .participant-portal {
+    padding: 0.85rem;
+  }
+
+  .participant-header {
+    grid-template-columns: 1fr;
+  }
+
+  .participant-header button {
+    justify-self: start;
+  }
+
+  .participant-nav button {
+    padding-inline: 0.75rem;
   }
 }
