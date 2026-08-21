@@ -85,32 +85,45 @@ export function ParticipantRegistrationCreate({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [copied, setCopied] = useState(false);
-  const [message, setMessage] = useState("Carregando inscrições disponíveis…");
+  const [message, setMessage] = useState(
+    "Carregando inscrições disponíveis…",
+  );
   const [busy, setBusy] = useState(false);
-  const [editingRegistrationId, setEditingRegistrationId] = useState<string | null>(null);
+  const [editingRegistrationId, setEditingRegistrationId] = useState<
+    string | null
+  >(null);
   const [editOfferId, setEditOfferId] = useState("");
   const [editGoalId, setEditGoalId] = useState("");
 
   async function loadCatalog() {
-    const { data, error } = await supabase.rpc("get_participant_checkout_catalog");
+    const { data, error } = await supabase.rpc(
+      "get_participant_checkout_catalog",
+    );
     if (error) throw error;
     const rows = (data ?? []) as CatalogItem[];
     setCatalog(rows);
     setOfferId((current) => {
-      if (current && rows.some((row) => row.offer_id === current)) return current;
+      if (current && rows.some((row) => row.offer_id === current)) {
+        return current;
+      }
       return rows[0]?.offer_id ?? "";
     });
     setGoalId((current) => {
-      if (current && rows.some((row) => row.goal_id === current)) return current;
+      if (current && rows.some((row) => row.goal_id === current)) {
+        return current;
+      }
       return rows[0]?.goal_id ?? "";
     });
     return rows;
   }
 
   async function loadCheckout() {
-    const { data, error } = await supabase.rpc("get_participant_checkout_state", {
-      target_checkout_id: null,
-    });
+    const { data, error } = await supabase.rpc(
+      "get_participant_checkout_state",
+      {
+        target_checkout_id: null,
+      },
+    );
     if (error) throw error;
     const next = data as CheckoutState;
     setCheckout(next);
@@ -121,7 +134,9 @@ export function ParticipantRegistrationCreate({
     const nextCheckout = await loadCheckout();
     const rows = await loadCatalog();
     if (nextCheckout.item_count > 0) {
-      setMessage("Revise suas inscrições, faça o PIX e envie o comprovante.");
+      setMessage(
+        "Revise suas inscrições, faça o PIX e envie o comprovante.",
+      );
     } else if (rows.length > 0) {
       setMessage("Adicione as inscrições que deseja fazer.");
     } else {
@@ -132,7 +147,9 @@ export function ParticipantRegistrationCreate({
   useEffect(() => {
     void refresh().catch(() => {
       setCatalog([]);
-      setMessage("Não foi possível carregar as inscrições disponíveis agora.");
+      setMessage(
+        "Não foi possível carregar as inscrições disponíveis agora.",
+      );
     });
   }, [supabase]);
 
@@ -178,14 +195,28 @@ export function ParticipantRegistrationCreate({
       setMessage("Inscrições atualizadas. Confira o resumo abaixo.");
     } catch (error) {
       const text = error instanceof Error ? error.message : "";
-      if (text.includes("not available") || text.includes("no longer available")) {
-        setMessage("Essa medalha não está mais disponível. Sua seleção anterior foi mantida.");
+      if (
+        text.includes("not available") ||
+        text.includes("no longer available")
+      ) {
+        setMessage(
+          "Essa medalha não está mais disponível. Sua seleção anterior foi mantida.",
+        );
       } else if (text.includes("limit reached")) {
-        setMessage("Você já atingiu o limite configurado para esse tipo de inscrição.");
-      } else if (text.includes("No active price lot") || text.includes("PIX key")) {
-        setMessage("A combinação de quantidade e valor ainda não está configurada pelo administrador.");
+        setMessage(
+          "Você já atingiu o limite configurado para esse tipo de inscrição.",
+        );
+      } else if (
+        text.includes("No active price lot") ||
+        text.includes("PIX key")
+      ) {
+        setMessage(
+          "A combinação de quantidade e valor ainda não está configurada pelo administrador.",
+        );
       } else {
-        setMessage("Não foi possível atualizar as inscrições agora. Nenhuma seleção existente foi perdida.");
+        setMessage(
+          "Não foi possível atualizar as inscrições agora. Nenhuma seleção existente foi perdida.",
+        );
       }
     } finally {
       setBusy(false);
@@ -221,11 +252,15 @@ export function ParticipantRegistrationCreate({
 
   function beginEdit(item: CheckoutItem) {
     setEditingRegistrationId(item.registration_id);
-    const availableSameOffer = catalog.find((row) => row.offer_id === item.offer_id);
+    const availableSameOffer = catalog.find(
+      (row) => row.offer_id === item.offer_id,
+    );
     const first = availableSameOffer ?? catalog[0];
     setEditOfferId(first?.offer_id ?? item.offer_id);
     const sameGoal = catalog.find(
-      (row) => row.offer_id === (first?.offer_id ?? item.offer_id) && row.goal_id === item.goal_id,
+      (row) =>
+        row.offer_id === (first?.offer_id ?? item.offer_id) &&
+        row.goal_id === item.goal_id,
     );
     setEditGoalId(sameGoal?.goal_id ?? first?.goal_id ?? item.goal_id);
   }
@@ -264,35 +299,62 @@ export function ParticipantRegistrationCreate({
       .upload(objectPath, file, { upsert: true, contentType: file.type });
     if (uploadError) throw uploadError;
 
-    const { error: attachError } = await supabase.rpc("attach_participant_checkout_media", {
-      target_checkout_id: checkoutId,
-      target_kind: kind,
-      target_object_path: objectPath,
-      target_mime_type: file.type || "application/octet-stream",
-      target_original_name: file.name,
-    });
+    const { error: attachError } = await supabase.rpc(
+      "attach_participant_checkout_media",
+      {
+        target_checkout_id: checkoutId,
+        target_kind: kind,
+        target_object_path: objectPath,
+        target_mime_type: file.type || "application/octet-stream",
+        target_original_name: file.name,
+      },
+    );
     if (attachError) throw attachError;
   }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!checkout || checkout.item_count < 1 || !avatarFile || !proofFile || !checkout.pix_key) {
-      setMessage("Adicione ao menos uma inscrição, sua foto e o comprovante antes de enviar.");
+    if (
+      !checkout ||
+      checkout.item_count < 1 ||
+      !avatarFile ||
+      !proofFile ||
+      !checkout.pix_key
+    ) {
+      setMessage(
+        "Adicione ao menos uma inscrição, sua foto e o comprovante antes de enviar.",
+      );
       return;
     }
 
     setBusy(true);
     setMessage("Enviando suas inscrições para conferência…");
     try {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError || !authData.user) throw authError ?? new Error("Sessão inválida");
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+      if (authError || !authData.user) {
+        throw authError ?? new Error("Sessão inválida");
+      }
 
-      await uploadCheckoutMedia(authData.user.id, checkout.checkout_id, "AVATAR", avatarFile);
-      await uploadCheckoutMedia(authData.user.id, checkout.checkout_id, "PAYMENT_PROOF", proofFile);
+      await uploadCheckoutMedia(
+        authData.user.id,
+        checkout.checkout_id,
+        "AVATAR",
+        avatarFile,
+      );
+      await uploadCheckoutMedia(
+        authData.user.id,
+        checkout.checkout_id,
+        "PAYMENT_PROOF",
+        proofFile,
+      );
 
-      const { data, error } = await supabase.rpc("submit_participant_checkout", {
-        target_checkout_id: checkout.checkout_id,
-      });
+      const { data, error } = await supabase.rpc(
+        "submit_participant_checkout",
+        {
+          target_checkout_id: checkout.checkout_id,
+        },
+      );
       if (error) throw error;
       setCheckout(data as CheckoutState);
       setAvatarFile(null);
@@ -318,29 +380,54 @@ export function ParticipantRegistrationCreate({
         <span className="registration-step-number">1</span>
         <div>
           <strong>Monte suas inscrições</strong>
-          <small>Adicione Normal e Repescagens dentro dos limites definidos pela equipe.</small>
+          <small>
+            Adicione Normal e Repescagens dentro dos limites definidos pela
+            equipe.
+          </small>
         </div>
       </div>
 
       {checkout && checkout.items.length > 0 ? (
-        <div className="registration-cart" aria-label="Inscrições adicionadas">
+        <div
+          className="registration-cart"
+          aria-label="Inscrições adicionadas"
+        >
           {checkout.items.map((item) => (
-            <article key={item.registration_id} className="registration-cart-item">
+            <article
+              key={item.registration_id}
+              className="registration-cart-item"
+            >
               <div className="registration-cart-main">
-                <span className="registration-category">{categoryLabel(item.category_code)}</span>
+                <span className="registration-category">
+                  {categoryLabel(item.category_code)}
+                </span>
                 <strong>{item.challenge_name}</strong>
                 <span>{item.goal_label}</span>
                 {item.reservation_status === "RESERVED" ? (
-                  <small className="registration-reserved">Medalha reservada ✓</small>
+                  <small className="registration-reserved">
+                    Medalha reservada ✓
+                  </small>
                 ) : null}
               </div>
-              <strong className="registration-cart-price">{formatMoney(item.price)}</strong>
+              <strong className="registration-cart-price">
+                {formatMoney(item.price)}
+              </strong>
               {editable ? (
                 <div className="registration-cart-actions">
-                  <button type="button" className="secondary" onClick={() => beginEdit(item)} disabled={busy}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => beginEdit(item)}
+                    disabled={busy}
+                  >
                     Alterar
                   </button>
-                  <button type="button" className="secondary" onClick={() => void removeItem(item)} disabled={busy}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void removeItem(item)}
+                    disabled={busy}
+                  >
                     Remover
                   </button>
                 </div>
@@ -349,14 +436,19 @@ export function ParticipantRegistrationCreate({
               {editingRegistrationId === item.registration_id ? (
                 <div className="registration-edit-box">
                   <strong>Trocar inscrição</strong>
-                  <small>A troca só acontece se a nova opção estiver realmente disponível.</small>
+                  <small>
+                    A troca só acontece se a nova opção estiver realmente
+                    disponível.
+                  </small>
                   <label>
                     Desafio
                     <select
                       value={editOfferId}
                       onChange={(event) => {
                         const nextOffer = event.target.value;
-                        const firstGoal = catalog.find((row) => row.offer_id === nextOffer);
+                        const firstGoal = catalog.find(
+                          (row) => row.offer_id === nextOffer,
+                        );
                         setEditOfferId(nextOffer);
                         setEditGoalId(firstGoal?.goal_id ?? "");
                       }}
@@ -364,24 +456,40 @@ export function ParticipantRegistrationCreate({
                     >
                       {offers.map((offer) => (
                         <option key={offer.offer_id} value={offer.offer_id}>
-                          {categoryLabel(offer.category_code)} — {offer.challenge_name}
+                          {categoryLabel(offer.category_code)} —{" "}
+                          {offer.challenge_name}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label>
                     Meta
-                    <select value={editGoalId} onChange={(event) => setEditGoalId(event.target.value)} disabled={busy}>
+                    <select
+                      value={editGoalId}
+                      onChange={(event) => setEditGoalId(event.target.value)}
+                      disabled={busy}
+                    >
                       {editGoals.map((goal) => (
-                        <option key={goal.goal_id} value={goal.goal_id}>{goal.goal_label}</option>
+                        <option key={goal.goal_id} value={goal.goal_id}>
+                          {goal.goal_label}
+                        </option>
                       ))}
                     </select>
                   </label>
                   <div className="registration-edit-actions">
-                    <button type="button" onClick={() => void swapItem(item)} disabled={busy || !editGoalId}>
+                    <button
+                      type="button"
+                      onClick={() => void swapItem(item)}
+                      disabled={busy || !editGoalId}
+                    >
                       Garantir e trocar
                     </button>
-                    <button type="button" className="secondary" onClick={() => setEditingRegistrationId(null)} disabled={busy}>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => setEditingRegistrationId(null)}
+                      disabled={busy}
+                    >
                       Cancelar
                     </button>
                   </div>
@@ -403,7 +511,9 @@ export function ParticipantRegistrationCreate({
               value={offerId}
               onChange={(event) => {
                 const nextOffer = event.target.value;
-                const firstGoal = catalog.find((item) => item.offer_id === nextOffer);
+                const firstGoal = catalog.find(
+                  (item) => item.offer_id === nextOffer,
+                );
                 setOfferId(nextOffer);
                 setGoalId(firstGoal?.goal_id ?? "");
               }}
@@ -418,9 +528,15 @@ export function ParticipantRegistrationCreate({
           </label>
           <label>
             Meta
-            <select value={goalId} onChange={(event) => setGoalId(event.target.value)} disabled={busy || goals.length === 0}>
+            <select
+              value={goalId}
+              onChange={(event) => setGoalId(event.target.value)}
+              disabled={busy || goals.length === 0}
+            >
               {goals.map((goal) => (
-                <option key={goal.goal_id} value={goal.goal_id}>{goal.goal_label}</option>
+                <option key={goal.goal_id} value={goal.goal_id}>
+                  {goal.goal_label}
+                </option>
               ))}
             </select>
           </label>
@@ -428,17 +544,29 @@ export function ParticipantRegistrationCreate({
             <div className="registration-add-summary">
               <span>Valor nesta configuração</span>
               <strong>{formatMoney(selected.price)}</strong>
-              {selected.reserve_on_add ? <small>Ao adicionar, a medalha será reservada no estoque.</small> : null}
+              {selected.reserve_on_add ? (
+                <small>
+                  Ao adicionar, a medalha será reservada no estoque.
+                </small>
+              ) : null}
             </div>
           ) : null}
-          <button type="button" onClick={() => void addItem()} disabled={busy || !selected}>
-            {selected?.reserve_on_add ? "Adicionar e reservar medalha" : "Adicionar inscrição"}
+          <button
+            type="button"
+            onClick={() => void addItem()}
+            disabled={busy || !selected}
+          >
+            {selected?.reserve_on_add
+              ? "Adicionar e reservar medalha"
+              : "Adicionar inscrição"}
           </button>
         </div>
       ) : null}
 
       {editable && catalog.length === 0 && checkout?.item_count ? (
-        <p className="participant-note">Você atingiu os limites das inscrições disponíveis neste momento.</p>
+        <p className="participant-note">
+          Você atingiu os limites das inscrições disponíveis neste momento.
+        </p>
       ) : null}
 
       {checkout && checkout.item_count > 0 ? (
@@ -447,7 +575,9 @@ export function ParticipantRegistrationCreate({
             <span className="registration-step-number">2</span>
             <div>
               <strong>Adicione sua foto</strong>
-              <small>Uma foto nítida será usada nos materiais das suas inscrições.</small>
+              <small>
+                Uma foto nítida será usada nos materiais das suas inscrições.
+              </small>
             </div>
           </div>
 
@@ -457,7 +587,9 @@ export function ParticipantRegistrationCreate({
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)}
+              onChange={(event) =>
+                setAvatarFile(event.target.files?.[0] ?? null)
+              }
               disabled={busy || !editable}
             />
           </label>
@@ -466,23 +598,35 @@ export function ParticipantRegistrationCreate({
             <span className="registration-step-number">3</span>
             <div>
               <strong>Faça o pagamento</strong>
-              <small>O valor e a chave PIX abaixo correspondem ao conjunto inteiro de inscrições.</small>
+              <small>
+                O valor e a chave PIX abaixo correspondem ao conjunto inteiro
+                de inscrições.
+              </small>
             </div>
           </div>
 
           <div className="registration-payment-card">
-            <span>{checkout.item_count} {checkout.item_count === 1 ? "inscrição" : "inscrições"}</span>
+            <span>
+              {checkout.item_count}{" "}
+              {checkout.item_count === 1 ? "inscrição" : "inscrições"}
+            </span>
             <strong>Total: {formatMoney(checkout.total_amount)}</strong>
             {checkout.pix_key ? (
               <>
                 <small>{checkout.pix_holder}</small>
                 <code>{checkout.pix_key}</code>
-                <button type="button" onClick={() => void copyPixKey()} disabled={busy || !editable}>
+                <button
+                  type="button"
+                  onClick={() => void copyPixKey()}
+                  disabled={busy || !editable}
+                >
                   {copied ? "Chave copiada ✓" : "Copiar chave PIX"}
                 </button>
               </>
             ) : (
-              <p className="status">Chave PIX ainda não configurada para esta quantidade.</p>
+              <p className="status">
+                Chave PIX ainda não configurada para esta quantidade.
+              </p>
             )}
           </div>
 
@@ -490,30 +634,45 @@ export function ParticipantRegistrationCreate({
             <span className="registration-step-number">4</span>
             <div>
               <strong>Envie o comprovante</strong>
-              <small>Um único comprovante corresponde ao pagamento total acima.</small>
+              <small>
+                Um único comprovante corresponde ao pagamento total acima.
+              </small>
             </div>
           </div>
 
           <label className="registration-upload">
-            <span>{proofFile ? "Trocar comprovante" : "Enviar comprovante"}</span>
-            <small>{proofFile ? proofFile.name : "Imagem ou PDF, até 10 MB"}</small>
+            <span>
+              {proofFile ? "Trocar comprovante" : "Enviar comprovante"}
+            </span>
+            <small>
+              {proofFile ? proofFile.name : "Imagem ou PDF, até 10 MB"}
+            </small>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,application/pdf"
-              onChange={(event) => setProofFile(event.target.files?.[0] ?? null)}
+              onChange={(event) =>
+                setProofFile(event.target.files?.[0] ?? null)
+              }
               disabled={busy || !editable}
             />
           </label>
 
           {editable ? (
-            <button type="submit" disabled={busy || !avatarFile || !proofFile || !checkout.pix_key}>
+            <button
+              type="submit"
+              disabled={
+                busy || !avatarFile || !proofFile || !checkout.pix_key
+              }
+            >
               {busy ? "Enviando…" : "Enviar inscrições para conferência"}
             </button>
           ) : null}
         </>
       ) : null}
 
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
     </form>
   );
 }
