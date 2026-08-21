@@ -1,12 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { ChallengeLifecycleControls } from "./ChallengeLifecycleControls";
+import { ChallengeMedalImageControl } from "./ChallengeMedalImageControl";
 import { OfferLifecycleControls } from "./OfferLifecycleControls";
 
 type Challenge = {
   id: string;
   code: string;
   public_name: string;
+  medal_image_path: string | null;
   reference_year: number;
   reference_month: number | null;
   sports_starts_at: string;
@@ -114,7 +116,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     const { data, error } = await supabase
       .from("challenges")
       .select(
-        "id,code,public_name,reference_year,reference_month,sports_starts_at,sports_ends_at,status,is_public",
+        "id,code,public_name,medal_image_path,reference_year,reference_month,sports_starts_at,sports_ends_at,status,is_public",
       )
       .order("sports_starts_at", { ascending: false });
 
@@ -526,6 +528,17 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             onChanged={async () => {
               await loadChallenges(selected.id);
               await loadChallengeDetails(selected.id);
+            }}
+          />
+
+          <ChallengeMedalImageControl
+            supabase={supabase}
+            challengeId={selected.id}
+            challengeName={selected.public_name}
+            medalImagePath={selected.medal_image_path}
+            canManage={canManage}
+            onChanged={async () => {
+              await loadChallenges(selected.id);
             }}
           />
 

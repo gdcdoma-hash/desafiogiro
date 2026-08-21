@@ -1,10 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { ParticipantCheckoutAdminPanel } from "./ParticipantCheckoutAdminPanel";
+import { ParticipantRegistrationConfigPanel } from "./ParticipantRegistrationConfigPanel";
 import "./payments-summary.css";
 
 type Props = {
   supabase: SupabaseClient;
   canManage: boolean;
+  canManageRegistrations: boolean;
 };
 
 type Participant = { id: string; full_name: string };
@@ -14,6 +17,7 @@ type Registration = {
   status: string;
   price_snapshot: number;
   created_at: string;
+  checkout_id: string | null;
 };
 type PaymentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 type Payment = {
@@ -40,7 +44,11 @@ const registrationLabels: Record<string, string> = {
   EXPIRED: "Inscrição expirada",
 };
 
-export function PaymentsPanel({ supabase, canManage }: Props) {
+export function PaymentsPanel({
+  supabase,
+  canManage,
+  canManageRegistrations,
+}: Props) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -58,7 +66,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
       supabase.from("participants").select("id,full_name").order("full_name"),
       supabase
         .from("registrations")
-        .select("id,participant_id,status,price_snapshot,created_at")
+        .select(
+          "id,participant_id,status,price_snapshot,created_at,checkout_id",
+        )
         .order("created_at", { ascending: false })
         .limit(250),
       supabase
@@ -91,8 +101,10 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
 
   const eligibleRegistrations = useMemo(
     () =>
-      registrations.filter((registration) =>
-        ["PENDING", "CONFIRMED"].includes(registration.status),
+      registrations.filter(
+        (registration) =>
+          !registration.checkout_id &&
+          ["PENDING", "CONFIRMED"].includes(registration.status),
       ),
     [registrations],
   );
@@ -149,8 +161,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
   const filteredPayments = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("pt-BR");
     return payments.filter((payment) => {
-      if (statusFilter !== "ALL" && payment.status !== statusFilter)
+      if (statusFilter !== "ALL" && payment.status !== statusFilter) {
         return false;
+      }
       if (!normalized) return true;
       const registration = registrationForPayment(payment.registration_id);
       const participant = registration
@@ -193,6 +206,13 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
     status: "CONFIRMED" | "CANCELLED",
   ) {
     if (!canManage || payment.status !== "PENDING") return;
+    const registration = registrationForPayment(payment.registration_id);
+    if (registration?.checkout_id) {
+      setMessage(
+        "Este pagamento pertence a um conjunto. Use a área Inscrições agrupadas acima.",
+      );
+      return;
+    }
     setBusy(true);
     const { error } = await supabase
       .from("registration_payments")
@@ -240,9 +260,20 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
         </button>
       </div>
       <p className="section-description">
-        Registro financeiro da inscrição. Confirmar pagamento não conclui
-        automaticamente a inscrição neste ciclo.
+        Registro financeiro das inscrições. Pagamentos agrupados do Portal Giro
+        são confirmados como um único conjunto.
       </p>
+
+      <ParticipantRegistrationConfigPanel
+        supabase={supabase}
+        canManageLimits={canManageRegistrations}
+        canManagePix={canManage}
+      />
+
+      <ParticipantCheckoutAdminPanel
+        supabase={supabase}
+        canManage={canManage}
+      />
 
       <div className="payments-summary" aria-label="Resumo dos pagamentos">
         <button
@@ -290,7 +321,7 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
       {canManage ? (
         <form className="payment-create-form" onSubmit={createPayment}>
           <label>
-            Inscrição aberta
+            Inscrição aberta sem checkout
             <select
               value={registrationId}
               onChange={(event) => setRegistrationId(event.target.value)}
@@ -355,6 +386,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
                         registration.status)
                       : "Inscrição não localizada na consulta atual"}
                   </span>
+                  {registration?.checkout_id ? (
+                    <span>Parte de um pagamento agrupado</span>
+                  ) : null}
                   <time dateTime={payment.created_at}>
                     Registrado em {formatDate(payment.created_at)}
                   </time>
@@ -370,7 +404,9 @@ export function PaymentsPanel({ supabase, canManage }: Props) {
                       Confirmado em {formatDate(payment.paid_at)}
                     </time>
                   ) : null}
-                  {canManage && payment.status === "PENDING" ? (
+                  {registration?.checkout_id && payment.status === "PENDING" ? (
+                    <small>Gerencie pelo conjunto acima.</small>
+                  ) : canManage && payment.status === "PENDING" ? (
                     <div className="payment-actions">
                       <button
                         type="button"

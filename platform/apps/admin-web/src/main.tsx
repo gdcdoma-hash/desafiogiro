@@ -553,6 +553,9 @@ function App() {
           <PaymentsPanel
             supabase={supabase}
             canManage={context.permissions.includes("payments.manage")}
+            canManageRegistrations={context.permissions.includes(
+              "registrations.manage",
+            )}
           />
         ) : null}
 
