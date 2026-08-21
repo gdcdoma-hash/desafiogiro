@@ -30,7 +30,17 @@ alter table public.challenge_goals
   add constraint challenge_goals_duration_days_check
     check (duration_days is null or duration_days > 0);
 
-create unique index if not exists challenge_goals_duration_unique
+alter table public.challenge_goals
+  drop constraint if exists challenge_goals_challenge_id_target_km_key;
+
+drop index if exists public.challenge_goals_distance_unique;
+drop index if exists public.challenge_goals_duration_unique;
+
+create unique index challenge_goals_distance_unique
+  on public.challenge_goals (challenge_id, target_km)
+  where duration_days is null;
+
+create unique index challenge_goals_duration_unique
   on public.challenge_goals (challenge_id, duration_days)
   where duration_days is not null;
 
