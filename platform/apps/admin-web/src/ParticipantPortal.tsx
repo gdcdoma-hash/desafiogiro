@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { MeuGiroParticipant } from "./MeuGiroParticipant";
+import { ParticipantRegistrationCreate } from "./ParticipantRegistrationCreate";
 import {
   registrationStatusLabel,
   selectMeuGiroFocus,
@@ -20,6 +21,7 @@ export function ParticipantPortal({
   const [activeModule, setActiveModule] = useState<ParticipantModule>("inicio");
   const [registrations, setRegistrations] = useState<MeuGiroProgress[]>([]);
   const [message, setMessage] = useState("Carregando seu Portal Giro…");
+  const [showNewRegistration, setShowNewRegistration] = useState(false);
   const focus = useMemo(
     () => selectMeuGiroFocus(registrations),
     [registrations],
@@ -28,17 +30,20 @@ export function ParticipantPortal({
     (registration) => registration.registration_status === "COMPLETED",
   );
 
+  async function loadRegistrations() {
+    const { data, error } = await supabase.rpc("my_giro");
+    if (error) {
+      setMessage("Não foi possível carregar seus dados agora.");
+      return;
+    }
+    setRegistrations((data ?? []) as MeuGiroProgress[]);
+    setMessage(
+      data?.length ? "Dados atualizados." : "Nenhuma inscrição encontrada.",
+    );
+  }
+
   useEffect(() => {
-    void supabase.rpc("my_giro").then(({ data, error }) => {
-      if (error) {
-        setMessage("Não foi possível carregar seus dados agora.");
-        return;
-      }
-      setRegistrations((data ?? []) as MeuGiroProgress[]);
-      setMessage(
-        data?.length ? "Dados atualizados." : "Nenhuma inscrição encontrada.",
-      );
-    });
+    void loadRegistrations();
   }, [supabase]);
 
   return (
@@ -161,10 +166,28 @@ export function ParticipantPortal({
                 <p className="eyebrow">Participações</p>
                 <h2 id="participant-registrations-title">Minhas inscrições</h2>
               </div>
+              <button
+                type="button"
+                className="compact"
+                onClick={() => setShowNewRegistration((current) => !current)}
+              >
+                {showNewRegistration ? "Fechar" : "Nova inscrição"}
+              </button>
             </div>
             <p className="section-description">
-              Aqui ficam as inscrições vinculadas à sua conta no Portal Giro.
+              Consulte suas participações ou faça uma nova inscrição nos desafios disponíveis.
             </p>
+
+            {showNewRegistration ? (
+              <ParticipantRegistrationCreate
+                supabase={supabase}
+                onCreated={async () => {
+                  await loadRegistrations();
+                  setShowNewRegistration(false);
+                }}
+              />
+            ) : null}
+
             <div className="participant-registration-list">
               {registrations.length ? (
                 registrations.map((registration) => (
@@ -190,11 +213,6 @@ export function ParticipantPortal({
                 <p>Nenhuma inscrição vinculada à sua conta.</p>
               )}
             </div>
-            <p className="participant-note">
-              A criação de nova inscrição será conectada a este módulo sem
-              alterar o fluxo atual que continua em funcionamento durante a
-              migração.
-            </p>
           </section>
         ) : null}
 
