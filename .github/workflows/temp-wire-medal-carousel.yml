@@ -1,0 +1,120 @@
+name: Temp wire medal carousel
+
+on:
+  push:
+    branches:
+      - feature/participant-checkout-v1
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/participant-checkout-v1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+      - working-directory: platform
+        run: pnpm install --frozen-lockfile
+      - run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('platform/apps/admin-web/src/ParticipantRegistrationCreate.tsx')
+          s = p.read_text()
+          if 'ParticipantMedalCarousel' not in s:
+              s = s.replace(
+                  'import { useEffect, useMemo, useState } from "react";\n',
+                  'import { useEffect, useMemo, useState } from "react";\nimport { ParticipantMedalCarousel } from "./ParticipantMedalCarousel";\n',
+              )
+          if 'medal_image_path: string | null;' not in s:
+              s = s.replace(
+                  '  challenge_name: string;\n',
+                  '  challenge_name: string;\n  medal_image_path: string | null;\n',
+                  1,
+              )
+
+          old_offers = '''  const offers = useMemo(() => {\n    const map = new Map<string, CatalogItem>();\n    for (const item of catalog) {\n      if (!map.has(item.offer_id)) map.set(item.offer_id, item);\n    }\n    return [...map.values()];\n  }, [catalog]);'''
+          new_offers = '''  const allOffers = useMemo(() => {\n    const map = new Map<string, CatalogItem>();\n    for (const item of catalog) {\n      if (!map.has(item.offer_id)) map.set(item.offer_id, item);\n    }\n    return [...map.values()];\n  }, [catalog]);\n\n  const offers = useMemo(() => {\n    const checkoutChallenges = new Set(\n      checkout?.items.map((item) => item.challenge_id) ?? [],\n    );\n    const categoryCounts = new Map<string, number>();\n    for (const item of checkout?.items ?? []) {\n      categoryCounts.set(\n        item.category_code,\n        (categoryCounts.get(item.category_code) ?? 0) + 1,\n      );\n    }\n    return allOffers.filter((offer) => {\n      if (checkoutChallenges.has(offer.challenge_id)) return false;\n      const usedNow = categoryCounts.get(offer.category_code) ?? 0;\n      return offer.category_used + usedNow < offer.category_limit;\n    });\n  }, [allOffers, checkout]);\n\n  useEffect(() => {\n    if (!offers.length) {\n      setOfferId(\"\");\n      setGoalId(\"\");\n      return;\n    }\n    if (offers.some((offer) => offer.offer_id === offerId)) return;\n    const first = offers[0];\n    setOfferId(first.offer_id);\n    setGoalId(\n      catalog.find((item) => item.offer_id === first.offer_id)?.goal_id ?? \"\",\n    );\n  }, [catalog, offerId, offers]);'''
+          if old_offers not in s:
+              raise SystemExit('offers block not found')
+          s = s.replace(old_offers, new_offers)
+
+          old_selected = '''  const selected = catalog.find(\n    (item) => item.offer_id === offerId && item.goal_id === goalId,\n  );'''
+          new_selected = '''  const selected = offers.some((offer) => offer.offer_id === offerId)\n    ? catalog.find(\n        (item) => item.offer_id === offerId && item.goal_id === goalId,\n      )\n    : undefined;'''
+          if old_selected not in s:
+              raise SystemExit('selected block not found')
+          s = s.replace(old_selected, new_selected)
+
+          s = s.replace('{editable && catalog.length > 0 ? (', '{editable && offers.length > 0 ? (')
+          s = s.replace('{editable && catalog.length === 0 && checkout?.item_count ? (', '{editable && offers.length === 0 && checkout?.item_count ? (')
+
+          add_marker = '<div className="registration-add-box">\n          <strong>Adicionar inscrição</strong>'
+          start = s.find(add_marker)
+          if start < 0:
+              raise SystemExit('registration add box not found')
+          label_start = s.find('          <label>\n            Desafio', start)
+          label_end = s.find('          </label>', label_start)
+          if label_start < 0 or label_end < 0:
+              raise SystemExit('challenge select in add box not found')
+          label_end += len('          </label>')
+          carousel = '''          <ParticipantMedalCarousel\n            supabase={supabase}\n            options={offers}\n            selectedOfferId={offerId}\n            disabled={busy}\n            onSelect={(nextOffer) => {\n              const firstGoal = catalog.find(\n                (item) => item.offer_id === nextOffer,\n              );\n              setOfferId(nextOffer);\n              setGoalId(firstGoal?.goal_id ?? \"\");\n            }}\n          />'''
+          s = s[:label_start] + carousel + s[label_end:]
+
+          edit_start = s.find('<strong>Trocar inscrição</strong>')
+          edit_end = s.find('</div>', edit_start)
+          segment = s[edit_start:edit_end]
+          if '{offers.map((offer) => (' not in segment:
+              # the enclosing div may contain nested divs, use the first occurrence after edit marker
+              pos = s.find('{offers.map((offer) => (', edit_start)
+              if pos < 0:
+                  raise SystemExit('edit offer map not found')
+              s = s[:pos] + '{allOffers.map((offer) => (' + s[pos + len('{offers.map((offer) => ('):]
+          else:
+              segment = segment.replace('{offers.map((offer) => (', '{allOffers.map((offer) => (', 1)
+              s = s[:edit_start] + segment + s[edit_end:]
+          p.write_text(s)
+
+          p = Path('platform/apps/admin-web/src/ChallengesPanel.tsx')
+          s = p.read_text()
+          if 'ChallengeMedalImageControl' not in s:
+              s = s.replace(
+                  'import { ChallengeLifecycleControls } from "./ChallengeLifecycleControls";\n',
+                  'import { ChallengeLifecycleControls } from "./ChallengeLifecycleControls";\nimport { ChallengeMedalImageControl } from "./ChallengeMedalImageControl";\n',
+              )
+          if 'medal_image_path: string | null;' not in s:
+              s = s.replace(
+                  '  public_name: string;\n',
+                  '  public_name: string;\n  medal_image_path: string | null;\n',
+                  1,
+              )
+          s = s.replace(
+              '"id,code,public_name,reference_year,reference_month,sports_starts_at,sports_ends_at,status,is_public",',
+              '"id,code,public_name,medal_image_path,reference_year,reference_month,sports_starts_at,sports_ends_at,status,is_public",',
+          )
+          lifecycle = '''          <ChallengeLifecycleControls\n            supabase={supabase}\n            challengeId={selected.id}\n            status={selected.status}\n            canManage={canManage}\n            onChanged={async () => {\n              await loadChallenges(selected.id);\n              await loadChallengeDetails(selected.id);\n            }}\n          />'''
+          medal = lifecycle + '''\n\n          <ChallengeMedalImageControl\n            supabase={supabase}\n            challengeId={selected.id}\n            challengeName={selected.public_name}\n            medalImagePath={selected.medal_image_path}\n            canManage={canManage}\n            onChanged={async () => {\n              await loadChallenges(selected.id);\n            }}\n          />'''
+          if lifecycle not in s:
+              raise SystemExit('lifecycle control not found')
+          s = s.replace(lifecycle, medal, 1)
+          p.write_text(s)
+          PY
+      - working-directory: platform
+        run: pnpm exec prettier --write apps/admin-web/src/ParticipantRegistrationCreate.tsx apps/admin-web/src/ChallengesPanel.tsx apps/admin-web/src/ParticipantMedalCarousel.tsx apps/admin-web/src/ChallengeMedalImageControl.tsx apps/admin-web/src/participant-medal-carousel.css apps/admin-web/src/challenge-medal-image.css
+      - run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add platform/apps/admin-web/src
+          git commit -m "feat: show medal carousel in participant registration"
+          git push origin HEAD:feature/participant-checkout-v1
