@@ -175,7 +175,8 @@ export function ParticipantPortal({
               </button>
             </div>
             <p className="section-description">
-              Consulte suas participações ou faça uma nova inscrição nos desafios disponíveis.
+              Consulte suas participações ou faça uma nova inscrição nos
+              desafios disponíveis.
             </p>
 
             {showNewRegistration ? (
