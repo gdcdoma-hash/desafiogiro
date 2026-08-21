@@ -118,8 +118,8 @@ export function ParticipantCheckoutAdminPanel({
         </button>
       </div>
       <p className="section-description">
-        Quando o participante paga várias inscrições de uma vez, a conferência
-        é feita neste conjunto para evitar confirmações parciais.
+        Quando o participante paga várias inscrições de uma vez, a conferência é
+        feita neste conjunto para evitar confirmações parciais.
       </p>
       <p role="status" className="status">
         {message}
@@ -131,7 +131,9 @@ export function ParticipantCheckoutAdminPanel({
             <div className="payment-main">
               <strong>{row.participant_name}</strong>
               <span>
-                {row.item_count} {row.item_count === 1 ? "inscrição" : "inscrições"} · {formatMoney(row.total_amount)}
+                {row.item_count}{" "}
+                {row.item_count === 1 ? "inscrição" : "inscrições"} ·{" "}
+                {formatMoney(row.total_amount)}
               </span>
               <span>
                 {row.status === "SUBMITTED"

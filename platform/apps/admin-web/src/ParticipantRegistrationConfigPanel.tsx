@@ -37,7 +37,10 @@ export function ParticipantRegistrationConfigPanel({
   canManageLimits: boolean;
   canManagePix: boolean;
 }) {
-  const [config, setConfig] = useState<Config>({ categories: [], pix_keys: [] });
+  const [config, setConfig] = useState<Config>({
+    categories: [],
+    pix_keys: [],
+  });
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -203,7 +206,8 @@ export function ParticipantRegistrationConfigPanel({
               key={row.registration_count}
             >
               <strong>
-                {row.registration_count} {row.registration_count === 1 ? "inscrição" : "inscrições"}
+                {row.registration_count}{" "}
+                {row.registration_count === 1 ? "inscrição" : "inscrições"}
               </strong>
               <label>
                 Chave PIX
