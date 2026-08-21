@@ -69,3 +69,5 @@ comment on column public.registrations.planned_starts_at is
   'Inicio previsto da participacao para desafios com prazo individual.';
 comment on column public.registrations.planned_ends_at is
   'Fim previsto calculado conforme o prazo escolhido.';
+
+-- A migration preserva DISTANCE_KM/NORMAL como padrão para desafios existentes.
