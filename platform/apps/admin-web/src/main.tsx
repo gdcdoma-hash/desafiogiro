@@ -179,6 +179,29 @@ function App() {
     setBusy(false);
   }
 
+  async function requestAdminPasswordlessAccess(event: React.FormEvent) {
+    event.preventDefault();
+    if (!email) {
+      setMessage("Informe o e-mail administrativo.");
+      return;
+    }
+    setBusy(true);
+    setMessage("Enviando acesso administrativo sem senha…");
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/?area=admin`,
+      },
+    });
+    setMessage(
+      error
+        ? "Não foi possível enviar o acesso agora. Tente novamente em instantes."
+        : "Se este e-mail possuir permissão administrativa, enviaremos um link de acesso. Abra o link neste navegador.",
+    );
+    setBusy(false);
+  }
+
   async function signOut() {
     setBusy(true);
     if (view === "authorized") await writeAudit("admin.logout", "success");
@@ -338,40 +361,70 @@ function App() {
         <section className="card">
           <p className="eyebrow">Portal Giro</p>
           <h1>Painel administrativo</h1>
-          <p>Acesso restrito aos integrantes autorizados da equipe.</p>
-          <form onSubmit={signIn}>
-            <label>
-              E-mail
-              <input
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Senha
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </label>
-            <button type="submit" disabled={busy}>
-              {busy ? "Entrando…" : "Entrar"}
-            </button>
-          </form>
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => void requestPasswordReset()}
-            disabled={busy}
-          >
-            Esqueci minha senha
-          </button>
+          {environment === "preview" ? (
+            <>
+              <div className="status-row">
+                <span className="dot" aria-hidden="true" />
+                <span>Ambiente DEV — acesso administrativo de teste</span>
+              </div>
+              <p>
+                Durante os testes, o Admin usa acesso por e-mail, sem senha. A
+                sessão fica salva neste navegador depois do primeiro acesso.
+              </p>
+              <form onSubmit={requestAdminPasswordlessAccess}>
+                <label>
+                  E-mail administrativo
+                  <input
+                    type="email"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                </label>
+                <button type="submit" disabled={busy}>
+                  {busy ? "Enviando…" : "Receber acesso ao Admin DEV"}
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <p>Acesso restrito aos integrantes autorizados da equipe.</p>
+              <form onSubmit={signIn}>
+                <label>
+                  E-mail
+                  <input
+                    type="email"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Senha
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                </label>
+                <button type="submit" disabled={busy}>
+                  {busy ? "Entrando…" : "Entrar"}
+                </button>
+              </form>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => void requestPasswordReset()}
+                disabled={busy}
+              >
+                Esqueci minha senha
+              </button>
+            </>
+          )}
           <p role="status" className="status">
             {message}
           </p>
