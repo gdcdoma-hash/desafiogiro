@@ -33,14 +33,13 @@ export function ParticipantRegistrationCreate({
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [offerId, setOfferId] = useState("");
   const [goalId, setGoalId] = useState("");
-  const [referralCode, setReferralCode] = useState("");
   const [message, setMessage] = useState("Carregando desafios disponíveis…");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     async function loadCatalog() {
       const { data, error } = await supabase.rpc(
-        "get_public_registration_catalog",
+        "get_participant_registration_catalog",
       );
       if (error) {
         setCatalog([]);
@@ -54,7 +53,7 @@ export function ParticipantRegistrationCreate({
       setMessage(
         rows.length
           ? "Escolha o desafio e a meta."
-          : "Nenhuma inscrição disponível no momento.",
+          : "Você não possui outra inscrição disponível no momento.",
       );
     }
 
@@ -86,21 +85,28 @@ export function ParticipantRegistrationCreate({
     const { error } = await supabase.rpc("create_participant_registration", {
       target_offer_id: offerId,
       target_goal_id: goalId,
-      target_referral_code: referralCode.trim() || null,
+      target_referral_code: null,
     });
     if (error) {
       setMessage(
         error.message.includes("registration limit")
-          ? "Você já atingiu o limite de inscrições para esta oferta."
+          ? "Esta inscrição não está mais disponível para sua conta."
           : "Não foi possível criar a inscrição agora.",
       );
       setBusy(false);
       return;
     }
     setMessage("Inscrição criada. O pagamento ficou pendente de confirmação.");
-    setReferralCode("");
     await onCreated();
     setBusy(false);
+  }
+
+  if (catalog.length === 0) {
+    return (
+      <p role="status" className="status">
+        {message}
+      </p>
+    );
   }
 
   return (
@@ -139,14 +145,6 @@ export function ParticipantRegistrationCreate({
             </option>
           ))}
         </select>
-      </label>
-      <label>
-        Código de indicação (opcional)
-        <input
-          value={referralCode}
-          onChange={(event) => setReferralCode(event.target.value)}
-          disabled={busy}
-        />
       </label>
       {selected ? (
         <p>
