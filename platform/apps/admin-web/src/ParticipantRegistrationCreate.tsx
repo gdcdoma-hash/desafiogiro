@@ -85,9 +85,7 @@ export function ParticipantRegistrationCreate({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [copied, setCopied] = useState(false);
-  const [message, setMessage] = useState(
-    "Carregando inscrições disponíveis…",
-  );
+  const [message, setMessage] = useState("Carregando inscrições disponíveis…");
   const [busy, setBusy] = useState(false);
   const [editingRegistrationId, setEditingRegistrationId] = useState<
     string | null
@@ -134,9 +132,7 @@ export function ParticipantRegistrationCreate({
     const nextCheckout = await loadCheckout();
     const rows = await loadCatalog();
     if (nextCheckout.item_count > 0) {
-      setMessage(
-        "Revise suas inscrições, faça o PIX e envie o comprovante.",
-      );
+      setMessage("Revise suas inscrições, faça o PIX e envie o comprovante.");
     } else if (rows.length > 0) {
       setMessage("Adicione as inscrições que deseja fazer.");
     } else {
@@ -147,9 +143,7 @@ export function ParticipantRegistrationCreate({
   useEffect(() => {
     void refresh().catch(() => {
       setCatalog([]);
-      setMessage(
-        "Não foi possível carregar as inscrições disponíveis agora.",
-      );
+      setMessage("Não foi possível carregar as inscrições disponíveis agora.");
     });
   }, [supabase]);
 
@@ -388,10 +382,7 @@ export function ParticipantRegistrationCreate({
       </div>
 
       {checkout && checkout.items.length > 0 ? (
-        <div
-          className="registration-cart"
-          aria-label="Inscrições adicionadas"
-        >
+        <div className="registration-cart" aria-label="Inscrições adicionadas">
           {checkout.items.map((item) => (
             <article
               key={item.registration_id}
@@ -599,8 +590,8 @@ export function ParticipantRegistrationCreate({
             <div>
               <strong>Faça o pagamento</strong>
               <small>
-                O valor e a chave PIX abaixo correspondem ao conjunto inteiro
-                de inscrições.
+                O valor e a chave PIX abaixo correspondem ao conjunto inteiro de
+                inscrições.
               </small>
             </div>
           </div>
@@ -660,9 +651,7 @@ export function ParticipantRegistrationCreate({
           {editable ? (
             <button
               type="submit"
-              disabled={
-                busy || !avatarFile || !proofFile || !checkout.pix_key
-              }
+              disabled={busy || !avatarFile || !proofFile || !checkout.pix_key}
             >
               {busy ? "Enviando…" : "Enviar inscrições para conferência"}
             </button>
