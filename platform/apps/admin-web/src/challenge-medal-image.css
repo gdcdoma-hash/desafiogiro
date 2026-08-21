@@ -1,0 +1,52 @@
+.challenge-medal-config {
+  margin-top: 1rem;
+}
+
+.challenge-medal-preview {
+  display: grid;
+  width: min(12rem, 100%);
+  aspect-ratio: 1 / 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #d2e0d6;
+  border-radius: 0.85rem;
+  background: #f5faf6;
+}
+
+.challenge-medal-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.challenge-medal-preview span {
+  padding: 1rem;
+  color: #647168;
+  text-align: center;
+}
+
+.challenge-medal-upload {
+  position: relative;
+  display: inline-grid;
+  gap: 0.15rem;
+  width: min(20rem, 100%);
+  padding: 0.85rem;
+  border: 1px dashed #8fb39a;
+  border-radius: 0.75rem;
+  background: #f7fbf8;
+  color: #176b36;
+  cursor: pointer;
+  text-align: center;
+}
+
+.challenge-medal-upload small {
+  color: #647168;
+}
+
+.challenge-medal-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
