@@ -1,9 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { ParticipantMedalCarousel } from "./ParticipantMedalCarousel";
 
 type CatalogItem = {
   challenge_id: string;
   challenge_name: string;
+  medal_image_path: string | null;
   short_description: string;
   reference_year: number;
   reference_month: number;
@@ -147,7 +149,7 @@ export function ParticipantRegistrationCreate({
     });
   }, [supabase]);
 
-  const offers = useMemo(() => {
+  const allOffers = useMemo(() => {
     const map = new Map<string, CatalogItem>();
     for (const item of catalog) {
       if (!map.has(item.offer_id)) map.set(item.offer_id, item);
@@ -155,14 +157,48 @@ export function ParticipantRegistrationCreate({
     return [...map.values()];
   }, [catalog]);
 
+  const offers = useMemo(() => {
+    const checkoutChallenges = new Set(
+      checkout?.items.map((item) => item.challenge_id) ?? [],
+    );
+    const categoryCounts = new Map<string, number>();
+    for (const item of checkout?.items ?? []) {
+      categoryCounts.set(
+        item.category_code,
+        (categoryCounts.get(item.category_code) ?? 0) + 1,
+      );
+    }
+    return allOffers.filter((offer) => {
+      if (checkoutChallenges.has(offer.challenge_id)) return false;
+      const usedNow = categoryCounts.get(offer.category_code) ?? 0;
+      return offer.category_used + usedNow < offer.category_limit;
+    });
+  }, [allOffers, checkout]);
+
+  useEffect(() => {
+    if (!offers.length) {
+      setOfferId("");
+      setGoalId("");
+      return;
+    }
+    if (offers.some((offer) => offer.offer_id === offerId)) return;
+    const first = offers[0];
+    setOfferId(first.offer_id);
+    setGoalId(
+      catalog.find((item) => item.offer_id === first.offer_id)?.goal_id ?? "",
+    );
+  }, [catalog, offerId, offers]);
+
   const goals = useMemo(
     () => catalog.filter((item) => item.offer_id === offerId),
     [catalog, offerId],
   );
 
-  const selected = catalog.find(
-    (item) => item.offer_id === offerId && item.goal_id === goalId,
-  );
+  const selected = offers.some((offer) => offer.offer_id === offerId)
+    ? catalog.find(
+        (item) => item.offer_id === offerId && item.goal_id === goalId,
+      )
+    : undefined;
 
   const editGoals = useMemo(
     () => catalog.filter((item) => item.offer_id === editOfferId),
@@ -445,7 +481,7 @@ export function ParticipantRegistrationCreate({
                       }}
                       disabled={busy}
                     >
-                      {offers.map((offer) => (
+                      {allOffers.map((offer) => (
                         <option key={offer.offer_id} value={offer.offer_id}>
                           {categoryLabel(offer.category_code)} —{" "}
                           {offer.challenge_name}
@@ -493,30 +529,22 @@ export function ParticipantRegistrationCreate({
         <p className="participant-note">Nenhuma inscrição adicionada ainda.</p>
       )}
 
-      {editable && catalog.length > 0 ? (
+      {editable && offers.length > 0 ? (
         <div className="registration-add-box">
           <strong>Adicionar inscrição</strong>
-          <label>
-            Desafio
-            <select
-              value={offerId}
-              onChange={(event) => {
-                const nextOffer = event.target.value;
-                const firstGoal = catalog.find(
-                  (item) => item.offer_id === nextOffer,
-                );
-                setOfferId(nextOffer);
-                setGoalId(firstGoal?.goal_id ?? "");
-              }}
-              disabled={busy || offers.length === 0}
-            >
-              {offers.map((offer) => (
-                <option key={offer.offer_id} value={offer.offer_id}>
-                  {categoryLabel(offer.category_code)} — {offer.challenge_name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ParticipantMedalCarousel
+            supabase={supabase}
+            options={offers}
+            selectedOfferId={offerId}
+            disabled={busy}
+            onSelect={(nextOffer) => {
+              const firstGoal = catalog.find(
+                (item) => item.offer_id === nextOffer,
+              );
+              setOfferId(nextOffer);
+              setGoalId(firstGoal?.goal_id ?? "");
+            }}
+          />
           <label>
             Meta
             <select
@@ -554,7 +582,7 @@ export function ParticipantRegistrationCreate({
         </div>
       ) : null}
 
-      {editable && catalog.length === 0 && checkout?.item_count ? (
+      {editable && offers.length === 0 && checkout?.item_count ? (
         <p className="participant-note">
           Você atingiu os limites das inscrições disponíveis neste momento.
         </p>
