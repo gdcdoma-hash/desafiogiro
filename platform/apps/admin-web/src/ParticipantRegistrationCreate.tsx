@@ -38,23 +38,33 @@ export function ParticipantRegistrationCreate({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    void supabase.rpc("get_public_registration_catalog").then(({ data, error }) => {
-      if (error) {
-        setCatalog([]);
-        setMessage("Não foi possível carregar os desafios disponíveis agora.");
-        return;
-      }
-      const rows = (data ?? []) as CatalogItem[];
-      setCatalog(rows);
-      setOfferId(rows[0]?.offer_id ?? "");
-      setGoalId(rows[0]?.goal_id ?? "");
-      setMessage(rows.length ? "Escolha o desafio e a meta." : "Nenhuma inscrição disponível no momento.");
-    });
+    void supabase
+      .rpc("get_public_registration_catalog")
+      .then(({ data, error }) => {
+        if (error) {
+          setCatalog([]);
+          setMessage(
+            "Não foi possível carregar os desafios disponíveis agora.",
+          );
+          return;
+        }
+        const rows = (data ?? []) as CatalogItem[];
+        setCatalog(rows);
+        setOfferId(rows[0]?.offer_id ?? "");
+        setGoalId(rows[0]?.goal_id ?? "");
+        setMessage(
+          rows.length
+            ? "Escolha o desafio e a meta."
+            : "Nenhuma inscrição disponível no momento.",
+        );
+      });
   }, [supabase]);
 
   const offers = useMemo(() => {
     const map = new Map<string, CatalogItem>();
-    for (const item of catalog) if (!map.has(item.offer_id)) map.set(item.offer_id, item);
+    for (const item of catalog) {
+      if (!map.has(item.offer_id)) map.set(item.offer_id, item);
+    }
     return [...map.values()];
   }, [catalog]);
 
@@ -101,7 +111,9 @@ export function ParticipantRegistrationCreate({
           onChange={(event) => {
             const nextOffer = event.target.value;
             setOfferId(nextOffer);
-            setGoalId(catalog.find((item) => item.offer_id === nextOffer)?.goal_id ?? "");
+            setGoalId(
+              catalog.find((item) => item.offer_id === nextOffer)?.goal_id ?? "",
+            );
           }}
           disabled={busy || offers.length === 0}
         >
