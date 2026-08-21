@@ -17,12 +17,7 @@ type Challenge = {
   goal_mode: "DISTANCE_KM" | "DURATION_DAYS";
   fixed_target_km: number | null;
   status:
-    | "DRAFT"
-    | "SCHEDULED"
-    | "ACTIVE"
-    | "FINISHED"
-    | "CANCELLED"
-    | "ARCHIVED";
+    "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
   is_public: boolean;
 };
 
@@ -90,13 +85,15 @@ function formatMoney(value: number) {
 }
 
 function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "desafio";
+  return (
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "desafio"
+  );
 }
 
 function buildRange(start: number, step: number, end: number) {
@@ -342,7 +339,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     }
     setShowGoalForm(false);
     await loadChallengeDetails(selected.id);
-    setMessage(rows.length === 1 ? "Meta adicionada." : `${rows.length} metas geradas.`);
+    setMessage(
+      rows.length === 1 ? "Meta adicionada." : `${rows.length} metas geradas.`,
+    );
   }
 
   async function generateDistanceGoals(event: React.FormEvent) {
@@ -465,13 +464,18 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       return;
     }
 
-    const links = offerGoalIds.map((goalId) => ({ offer_id: data.id, goal_id: goalId }));
+    const links = offerGoalIds.map((goalId) => ({
+      offer_id: data.id,
+      goal_id: goalId,
+    }));
     const { error: linkError } = await supabase
       .from("challenge_offer_goals")
       .insert(links);
     if (linkError) {
       await supabase.from("challenge_offers").delete().eq("id", data.id);
-      setMessage("A oferta não foi salva porque as metas não puderam ser vinculadas.");
+      setMessage(
+        "A oferta não foi salva porque as metas não puderam ser vinculadas.",
+      );
       setBusy(false);
       return;
     }
@@ -539,7 +543,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               <select
                 value={registrationType}
                 onChange={(event) =>
-                  setRegistrationType(event.target.value as "NORMAL" | "REPESCAGEM")
+                  setRegistrationType(
+                    event.target.value as "NORMAL" | "REPESCAGEM",
+                  )
                 }
               >
                 <option value="NORMAL">Normal</option>
@@ -551,7 +557,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               <select
                 value={goalMode}
                 onChange={(event) =>
-                  setGoalMode(event.target.value as "DISTANCE_KM" | "DURATION_DAYS")
+                  setGoalMode(
+                    event.target.value as "DISTANCE_KM" | "DURATION_DAYS",
+                  )
                 }
               >
                 <option value="DISTANCE_KM">Distância em km</option>
@@ -580,7 +588,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 min={1}
                 max={12}
                 value={referenceMonth}
-                onChange={(event) => setReferenceMonth(Number(event.target.value))}
+                onChange={(event) =>
+                  setReferenceMonth(Number(event.target.value))
+                }
                 required
               />
             </label>
@@ -591,7 +601,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 min={2020}
                 max={2200}
                 value={referenceYear}
-                onChange={(event) => setReferenceYear(Number(event.target.value))}
+                onChange={(event) =>
+                  setReferenceYear(Number(event.target.value))
+                }
                 required
               />
             </label>
@@ -618,8 +630,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
           </div>
           {goalMode === "DURATION_DAYS" ? (
             <p className="mini-description">
-              O início e o término previstos de cada participante serão calculados
-              conforme o prazo escolhido quando a inscrição for confirmada.
+              O início e o término previstos de cada participante serão
+              calculados conforme o prazo escolhido quando a inscrição for
+              confirmada.
             </p>
           ) : null}
           <div className="form-actions">
@@ -630,7 +643,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         </form>
       ) : null}
 
-      <p role="status" className="status">{message}</p>
+      <p role="status" className="status">
+        {message}
+      </p>
 
       <div className="challenge-list">
         {items.map((item) => (
@@ -643,19 +658,23 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             <div className="challenge-main">
               <div className="challenge-title-row">
                 <strong>{item.public_name}</strong>
-                <span className={`challenge-status ${item.status.toLowerCase()}`}>
+                <span
+                  className={`challenge-status ${item.status.toLowerCase()}`}
+                >
                   {statusLabel[item.status]}
                 </span>
               </div>
               <span className="challenge-code">{item.code}</span>
               <span>
-                {item.registration_type === "NORMAL" ? "Normal" : "Repescagem"} ·{" "}
+                {item.registration_type === "NORMAL" ? "Normal" : "Repescagem"}{" "}
+                ·{" "}
                 {item.goal_mode === "DISTANCE_KM"
                   ? "meta em km"
                   : `${item.fixed_target_km ?? 0} km por prazo`}
               </span>
               <span>
-                {formatDate(item.sports_starts_at)} a {formatDate(item.sports_ends_at)}
+                {formatDate(item.sports_starts_at)} a{" "}
+                {formatDate(item.sports_ends_at)}
               </span>
             </div>
             <div className="challenge-side">
@@ -703,7 +722,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             <section className="config-card">
               <div className="section-heading">
                 <div>
-                  <h3>{selected.goal_mode === "DURATION_DAYS" ? "Prazos" : "Metas"}</h3>
+                  <h3>
+                    {selected.goal_mode === "DURATION_DAYS"
+                      ? "Prazos"
+                      : "Metas"}
+                  </h3>
                   <p className="mini-description">
                     {selected.goal_mode === "DURATION_DAYS"
                       ? `Todos cumprem ${selected.fixed_target_km} km; o participante escolhe o prazo.`
@@ -724,29 +747,53 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 ) : null}
               </div>
 
-              {showGoalForm && selected.goal_mode === "DISTANCE_KM" && selected.registration_type === "NORMAL" ? (
+              {showGoalForm &&
+              selected.goal_mode === "DISTANCE_KM" &&
+              selected.registration_type === "NORMAL" ? (
                 <form className="compact-form" onSubmit={generateDistanceGoals}>
                   <div className="form-grid three">
                     <label>
                       Menor km
-                      <input type="number" min={1} value={rangeStart} onChange={(e) => setRangeStart(e.target.value)} required />
+                      <input
+                        type="number"
+                        min={1}
+                        value={rangeStart}
+                        onChange={(e) => setRangeStart(e.target.value)}
+                        required
+                      />
                     </label>
                     <label>
                       Variação
-                      <input type="number" min={1} value={rangeStep} onChange={(e) => setRangeStep(e.target.value)} required />
+                      <input
+                        type="number"
+                        min={1}
+                        value={rangeStep}
+                        onChange={(e) => setRangeStep(e.target.value)}
+                        required
+                      />
                     </label>
                     <label>
                       Maior km
-                      <input type="number" min={1} value={rangeEnd} onChange={(e) => setRangeEnd(e.target.value)} required />
+                      <input
+                        type="number"
+                        min={1}
+                        value={rangeEnd}
+                        onChange={(e) => setRangeEnd(e.target.value)}
+                        required
+                      />
                     </label>
                   </div>
                   <div className="form-actions">
-                    <button type="submit" disabled={busy}>Gerar metas</button>
+                    <button type="submit" disabled={busy}>
+                      Gerar metas
+                    </button>
                   </div>
                 </form>
               ) : null}
 
-              {showGoalForm && selected.goal_mode === "DISTANCE_KM" && selected.registration_type === "REPESCAGEM" ? (
+              {showGoalForm &&
+              selected.goal_mode === "DISTANCE_KM" &&
+              selected.registration_type === "REPESCAGEM" ? (
                 <form className="compact-form" onSubmit={createManualGoal}>
                   <label>
                     Quilômetros disponíveis
@@ -762,7 +809,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     />
                   </label>
                   <div className="form-actions">
-                    <button type="submit" disabled={busy}>Adicionar meta</button>
+                    <button type="submit" disabled={busy}>
+                      Adicionar meta
+                    </button>
                   </div>
                 </form>
               ) : null}
@@ -772,19 +821,39 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   <div className="form-grid three">
                     <label>
                       Menor prazo (dias)
-                      <input type="number" min={1} value={daysStart} onChange={(e) => setDaysStart(e.target.value)} required />
+                      <input
+                        type="number"
+                        min={1}
+                        value={daysStart}
+                        onChange={(e) => setDaysStart(e.target.value)}
+                        required
+                      />
                     </label>
                     <label>
                       Variação (dias)
-                      <input type="number" min={1} value={daysStep} onChange={(e) => setDaysStep(e.target.value)} required />
+                      <input
+                        type="number"
+                        min={1}
+                        value={daysStep}
+                        onChange={(e) => setDaysStep(e.target.value)}
+                        required
+                      />
                     </label>
                     <label>
                       Maior prazo (dias)
-                      <input type="number" min={1} value={daysEnd} onChange={(e) => setDaysEnd(e.target.value)} required />
+                      <input
+                        type="number"
+                        min={1}
+                        value={daysEnd}
+                        onChange={(e) => setDaysEnd(e.target.value)}
+                        required
+                      />
                     </label>
                   </div>
                   <div className="form-actions">
-                    <button type="submit" disabled={busy}>Gerar prazos</button>
+                    <button type="submit" disabled={busy}>
+                      Gerar prazos
+                    </button>
                   </div>
                 </form>
               ) : null}
@@ -796,7 +865,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     <span>{goal.is_active ? "Ativa" : "Inativa"}</span>
                   </div>
                 ))}
-                {!goals.length ? <p className="empty-note">Nenhuma meta cadastrada.</p> : null}
+                {!goals.length ? (
+                  <p className="empty-note">Nenhuma meta cadastrada.</p>
+                ) : null}
               </div>
             </section>
 
@@ -805,7 +876,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 <div>
                   <h3>Ofertas de inscrição</h3>
                   <p className="mini-description">
-                    Tipo {selected.registration_type === "NORMAL" ? "Normal" : "Repescagem"}; configure preço, período, limite e metas.
+                    Tipo{" "}
+                    {selected.registration_type === "NORMAL"
+                      ? "Normal"
+                      : "Repescagem"}
+                    ; configure preço, período, limite e metas.
                   </p>
                 </div>
                 {canManage ? (
@@ -825,42 +900,88 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   <div className="form-grid two">
                     <label>
                       Nome interno
-                      <input value={offerInternalName} onChange={(e) => setOfferInternalName(e.target.value)} placeholder="Agosto 2026" required minLength={2} />
+                      <input
+                        value={offerInternalName}
+                        onChange={(e) => setOfferInternalName(e.target.value)}
+                        placeholder="Agosto 2026"
+                        required
+                        minLength={2}
+                      />
                     </label>
                     <label>
                       Nome para o público
-                      <input value={offerPublicName} onChange={(e) => setOfferPublicName(e.target.value)} placeholder="Inscrição Agosto" required minLength={2} />
+                      <input
+                        value={offerPublicName}
+                        onChange={(e) => setOfferPublicName(e.target.value)}
+                        placeholder="Inscrição Agosto"
+                        required
+                        minLength={2}
+                      />
                     </label>
                   </div>
                   <label>
                     Valor (R$)
-                    <input inputMode="decimal" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)} placeholder="44,90" required />
+                    <input
+                      inputMode="decimal"
+                      value={offerPrice}
+                      onChange={(e) => setOfferPrice(e.target.value)}
+                      placeholder="44,90"
+                      required
+                    />
                   </label>
                   <div className="form-grid two">
                     <label>
                       Início das inscrições
-                      <input type="datetime-local" value={offerStartsAt} onChange={(e) => setOfferStartsAt(e.target.value)} required />
+                      <input
+                        type="datetime-local"
+                        value={offerStartsAt}
+                        onChange={(e) => setOfferStartsAt(e.target.value)}
+                        required
+                      />
                     </label>
                     <label>
                       Fim das inscrições
-                      <input type="datetime-local" value={offerEndsAt} onChange={(e) => setOfferEndsAt(e.target.value)} required />
+                      <input
+                        type="datetime-local"
+                        value={offerEndsAt}
+                        onChange={(e) => setOfferEndsAt(e.target.value)}
+                        required
+                      />
                     </label>
                   </div>
                   <label>
                     Limite por participante
-                    <input type="number" min={1} value={offerLimit} onChange={(e) => setOfferLimit(e.target.value)} required />
+                    <input
+                      type="number"
+                      min={1}
+                      value={offerLimit}
+                      onChange={(e) => setOfferLimit(e.target.value)}
+                      required
+                    />
                   </label>
                   <fieldset className="goal-picker">
-                    <legend>{selected.goal_mode === "DURATION_DAYS" ? "Prazos disponíveis" : "Metas disponíveis"}</legend>
-                    {goals.filter((goal) => goal.is_active).map((goal) => (
-                      <label className="check-row" key={goal.id}>
-                        <input type="checkbox" checked={offerGoalIds.includes(goal.id)} onChange={() => toggleOfferGoal(goal.id)} />
-                        <span>{goalLabel(goal, selected)}</span>
-                      </label>
-                    ))}
+                    <legend>
+                      {selected.goal_mode === "DURATION_DAYS"
+                        ? "Prazos disponíveis"
+                        : "Metas disponíveis"}
+                    </legend>
+                    {goals
+                      .filter((goal) => goal.is_active)
+                      .map((goal) => (
+                        <label className="check-row" key={goal.id}>
+                          <input
+                            type="checkbox"
+                            checked={offerGoalIds.includes(goal.id)}
+                            onChange={() => toggleOfferGoal(goal.id)}
+                          />
+                          <span>{goalLabel(goal, selected)}</span>
+                        </label>
+                      ))}
                   </fieldset>
                   <div className="form-actions">
-                    <button type="submit" disabled={busy}>Salvar oferta em rascunho</button>
+                    <button type="submit" disabled={busy}>
+                      Salvar oferta em rascunho
+                    </button>
                   </div>
                 </form>
               ) : null}
@@ -870,12 +991,20 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   <div className="offer-row" key={offer.id}>
                     <div>
                       <strong>{offer.public_name}</strong>
-                      <span>{offer.internal_name} · {offer.category_code}</span>
+                      <span>
+                        {offer.internal_name} · {offer.category_code}
+                      </span>
                     </div>
                     <div className="offer-side">
                       <strong>{formatMoney(Number(offer.price))}</strong>
-                      <span>{formatDate(offer.registration_starts_at)} a {formatDate(offer.registration_ends_at)}</span>
-                      <span>{offerStatusLabel[offer.status]} · limite {offer.max_per_participant}</span>
+                      <span>
+                        {formatDate(offer.registration_starts_at)} a{" "}
+                        {formatDate(offer.registration_ends_at)}
+                      </span>
+                      <span>
+                        {offerStatusLabel[offer.status]} · limite{" "}
+                        {offer.max_per_participant}
+                      </span>
                       <OfferLifecycleControls
                         supabase={supabase}
                         offerId={offer.id}
@@ -887,7 +1016,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     </div>
                   </div>
                 ))}
-                {!offers.length ? <p className="empty-note">Nenhuma oferta cadastrada.</p> : null}
+                {!offers.length ? (
+                  <p className="empty-note">Nenhuma oferta cadastrada.</p>
+                ) : null}
               </div>
             </section>
           </div>
@@ -895,7 +1026,12 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       ) : null}
 
       {items.length ? (
-        <button type="button" className="link-button" onClick={() => void loadChallenges(selectedId)} disabled={busy}>
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => void loadChallenges(selectedId)}
+          disabled={busy}
+        >
           Atualizar lista
         </button>
       ) : null}
