@@ -13,6 +13,9 @@ type Challenge = {
   reference_month: number | null;
   sports_starts_at: string;
   sports_ends_at: string;
+  registration_type: "NORMAL" | "REPESCAGEM";
+  goal_mode: "DISTANCE_KM" | "DURATION_DAYS";
+  fixed_target_km: number | null;
   status:
     "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
   is_public: boolean;
@@ -22,6 +25,7 @@ type ChallengeGoal = {
   id: string;
   challenge_id: string;
   target_km: number;
+  duration_days: number | null;
   public_label: string | null;
   display_order: number;
   is_active: boolean;
@@ -80,6 +84,44 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
+function slugify(value: string) {
+  return (
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "desafio"
+  );
+}
+
+function buildRange(start: number, step: number, end: number) {
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(step) ||
+    !Number.isInteger(end) ||
+    start <= 0 ||
+    step <= 0 ||
+    end < start
+  ) {
+    return null;
+  }
+  const result: number[] = [];
+  for (let value = start; value <= end; value += step) {
+    result.push(value);
+    if (result.length > 500) return null;
+  }
+  return result;
+}
+
+function goalLabel(goal: ChallengeGoal, challenge: Challenge) {
+  if (challenge.goal_mode === "DURATION_DAYS" && goal.duration_days) {
+    return `${goal.duration_days} dias · ${goal.target_km} km`;
+  }
+  return goal.public_label || `${goal.target_km} km`;
+}
+
 export function ChallengesPanel({ supabase, canManage }: Props) {
   const now = useMemo(() => new Date(), []);
   const [items, setItems] = useState<Challenge[]>([]);
@@ -91,17 +133,30 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [showOfferForm, setShowOfferForm] = useState(false);
   const [message, setMessage] = useState("");
+
   const [name, setName] = useState("");
-  const [code, setCode] = useState("");
+  const [registrationType, setRegistrationType] = useState<
+    "NORMAL" | "REPESCAGEM"
+  >("NORMAL");
+  const [goalMode, setGoalMode] = useState<"DISTANCE_KM" | "DURATION_DAYS">(
+    "DISTANCE_KM",
+  );
+  const [fixedTargetKm, setFixedTargetKm] = useState("1000");
   const [referenceMonth, setReferenceMonth] = useState(now.getMonth() + 1);
   const [referenceYear, setReferenceYear] = useState(now.getFullYear());
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
-  const [goalKm, setGoalKm] = useState("");
-  const [goalLabel, setGoalLabel] = useState("");
+
+  const [rangeStart, setRangeStart] = useState("50");
+  const [rangeStep, setRangeStep] = useState("25");
+  const [rangeEnd, setRangeEnd] = useState("3000");
+  const [manualGoal, setManualGoal] = useState("");
+  const [daysStart, setDaysStart] = useState("15");
+  const [daysStep, setDaysStep] = useState("15");
+  const [daysEnd, setDaysEnd] = useState("90");
+
   const [offerInternalName, setOfferInternalName] = useState("");
   const [offerPublicName, setOfferPublicName] = useState("");
-  const [offerCategory, setOfferCategory] = useState("NORMAL");
   const [offerPrice, setOfferPrice] = useState("");
   const [offerLimit, setOfferLimit] = useState("1");
   const [offerStartsAt, setOfferStartsAt] = useState("");
@@ -116,7 +171,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     const { data, error } = await supabase
       .from("challenges")
       .select(
-        "id,code,public_name,medal_image_path,reference_year,reference_month,sports_starts_at,sports_ends_at,status,is_public",
+        "id,code,public_name,medal_image_path,reference_year,reference_month,sports_starts_at,sports_ends_at,registration_type,goal_mode,fixed_target_km,status,is_public",
       )
       .order("sports_starts_at", { ascending: false });
 
@@ -146,11 +201,10 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       supabase
         .from("challenge_goals")
         .select(
-          "id,challenge_id,target_km,public_label,display_order,is_active",
+          "id,challenge_id,target_km,duration_days,public_label,display_order,is_active",
         )
         .eq("challenge_id", challengeId)
-        .order("display_order", { ascending: true })
-        .order("target_km", { ascending: true }),
+        .order("display_order", { ascending: true }),
       supabase
         .from("challenge_offers")
         .select(
@@ -183,7 +237,23 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       setGoals([]);
       setOffers([]);
     }
+    setShowGoalForm(false);
+    setShowOfferForm(false);
   }, [selectedId]);
+
+  async function nextChallengeCode() {
+    const month = String(referenceMonth).padStart(2, "0");
+    const base = `${slugify(name)}-${referenceYear}${month}`;
+    const { data } = await supabase
+      .from("challenges")
+      .select("code")
+      .like("code", `${base}%`);
+    const used = new Set((data ?? []).map((item) => String(item.code)));
+    if (!used.has(base)) return base;
+    let suffix = 2;
+    while (used.has(`${base}-${suffix}`)) suffix += 1;
+    return `${base}-${suffix}`;
+  }
 
   async function createChallenge(event: React.FormEvent) {
     event.preventDefault();
@@ -192,24 +262,31 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       setMessage("Confira o início e o fim do período esportivo.");
       return;
     }
+    const fixedKm = goalMode === "DURATION_DAYS" ? Number(fixedTargetKm) : null;
+    if (
+      goalMode === "DURATION_DAYS" &&
+      (!Number.isInteger(fixedKm) || Number(fixedKm) <= 0)
+    ) {
+      setMessage("Informe a distância fixa do desafio em quilômetros.");
+      return;
+    }
 
     setBusy(true);
     setMessage("Salvando desafio…");
-    const normalizedCode = code
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+    const generatedCode = await nextChallengeCode();
     const { data, error } = await supabase
       .from("challenges")
       .insert({
-        code: normalizedCode,
+        code: generatedCode,
         public_name: name.trim(),
         reference_year: referenceYear,
         reference_month: referenceMonth,
         sports_starts_at: toIsoLocal(startsAt),
         sports_ends_at: toIsoLocal(endsAt),
         timezone: "America/Fortaleza",
+        registration_type: registrationType,
+        goal_mode: goalMode,
+        fixed_target_km: fixedKm,
         status: "DRAFT",
         is_public: false,
       })
@@ -217,19 +294,19 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       .single();
 
     if (error) {
-      setMessage(
-        error.code === "23505"
-          ? "Já existe um desafio com esse código."
-          : "Não foi possível salvar o desafio.",
-      );
+      setMessage("Não foi possível salvar o desafio.");
       setBusy(false);
       return;
     }
 
     await supabase.rpc("write_audit_event", {
       event_action: "challenge.created",
-      event_application_version: "challenges-cycle-1",
-      event_metadata: { code: normalizedCode },
+      event_application_version: "challenges-goal-modes-v1",
+      event_metadata: {
+        code: generatedCode,
+        registration_type: registrationType,
+        goal_mode: goalMode,
+      },
       event_outcome: "success",
       event_reason: null,
       event_request_id: crypto.randomUUID(),
@@ -237,47 +314,103 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     });
 
     setName("");
-    setCode("");
+    setRegistrationType("NORMAL");
+    setGoalMode("DISTANCE_KM");
+    setFixedTargetKm("1000");
     setStartsAt("");
     setEndsAt("");
     setShowForm(false);
     await loadChallenges(data.id);
-    setMessage("Desafio criado em rascunho.");
+    setMessage(`Desafio criado em rascunho. Código: ${generatedCode}`);
   }
 
-  async function createGoal(event: React.FormEvent) {
-    event.preventDefault();
-    if (!canManage || !selected) return;
-    const targetKm = Number(goalKm);
-    if (!Number.isInteger(targetKm) || targetKm <= 0) {
-      setMessage("Informe uma meta de quilômetros válida.");
-      return;
-    }
-
+  async function insertGoals(rows: Array<Record<string, unknown>>) {
+    if (!selected || !rows.length) return;
     setBusy(true);
-    const { error } = await supabase.from("challenge_goals").insert({
-      challenge_id: selected.id,
-      target_km: targetKm,
-      public_label: goalLabel.trim() || `${targetKm} km`,
-      display_order: goals.length,
-      is_active: true,
-    });
-
+    const { error } = await supabase.from("challenge_goals").insert(rows);
     if (error) {
       setMessage(
         error.code === "23505"
-          ? "Essa meta já está cadastrada neste desafio."
-          : "Não foi possível cadastrar a meta.",
+          ? "Uma ou mais metas já estão cadastradas neste desafio."
+          : "Não foi possível cadastrar as metas.",
       );
       setBusy(false);
       return;
     }
-
-    setGoalKm("");
-    setGoalLabel("");
     setShowGoalForm(false);
     await loadChallengeDetails(selected.id);
-    setMessage("Meta adicionada ao desafio.");
+    setMessage(
+      rows.length === 1 ? "Meta adicionada." : `${rows.length} metas geradas.`,
+    );
+  }
+
+  async function generateDistanceGoals(event: React.FormEvent) {
+    event.preventDefault();
+    if (!canManage || !selected) return;
+    const values = buildRange(
+      Number(rangeStart),
+      Number(rangeStep),
+      Number(rangeEnd),
+    );
+    if (!values) {
+      setMessage("Confira a menor meta, a variação e a maior meta.");
+      return;
+    }
+    await insertGoals(
+      values.map((targetKm, index) => ({
+        challenge_id: selected.id,
+        target_km: targetKm,
+        duration_days: null,
+        public_label: `${targetKm} km`,
+        display_order: goals.length + index,
+        is_active: true,
+      })),
+    );
+  }
+
+  async function createManualGoal(event: React.FormEvent) {
+    event.preventDefault();
+    if (!canManage || !selected) return;
+    const targetKm = Number(manualGoal);
+    if (!Number.isInteger(targetKm) || targetKm <= 0) {
+      setMessage("Informe somente números inteiros maiores que zero.");
+      return;
+    }
+    await insertGoals([
+      {
+        challenge_id: selected.id,
+        target_km: targetKm,
+        duration_days: null,
+        public_label: `${targetKm} km`,
+        display_order: goals.length,
+        is_active: true,
+      },
+    ]);
+    setManualGoal("");
+  }
+
+  async function generateDurationGoals(event: React.FormEvent) {
+    event.preventDefault();
+    if (!canManage || !selected || !selected.fixed_target_km) return;
+    const values = buildRange(
+      Number(daysStart),
+      Number(daysStep),
+      Number(daysEnd),
+    );
+    if (!values) {
+      setMessage("Confira o menor prazo, a variação e o maior prazo.");
+      return;
+    }
+    await insertGoals(
+      values.map((days, index) => ({
+        challenge_id: selected.id,
+        target_km: selected.fixed_target_km,
+        duration_days: days,
+        public_label: `${days} dias`,
+        display_order: goals.length + index,
+        is_active: true,
+      })),
+    );
   }
 
   async function createOffer(event: React.FormEvent) {
@@ -314,10 +447,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         challenge_id: selected.id,
         internal_name: offerInternalName.trim(),
         public_name: offerPublicName.trim(),
-        category_code: offerCategory
-          .trim()
-          .toUpperCase()
-          .replace(/[^A-Z0-9_]/g, "_"),
+        category_code: selected.registration_type,
         registration_starts_at: toIsoLocal(offerStartsAt),
         registration_ends_at: toIsoLocal(offerEndsAt),
         price,
@@ -352,7 +482,6 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
 
     setOfferInternalName("");
     setOfferPublicName("");
-    setOfferCategory("NORMAL");
     setOfferPrice("");
     setOfferLimit("1");
     setOfferStartsAt("");
@@ -390,8 +519,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         ) : null}
       </div>
       <p className="section-description">
-        Cadastre a edição e, em seguida, configure metas e ofertas de inscrição
-        dentro dela.
+        Cadastre o desafio, a foto da medalha, as metas e a oferta de inscrição.
       </p>
 
       {showForm ? (
@@ -401,21 +529,57 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Ex.: Desafio Giro Agosto 2026"
+              placeholder="Ex.: Desafio Giro 1000 km"
               required
               minLength={2}
             />
           </label>
-          <label>
-            Código interno
-            <input
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="ex.: agosto-2026"
-              required
-              pattern="[A-Za-z0-9_-]+"
-            />
-          </label>
+          <p className="mini-description">
+            O código interno será criado automaticamente pelo sistema.
+          </p>
+          <div className="form-grid two">
+            <label>
+              Tipo do desafio
+              <select
+                value={registrationType}
+                onChange={(event) =>
+                  setRegistrationType(
+                    event.target.value as "NORMAL" | "REPESCAGEM",
+                  )
+                }
+              >
+                <option value="NORMAL">Normal</option>
+                <option value="REPESCAGEM">Repescagem</option>
+              </select>
+            </label>
+            <label>
+              Forma da meta
+              <select
+                value={goalMode}
+                onChange={(event) =>
+                  setGoalMode(
+                    event.target.value as "DISTANCE_KM" | "DURATION_DAYS",
+                  )
+                }
+              >
+                <option value="DISTANCE_KM">Distância em km</option>
+                <option value="DURATION_DAYS">Prazo em dias</option>
+              </select>
+            </label>
+          </div>
+          {goalMode === "DURATION_DAYS" ? (
+            <label>
+              Distância fixa para todos (km)
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={fixedTargetKm}
+                onChange={(event) => setFixedTargetKm(event.target.value)}
+                required
+              />
+            </label>
+          ) : null}
           <div className="form-grid two">
             <label>
               Mês de referência
@@ -464,6 +628,13 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               />
             </label>
           </div>
+          {goalMode === "DURATION_DAYS" ? (
+            <p className="mini-description">
+              O início e o término previstos de cada participante serão
+              calculados conforme o prazo escolhido quando a inscrição for
+              confirmada.
+            </p>
+          ) : null}
           <div className="form-actions">
             <button type="submit" disabled={busy}>
               {busy ? "Salvando…" : "Criar rascunho"}
@@ -494,6 +665,13 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 </span>
               </div>
               <span className="challenge-code">{item.code}</span>
+              <span>
+                {item.registration_type === "NORMAL" ? "Normal" : "Repescagem"}{" "}
+                ·{" "}
+                {item.goal_mode === "DISTANCE_KM"
+                  ? "meta em km"
+                  : `${item.fixed_target_km ?? 0} km por prazo`}
+              </span>
               <span>
                 {formatDate(item.sports_starts_at)} a{" "}
                 {formatDate(item.sports_ends_at)}
@@ -537,18 +715,24 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             challengeName={selected.public_name}
             medalImagePath={selected.medal_image_path}
             canManage={canManage}
-            onChanged={async () => {
-              await loadChallenges(selected.id);
-            }}
+            onChanged={async () => loadChallenges(selected.id)}
           />
 
           <div className="challenge-config-grid">
             <section className="config-card">
               <div className="section-heading">
                 <div>
-                  <h3>Metas</h3>
+                  <h3>
+                    {selected.goal_mode === "DURATION_DAYS"
+                      ? "Prazos"
+                      : "Metas"}
+                  </h3>
                   <p className="mini-description">
-                    Quilometragens disponíveis nesta edição.
+                    {selected.goal_mode === "DURATION_DAYS"
+                      ? `Todos cumprem ${selected.fixed_target_km} km; o participante escolhe o prazo.`
+                      : selected.registration_type === "NORMAL"
+                        ? "Gere as quilometragens em lote."
+                        : "Cadastre somente as quilometragens disponíveis para a repescagem."}
                   </p>
                 </div>
                 {canManage ? (
@@ -558,37 +742,117 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     onClick={() => setShowGoalForm((value) => !value)}
                     disabled={busy}
                   >
-                    {showGoalForm ? "Cancelar" : "Adicionar meta"}
+                    {showGoalForm ? "Cancelar" : "Configurar metas"}
                   </button>
                 ) : null}
               </div>
 
-              {showGoalForm ? (
-                <form className="compact-form" onSubmit={createGoal}>
-                  <div className="form-grid two">
+              {showGoalForm &&
+              selected.goal_mode === "DISTANCE_KM" &&
+              selected.registration_type === "NORMAL" ? (
+                <form className="compact-form" onSubmit={generateDistanceGoals}>
+                  <div className="form-grid three">
                     <label>
-                      Quilômetros
+                      Menor km
                       <input
                         type="number"
                         min={1}
-                        value={goalKm}
-                        onChange={(event) => setGoalKm(event.target.value)}
-                        placeholder="300"
+                        value={rangeStart}
+                        onChange={(e) => setRangeStart(e.target.value)}
                         required
                       />
                     </label>
                     <label>
-                      Nome exibido
+                      Variação
                       <input
-                        value={goalLabel}
-                        onChange={(event) => setGoalLabel(event.target.value)}
-                        placeholder="300 km"
+                        type="number"
+                        min={1}
+                        value={rangeStep}
+                        onChange={(e) => setRangeStep(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Maior km
+                      <input
+                        type="number"
+                        min={1}
+                        value={rangeEnd}
+                        onChange={(e) => setRangeEnd(e.target.value)}
+                        required
                       />
                     </label>
                   </div>
                   <div className="form-actions">
                     <button type="submit" disabled={busy}>
-                      Salvar meta
+                      Gerar metas
+                    </button>
+                  </div>
+                </form>
+              ) : null}
+
+              {showGoalForm &&
+              selected.goal_mode === "DISTANCE_KM" &&
+              selected.registration_type === "REPESCAGEM" ? (
+                <form className="compact-form" onSubmit={createManualGoal}>
+                  <label>
+                    Quilômetros disponíveis
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      inputMode="numeric"
+                      value={manualGoal}
+                      onChange={(event) => setManualGoal(event.target.value)}
+                      placeholder="Ex.: 300"
+                      required
+                    />
+                  </label>
+                  <div className="form-actions">
+                    <button type="submit" disabled={busy}>
+                      Adicionar meta
+                    </button>
+                  </div>
+                </form>
+              ) : null}
+
+              {showGoalForm && selected.goal_mode === "DURATION_DAYS" ? (
+                <form className="compact-form" onSubmit={generateDurationGoals}>
+                  <div className="form-grid three">
+                    <label>
+                      Menor prazo (dias)
+                      <input
+                        type="number"
+                        min={1}
+                        value={daysStart}
+                        onChange={(e) => setDaysStart(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Variação (dias)
+                      <input
+                        type="number"
+                        min={1}
+                        value={daysStep}
+                        onChange={(e) => setDaysStep(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Maior prazo (dias)
+                      <input
+                        type="number"
+                        min={1}
+                        value={daysEnd}
+                        onChange={(e) => setDaysEnd(e.target.value)}
+                        required
+                      />
+                    </label>
+                  </div>
+                  <div className="form-actions">
+                    <button type="submit" disabled={busy}>
+                      Gerar prazos
                     </button>
                   </div>
                 </form>
@@ -597,9 +861,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               <div className="simple-list">
                 {goals.map((goal) => (
                   <div className="simple-row" key={goal.id}>
-                    <strong>
-                      {goal.public_label || `${goal.target_km} km`}
-                    </strong>
+                    <strong>{goalLabel(goal, selected)}</strong>
                     <span>{goal.is_active ? "Ativa" : "Inativa"}</span>
                   </div>
                 ))}
@@ -614,7 +876,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 <div>
                   <h3>Ofertas de inscrição</h3>
                   <p className="mini-description">
-                    Preço, prazo, limite e metas disponíveis.
+                    Tipo{" "}
+                    {selected.registration_type === "NORMAL"
+                      ? "Normal"
+                      : "Repescagem"}
+                    ; configure preço, período, limite e metas.
                   </p>
                 </div>
                 {canManage ? (
@@ -636,10 +902,8 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                       Nome interno
                       <input
                         value={offerInternalName}
-                        onChange={(event) =>
-                          setOfferInternalName(event.target.value)
-                        }
-                        placeholder="Normal agosto"
+                        onChange={(e) => setOfferInternalName(e.target.value)}
+                        placeholder="Agosto 2026"
                         required
                         minLength={2}
                       />
@@ -648,47 +912,30 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                       Nome para o público
                       <input
                         value={offerPublicName}
-                        onChange={(event) =>
-                          setOfferPublicName(event.target.value)
-                        }
+                        onChange={(e) => setOfferPublicName(e.target.value)}
                         placeholder="Inscrição Agosto"
                         required
                         minLength={2}
                       />
                     </label>
                   </div>
-                  <div className="form-grid two">
-                    <label>
-                      Categoria
-                      <input
-                        value={offerCategory}
-                        onChange={(event) =>
-                          setOfferCategory(event.target.value)
-                        }
-                        placeholder="NORMAL"
-                        required
-                      />
-                    </label>
-                    <label>
-                      Valor (R$)
-                      <input
-                        inputMode="decimal"
-                        value={offerPrice}
-                        onChange={(event) => setOfferPrice(event.target.value)}
-                        placeholder="44,90"
-                        required
-                      />
-                    </label>
-                  </div>
+                  <label>
+                    Valor (R$)
+                    <input
+                      inputMode="decimal"
+                      value={offerPrice}
+                      onChange={(e) => setOfferPrice(e.target.value)}
+                      placeholder="44,90"
+                      required
+                    />
+                  </label>
                   <div className="form-grid two">
                     <label>
                       Início das inscrições
                       <input
                         type="datetime-local"
                         value={offerStartsAt}
-                        onChange={(event) =>
-                          setOfferStartsAt(event.target.value)
-                        }
+                        onChange={(e) => setOfferStartsAt(e.target.value)}
                         required
                       />
                     </label>
@@ -697,7 +944,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                       <input
                         type="datetime-local"
                         value={offerEndsAt}
-                        onChange={(event) => setOfferEndsAt(event.target.value)}
+                        onChange={(e) => setOfferEndsAt(e.target.value)}
                         required
                       />
                     </label>
@@ -708,12 +955,16 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                       type="number"
                       min={1}
                       value={offerLimit}
-                      onChange={(event) => setOfferLimit(event.target.value)}
+                      onChange={(e) => setOfferLimit(e.target.value)}
                       required
                     />
                   </label>
                   <fieldset className="goal-picker">
-                    <legend>Metas disponíveis nesta oferta</legend>
+                    <legend>
+                      {selected.goal_mode === "DURATION_DAYS"
+                        ? "Prazos disponíveis"
+                        : "Metas disponíveis"}
+                    </legend>
                     {goals
                       .filter((goal) => goal.is_active)
                       .map((goal) => (
@@ -723,9 +974,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                             checked={offerGoalIds.includes(goal.id)}
                             onChange={() => toggleOfferGoal(goal.id)}
                           />
-                          <span>
-                            {goal.public_label || `${goal.target_km} km`}
-                          </span>
+                          <span>{goalLabel(goal, selected)}</span>
                         </label>
                       ))}
                   </fieldset>
