@@ -44,9 +44,7 @@ export function ParticipantRegistrationCreate({
       );
       if (error) {
         setCatalog([]);
-        setMessage(
-          "Não foi possível carregar os desafios disponíveis agora.",
-        );
+        setMessage("Não foi possível carregar os desafios disponíveis agora.");
         return;
       }
       const rows = (data ?? []) as CatalogItem[];
