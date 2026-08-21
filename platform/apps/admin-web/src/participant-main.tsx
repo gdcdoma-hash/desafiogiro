@@ -168,6 +168,27 @@ function ParticipantApp() {
   }
 
   if (view === "login") {
+    if (showFirstAccess) {
+      return (
+        <main className="shell">
+          <section className="card">
+            <p className="eyebrow">Primeiro acesso</p>
+            <ParticipantFirstAccess apiUrl={apiUrl} />
+            <p>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => setShowFirstAccess(false)}
+              >
+                Voltar para o login
+              </button>
+            </p>
+            <p className="environment">Ambiente: desenvolvimento</p>
+          </section>
+        </main>
+      );
+    }
+
     return (
       <main className="shell">
         <section className="card">
@@ -202,25 +223,31 @@ function ParticipantApp() {
               {busy ? "Entrando…" : "Acessar sistema"}
             </button>
           </form>
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => void requestPasswordReset()}
-            disabled={busy}
-          >
-            Esqueci minha senha
-          </button>
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => setShowFirstAccess((current) => !current)}
-          >
-            {showFirstAccess ? "Voltar ao acesso" : "Primeiro acesso"}
-          </button>
+          <p>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => void requestPasswordReset()}
+              disabled={busy}
+            >
+              Esqueci minha senha
+            </button>
+          </p>
+          <p>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => {
+                setMessage("");
+                setShowFirstAccess(true);
+              }}
+            >
+              Primeiro acesso
+            </button>
+          </p>
           <p role="status" className="status">
             {message}
           </p>
-          {showFirstAccess ? <ParticipantFirstAccess apiUrl={apiUrl} /> : null}
           <p className="environment">Ambiente: desenvolvimento</p>
         </section>
       </main>
