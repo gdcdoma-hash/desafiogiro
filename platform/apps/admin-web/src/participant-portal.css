@@ -151,6 +151,102 @@
   text-align: right;
 }
 
+.participant-registration-form {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0 1.5rem;
+}
+
+.registration-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.registration-step-number {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #176b36;
+  color: #fff;
+  font-weight: 800;
+}
+
+.registration-step strong,
+.registration-step small {
+  display: block;
+}
+
+.registration-step small {
+  margin-top: 0.15rem;
+  color: #647168;
+}
+
+.registration-upload {
+  position: relative;
+  display: flex;
+  min-height: 6rem;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.3rem;
+  border: 2px dashed #aac6b1;
+  border-radius: 0.85rem;
+  background: #f7fbf8;
+  color: #176b36;
+  cursor: pointer;
+  text-align: center;
+}
+
+.registration-upload span {
+  font-weight: 800;
+}
+
+.registration-upload small {
+  color: #647168;
+}
+
+.registration-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.registration-payment-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px solid #d2e0d6;
+  border-radius: 0.85rem;
+  background: #f5faf6;
+}
+
+.registration-payment-card > span,
+.registration-payment-card > small {
+  color: #647168;
+}
+
+.registration-payment-card > strong {
+  font-size: 1.5rem;
+  color: #176b36;
+}
+
+.registration-payment-card code {
+  overflow-wrap: anywhere;
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #14261b;
+  font-family: inherit;
+  font-weight: 700;
+}
+
 .participant-note {
   margin-top: 1rem;
   font-size: 0.9rem;
