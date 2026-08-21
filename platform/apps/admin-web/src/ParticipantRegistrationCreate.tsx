@@ -55,7 +55,9 @@ export function ParticipantRegistrationCreate({
   const [goalId, setGoalId] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
-  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState("Carregando desafios disponíveis…");
   const [busy, setBusy] = useState(false);
@@ -146,7 +148,9 @@ export function ParticipantRegistrationCreate({
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!offerId || !goalId || !selected || !avatarFile || !proofFile) {
-      setMessage("Adicione sua foto e o comprovante antes de enviar a inscrição.");
+      setMessage(
+        "Adicione sua foto e o comprovante antes de enviar a inscrição.",
+      );
       return;
     }
 
@@ -227,7 +231,9 @@ export function ParticipantRegistrationCreate({
         <span className="registration-step-number">1</span>
         <div>
           <strong>Escolha o desafio</strong>
-          <small>Mostramos somente inscrições disponíveis para sua conta.</small>
+          <small>
+            Mostramos somente inscrições disponíveis para sua conta.
+          </small>
         </div>
       </div>
 
