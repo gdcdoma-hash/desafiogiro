@@ -54,8 +54,6 @@ export function ParticipantFirstAccess({ apiUrl }: Props) {
 
   return (
     <section aria-labelledby="participant-access-title">
-      <hr />
-      <p className="eyebrow">Primeiro acesso</p>
       <h2 id="participant-access-title">Criar acesso ao Portal Giro</h2>
       <p>
         Se sua inscrição já foi paga e confirmada, use o mesmo e-mail cadastrado
