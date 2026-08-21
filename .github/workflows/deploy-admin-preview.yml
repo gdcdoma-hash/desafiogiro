@@ -67,3 +67,5 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         run: pnpm dlx wrangler@latest pages deploy apps/admin-web/dist --project-name portal-giro-admin --branch dev
+
+# redeploy trigger: admin DEV passwordless access
