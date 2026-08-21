@@ -154,14 +154,20 @@ export function ParticipantRegistrationCreate({
     setMessage("Enviando sua inscrição…");
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError || !authData.user) throw authError ?? new Error("Sessão inválida");
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+      if (authError || !authData.user) {
+        throw authError ?? new Error("Sessão inválida");
+      }
 
-      const { data, error } = await supabase.rpc("create_participant_registration", {
-        target_offer_id: offerId,
-        target_goal_id: goalId,
-        target_referral_code: null,
-      });
+      const { data, error } = await supabase.rpc(
+        "create_participant_registration",
+        {
+          target_offer_id: offerId,
+          target_goal_id: goalId,
+          target_referral_code: null,
+        },
+      );
 
       if (error) {
         setMessage(
@@ -173,7 +179,12 @@ export function ParticipantRegistrationCreate({
       }
 
       const result = data as RegistrationResult;
-      await uploadMedia(authData.user.id, result.registration_id, "AVATAR", avatarFile);
+      await uploadMedia(
+        authData.user.id,
+        result.registration_id,
+        "AVATAR",
+        avatarFile,
+      );
       await uploadMedia(
         authData.user.id,
         result.registration_id,
@@ -226,7 +237,9 @@ export function ParticipantRegistrationCreate({
           value={offerId}
           onChange={(event) => {
             const nextOffer = event.target.value;
-            const firstGoal = catalog.find((item) => item.offer_id === nextOffer);
+            const firstGoal = catalog.find(
+              (item) => item.offer_id === nextOffer,
+            );
             setOfferId(nextOffer);
             setGoalId(firstGoal?.goal_id ?? "");
           }}
@@ -290,7 +303,11 @@ export function ParticipantRegistrationCreate({
             <>
               <small>{paymentConfig.pix_holder}</small>
               <code>{paymentConfig.pix_key}</code>
-              <button type="button" onClick={() => void copyPixKey()} disabled={busy}>
+              <button
+                type="button"
+                onClick={() => void copyPixKey()}
+                disabled={busy}
+              >
                 {copied ? "Chave copiada ✓" : "Copiar chave PIX"}
               </button>
             </>
@@ -321,7 +338,9 @@ export function ParticipantRegistrationCreate({
 
       <button
         type="submit"
-        disabled={busy || !selected || !avatarFile || !proofFile || !paymentConfig}
+        disabled={
+          busy || !selected || !avatarFile || !proofFile || !paymentConfig
+        }
       >
         {busy ? "Enviando…" : "Enviar inscrição para conferência"}
       </button>
