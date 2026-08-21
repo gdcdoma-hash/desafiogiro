@@ -247,6 +247,114 @@
   font-weight: 700;
 }
 
+.registration-cart {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.registration-cart-item,
+.registration-add-box,
+.registration-edit-box {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #d2e0d6;
+  border-radius: 0.85rem;
+  background: #fff;
+}
+
+.registration-cart-item {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.registration-cart-main {
+  min-width: 0;
+}
+
+.registration-cart-main > span,
+.registration-cart-main > strong,
+.registration-cart-main > small {
+  display: block;
+}
+
+.registration-category {
+  margin-bottom: 0.25rem;
+  color: #176b36;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.registration-cart-main > strong {
+  overflow-wrap: anywhere;
+}
+
+.registration-cart-main > span:not(.registration-category),
+.registration-cart-main > small {
+  margin-top: 0.2rem;
+  color: #647168;
+}
+
+.registration-reserved {
+  color: #176b36 !important;
+  font-weight: 750;
+}
+
+.registration-cart-price {
+  white-space: nowrap;
+  color: #176b36;
+}
+
+.registration-cart-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 0.5rem;
+}
+
+.registration-cart-actions button,
+.registration-edit-actions button {
+  width: auto;
+}
+
+.registration-edit-box {
+  grid-column: 1 / -1;
+  background: #f7fbf8;
+}
+
+.registration-edit-box > small {
+  color: #647168;
+}
+
+.registration-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.registration-add-box {
+  background: #f7fbf8;
+}
+
+.registration-add-summary {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border-radius: 0.7rem;
+  background: #e9f6ed;
+}
+
+.registration-add-summary span,
+.registration-add-summary small {
+  color: #647168;
+}
+
+.registration-add-summary strong {
+  color: #176b36;
+  font-size: 1.25rem;
+}
+
 .participant-note {
   margin-top: 1rem;
   font-size: 0.9rem;
@@ -346,7 +454,11 @@
   .participant-registration-form select,
   .registration-upload,
   .registration-payment-card,
-  .participant-registration-form button {
+  .participant-registration-form button,
+  .registration-cart,
+  .registration-cart-item,
+  .registration-add-box,
+  .registration-edit-box {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -360,11 +472,35 @@
     min-width: 0;
   }
 
+  .registration-cart-item {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-cart-price,
+  .registration-cart-actions,
+  .registration-edit-box {
+    grid-column: 1;
+  }
+
+  .registration-cart-actions,
+  .registration-edit-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .registration-cart-actions button,
+  .registration-edit-actions button {
+    width: 100%;
+  }
+
   .registration-payment-card code,
   .registration-upload small,
   .participant-registration-list strong,
   .participant-registration-list span,
-  .participant-registration-list small {
+  .participant-registration-list small,
+  .registration-cart-main strong,
+  .registration-cart-main span,
+  .registration-edit-box small {
     overflow-wrap: anywhere;
     word-break: break-word;
   }
@@ -385,5 +521,10 @@
 
   .participant-nav button {
     padding-inline: 0.75rem;
+  }
+
+  .registration-cart-actions,
+  .registration-edit-actions {
+    grid-template-columns: 1fr;
   }
 }
