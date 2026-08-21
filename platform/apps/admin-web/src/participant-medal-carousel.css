@@ -1,0 +1,75 @@
+.medal-carousel {
+  display: flex;
+  gap: 0.8rem;
+  overflow-x: auto;
+  padding: 0.2rem 0.1rem 0.6rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.medal-card {
+  width: 11.5rem;
+  min-width: 11.5rem;
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.7rem;
+  border: 2px solid #d2e0d6;
+  border-radius: 0.9rem;
+  background: #fff;
+  color: #14261b;
+  text-align: left;
+  scroll-snap-align: start;
+}
+
+.medal-card.selected {
+  border-color: #176b36;
+  box-shadow: 0 0 0 2px rgba(23, 107, 54, 0.12);
+  background: #f3faf5;
+}
+
+.medal-card-image {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 0.7rem;
+  background: #edf4ef;
+}
+
+.medal-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.medal-card-image span {
+  padding: 0.8rem;
+  color: #647168;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.medal-card-category {
+  color: #176b36;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.medal-card strong {
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+
+.medal-card small {
+  color: #647168;
+}
+
+@media (max-width: 30rem) {
+  .medal-card {
+    width: 9.6rem;
+    min-width: 9.6rem;
+  }
+}
