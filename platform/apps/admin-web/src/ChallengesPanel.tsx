@@ -16,6 +16,8 @@ type Challenge = {
   registration_type: "NORMAL" | "REPESCAGEM";
   goal_mode: "DISTANCE_KM" | "DURATION_DAYS";
   fixed_target_km: number | null;
+  participant_start_opens_on: string | null;
+  participant_start_closes_on: string | null;
   status:
     "DRAFT" | "SCHEDULED" | "ACTIVE" | "FINISHED" | "CANCELLED" | "ARCHIVED";
   is_public: boolean;
@@ -146,6 +148,8 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
   const [referenceYear, setReferenceYear] = useState(now.getFullYear());
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
+  const [startWindowOpen, setStartWindowOpen] = useState("");
+  const [startWindowClose, setStartWindowClose] = useState("");
 
   const [rangeStart, setRangeStart] = useState("50");
   const [rangeStep, setRangeStep] = useState("25");
@@ -171,7 +175,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     const { data, error } = await supabase
       .from("challenges")
       .select(
-        "id,code,public_name,medal_image_path,reference_year,reference_month,sports_starts_at,sports_ends_at,registration_type,goal_mode,fixed_target_km,status,is_public",
+        "id,code,public_name,medal_image_path,reference_year,reference_month,sports_starts_at,sports_ends_at,registration_type,goal_mode,fixed_target_km,participant_start_opens_on,participant_start_closes_on,status,is_public",
       )
       .order("sports_starts_at", { ascending: false });
 
@@ -258,8 +262,20 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
   async function createChallenge(event: React.FormEvent) {
     event.preventDefault();
     if (!canManage) return;
-    if (!startsAt || !endsAt || new Date(endsAt) <= new Date(startsAt)) {
+    if (
+      goalMode === "DISTANCE_KM" &&
+      (!startsAt || !endsAt || new Date(endsAt) <= new Date(startsAt))
+    ) {
       setMessage("Confira o início e o fim do período esportivo.");
+      return;
+    }
+    if (
+      goalMode === "DURATION_DAYS" &&
+      (!startWindowOpen ||
+        !startWindowClose ||
+        startWindowClose < startWindowOpen)
+    ) {
+      setMessage("Confira o primeiro e o último dia permitidos para iniciar.");
       return;
     }
     const fixedKm = goalMode === "DURATION_DAYS" ? Number(fixedTargetKm) : null;
@@ -281,12 +297,22 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         public_name: name.trim(),
         reference_year: referenceYear,
         reference_month: referenceMonth,
-        sports_starts_at: toIsoLocal(startsAt),
-        sports_ends_at: toIsoLocal(endsAt),
+        sports_starts_at:
+          goalMode === "DISTANCE_KM"
+            ? toIsoLocal(startsAt)
+            : toIsoLocal(`${startWindowOpen}T00:00`),
+        sports_ends_at:
+          goalMode === "DISTANCE_KM"
+            ? toIsoLocal(endsAt)
+            : toIsoLocal(`${startWindowClose}T23:59`),
         timezone: "America/Fortaleza",
         registration_type: registrationType,
         goal_mode: goalMode,
         fixed_target_km: fixedKm,
+        participant_start_opens_on:
+          goalMode === "DURATION_DAYS" ? startWindowOpen : null,
+        participant_start_closes_on:
+          goalMode === "DURATION_DAYS" ? startWindowClose : null,
         status: "DRAFT",
         is_public: false,
       })
@@ -319,6 +345,8 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     setFixedTargetKm("1000");
     setStartsAt("");
     setEndsAt("");
+    setStartWindowOpen("");
+    setStartWindowClose("");
     setShowForm(false);
     await loadChallenges(data.id);
     setMessage(`Desafio criado em rascunho. Código: ${generatedCode}`);
@@ -556,11 +584,23 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               Forma da meta
               <select
                 value={goalMode}
-                onChange={(event) =>
-                  setGoalMode(
-                    event.target.value as "DISTANCE_KM" | "DURATION_DAYS",
-                  )
-                }
+                onChange={(event) => {
+                  const nextMode = event.target.value as
+                    "DISTANCE_KM" | "DURATION_DAYS";
+                  setGoalMode(nextMode);
+                  if (nextMode === "DURATION_DAYS" && !startWindowOpen) {
+                    const first = `${referenceYear}-${String(referenceMonth).padStart(2, "0")}-01`;
+                    const lastDay = new Date(
+                      referenceYear,
+                      referenceMonth,
+                      0,
+                    ).getDate();
+                    setStartWindowOpen(first);
+                    setStartWindowClose(
+                      `${referenceYear}-${String(referenceMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
+                    );
+                  }
+                }}
               >
                 <option value="DISTANCE_KM">Distância em km</option>
                 <option value="DURATION_DAYS">Prazo em dias</option>
@@ -608,33 +648,60 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               />
             </label>
           </div>
-          <div className="form-grid two">
-            <label>
-              Início do período esportivo
-              <input
-                type="datetime-local"
-                value={startsAt}
-                onChange={(event) => setStartsAt(event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Fim do período esportivo
-              <input
-                type="datetime-local"
-                value={endsAt}
-                onChange={(event) => setEndsAt(event.target.value)}
-                required
-              />
-            </label>
-          </div>
-          {goalMode === "DURATION_DAYS" ? (
-            <p className="mini-description">
-              O início e o término previstos de cada participante serão
-              calculados conforme o prazo escolhido quando a inscrição for
-              confirmada.
-            </p>
-          ) : null}
+          {goalMode === "DISTANCE_KM" ? (
+            <div className="form-grid two">
+              <label>
+                Início do desafio
+                <input
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(event) => setStartsAt(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Fim do desafio
+                <input
+                  type="datetime-local"
+                  value={endsAt}
+                  onChange={(event) => setEndsAt(event.target.value)}
+                  required
+                />
+              </label>
+            </div>
+          ) : (
+            <>
+              <div className="form-grid two">
+                <label>
+                  Primeiro dia permitido para iniciar
+                  <input
+                    type="date"
+                    value={startWindowOpen}
+                    onChange={(event) => setStartWindowOpen(event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Último dia permitido para iniciar
+                  <input
+                    type="date"
+                    min={startWindowOpen || undefined}
+                    value={startWindowClose}
+                    onChange={(event) =>
+                      setStartWindowClose(event.target.value)
+                    }
+                    required
+                  />
+                </label>
+              </div>
+              <p className="mini-description">
+                Cada participante terá seu próprio período. Quem se inscrever
+                antes pode escolher uma data futura dentro desta janela; quem
+                entrar durante o mês começa, no mínimo, na data da inscrição. O
+                término será calculado pelo prazo escolhido.
+              </p>
+            </>
+          )}
           <div className="form-actions">
             <button type="submit" disabled={busy}>
               {busy ? "Salvando…" : "Criar rascunho"}
@@ -673,8 +740,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   : `${item.fixed_target_km ?? 0} km por prazo`}
               </span>
               <span>
-                {formatDate(item.sports_starts_at)} a{" "}
-                {formatDate(item.sports_ends_at)}
+                {item.goal_mode === "DURATION_DAYS" &&
+                item.participant_start_opens_on &&
+                item.participant_start_closes_on
+                  ? `Inícios permitidos: ${formatDate(item.participant_start_opens_on + "T12:00:00")} a ${formatDate(item.participant_start_closes_on + "T12:00:00")}`
+                  : `${formatDate(item.sports_starts_at)} a ${formatDate(item.sports_ends_at)}`}
               </span>
             </div>
             <div className="challenge-side">
