@@ -21,6 +21,10 @@ type CatalogItem = {
   available_balance: number | string;
   category_limit: number;
   category_used: number;
+  goal_mode: "DISTANCE_KM" | "DURATION_DAYS";
+  duration_days: number | null;
+  participant_start_opens_on: string | null;
+  participant_start_closes_on: string | null;
 };
 
 type CheckoutItem = {
@@ -34,6 +38,12 @@ type CheckoutItem = {
   category_code: string;
   price: number | string;
   reservation_status: string | null;
+  goal_mode: "DISTANCE_KM" | "DURATION_DAYS";
+  duration_days: number | null;
+  planned_starts_at: string | null;
+  planned_ends_at: string | null;
+  participant_start_opens_on: string | null;
+  participant_start_closes_on: string | null;
 };
 
 type CheckoutState = {
@@ -61,6 +71,28 @@ function extensionFor(file: File) {
   if (file.type === "image/webp") return "webp";
   if (file.type === "application/pdf") return "pdf";
   return "jpg";
+}
+
+function localDateInput(value = new Date()) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function maxDate(a: string, b: string) {
+  return a > b ? a : b;
+}
+
+function displayPeriodEnd(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  date.setDate(date.getDate() - 1);
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function displayPeriodStart(value: string | null) {
+  return value ? new Intl.DateTimeFormat("pt-BR").format(new Date(value)) : "";
 }
 
 function categoryLabel(categoryCode: string) {
@@ -94,6 +126,8 @@ export function ParticipantRegistrationCreate({
   >(null);
   const [editOfferId, setEditOfferId] = useState("");
   const [editGoalId, setEditGoalId] = useState("");
+  const [startOn, setStartOn] = useState("");
+  const [editStartOn, setEditStartOn] = useState("");
 
   async function loadCatalog() {
     const { data, error } = await supabase.rpc(
@@ -200,17 +234,33 @@ export function ParticipantRegistrationCreate({
       )
     : undefined;
 
+  useEffect(() => {
+    if (selected?.goal_mode === "DURATION_DAYS") {
+      setStartOn(
+        maxDate(
+          localDateInput(),
+          selected.participant_start_opens_on ?? localDateInput(),
+        ),
+      );
+    } else {
+      setStartOn("");
+    }
+  }, [selected?.goal_id]);
+
   const editGoals = useMemo(
     () => catalog.filter((item) => item.offer_id === editOfferId),
     [catalog, editOfferId],
   );
+  const editSelected = catalog.find(
+    (item) => item.offer_id === editOfferId && item.goal_id === editGoalId,
+  );
 
   async function mutateCheckout(
     rpcName:
-      | "add_participant_checkout_item"
+      | "add_participant_checkout_item_scheduled"
       | "remove_participant_checkout_item"
-      | "swap_participant_checkout_item",
-    args: Record<string, string>,
+      | "swap_participant_checkout_item_scheduled",
+    args: Record<string, string | null>,
     progressMessage: string,
   ) {
     if (!checkout) return;
@@ -256,11 +306,13 @@ export function ParticipantRegistrationCreate({
   async function addItem() {
     if (!checkout || !selected) return;
     await mutateCheckout(
-      "add_participant_checkout_item",
+      "add_participant_checkout_item_scheduled",
       {
         target_checkout_id: checkout.checkout_id,
         target_offer_id: selected.offer_id,
         target_goal_id: selected.goal_id,
+        target_start_on:
+          selected.goal_mode === "DURATION_DAYS" ? startOn : null,
       },
       selected.reserve_on_add
         ? "Garantindo sua medalha no estoque…"
@@ -293,17 +345,24 @@ export function ParticipantRegistrationCreate({
         row.goal_id === item.goal_id,
     );
     setEditGoalId(sameGoal?.goal_id ?? first?.goal_id ?? item.goal_id);
+    setEditStartOn(
+      item.goal_mode === "DURATION_DAYS" && item.planned_starts_at
+        ? localDateInput(new Date(item.planned_starts_at))
+        : "",
+    );
   }
 
   async function swapItem(item: CheckoutItem) {
     if (!checkout || !editOfferId || !editGoalId) return;
     await mutateCheckout(
-      "swap_participant_checkout_item",
+      "swap_participant_checkout_item_scheduled",
       {
         target_checkout_id: checkout.checkout_id,
         target_registration_id: item.registration_id,
         target_offer_id: editOfferId,
         target_goal_id: editGoalId,
+        target_start_on:
+          editSelected?.goal_mode === "DURATION_DAYS" ? editStartOn : null,
       },
       "Verificando a nova medalha antes de trocar…",
     );
@@ -430,6 +489,12 @@ export function ParticipantRegistrationCreate({
                 </span>
                 <strong>{item.challenge_name}</strong>
                 <span>{item.goal_label}</span>
+                {item.goal_mode === "DURATION_DAYS" ? (
+                  <small>
+                    Período: {displayPeriodStart(item.planned_starts_at)} a{" "}
+                    {displayPeriodEnd(item.planned_ends_at)}
+                  </small>
+                ) : null}
                 {item.reservation_status === "RESERVED" ? (
                   <small className="registration-reserved">
                     Medalha reservada ✓
@@ -478,6 +543,15 @@ export function ParticipantRegistrationCreate({
                         );
                         setEditOfferId(nextOffer);
                         setEditGoalId(firstGoal?.goal_id ?? "");
+                        setEditStartOn(
+                          firstGoal?.goal_mode === "DURATION_DAYS"
+                            ? maxDate(
+                                localDateInput(),
+                                firstGoal.participant_start_opens_on ??
+                                  localDateInput(),
+                              )
+                            : "",
+                        );
                       }}
                       disabled={busy}
                     >
@@ -493,7 +567,24 @@ export function ParticipantRegistrationCreate({
                     Meta
                     <select
                       value={editGoalId}
-                      onChange={(event) => setEditGoalId(event.target.value)}
+                      onChange={(event) => {
+                        const nextGoalId = event.target.value;
+                        const nextGoal = catalog.find(
+                          (row) =>
+                            row.offer_id === editOfferId &&
+                            row.goal_id === nextGoalId,
+                        );
+                        setEditGoalId(nextGoalId);
+                        if (nextGoal?.goal_mode === "DURATION_DAYS") {
+                          setEditStartOn(
+                            maxDate(
+                              localDateInput(),
+                              nextGoal.participant_start_opens_on ??
+                                localDateInput(),
+                            ),
+                          );
+                        }
+                      }}
                       disabled={busy}
                     >
                       {editGoals.map((goal) => (
@@ -503,6 +594,26 @@ export function ParticipantRegistrationCreate({
                       ))}
                     </select>
                   </label>
+                  {editSelected?.goal_mode === "DURATION_DAYS" ? (
+                    <label>
+                      Data de início
+                      <input
+                        type="date"
+                        min={maxDate(
+                          localDateInput(),
+                          editSelected.participant_start_opens_on ??
+                            localDateInput(),
+                        )}
+                        max={
+                          editSelected.participant_start_closes_on ?? undefined
+                        }
+                        value={editStartOn}
+                        onChange={(event) => setEditStartOn(event.target.value)}
+                        disabled={busy}
+                        required
+                      />
+                    </label>
+                  ) : null}
                   <div className="registration-edit-actions">
                     <button
                       type="button"
@@ -559,6 +670,27 @@ export function ParticipantRegistrationCreate({
               ))}
             </select>
           </label>
+          {selected?.goal_mode === "DURATION_DAYS" ? (
+            <label>
+              Quando você quer começar?
+              <input
+                type="date"
+                min={maxDate(
+                  localDateInput(),
+                  selected.participant_start_opens_on ?? localDateInput(),
+                )}
+                max={selected.participant_start_closes_on ?? undefined}
+                value={startOn}
+                onChange={(event) => setStartOn(event.target.value)}
+                disabled={busy}
+                required
+              />
+              <small>
+                Você escolhe o início. O sistema calcula automaticamente o fim
+                dos {selected.duration_days} dias.
+              </small>
+            </label>
+          ) : null}
           {selected ? (
             <div className="registration-add-summary">
               <span>Valor nesta configuração</span>
