@@ -180,9 +180,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         draft.registrationType === "REPESCAGEM" ? "REPESCAGEM" : "NORMAL",
       );
       setGoalMode(
-        draft.goalMode === "DURATION_DAYS"
-          ? "DURATION_DAYS"
-          : "DISTANCE_KM",
+        draft.goalMode === "DURATION_DAYS" ? "DURATION_DAYS" : "DISTANCE_KM",
       );
       setFixedTargetKm(String(draft.fixedTargetKm ?? "1000"));
       setReferenceMonth(Number(draft.referenceMonth) || now.getMonth() + 1);
@@ -288,9 +286,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     if (goalsResult.error || offersResult.error) {
       setGoals([]);
       setOffers([]);
-      setMessage(
-        "Não foi possível carregar metas e condições deste desafio.",
-      );
+      setMessage("Não foi possível carregar metas e condições deste desafio.");
     } else {
       setGoals((goalsResult.data ?? []) as ChallengeGoal[]);
       setOffers((offersResult.data ?? []) as ChallengeOffer[]);
@@ -531,9 +527,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       return;
     }
     if (!offerGoalIds.length) {
-      setMessage(
-        "Selecione pelo menos uma meta disponível nesta condição.",
-      );
+      setMessage("Selecione pelo menos uma meta disponível nesta condição.");
       return;
     }
 
@@ -882,7 +876,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 <div>
                   <h3>
                     3.{" "}
-                    {selected.goal_mode === "DURATION_DAYS" ? "Prazos" : "Metas"}
+                    {selected.goal_mode === "DURATION_DAYS"
+                      ? "Prazos"
+                      : "Metas"}
                   </h3>
                   <p className="mini-description">
                     {selected.goal_mode === "DURATION_DAYS"
