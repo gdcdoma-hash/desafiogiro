@@ -255,11 +255,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         ? preferredId
         : hasUnsavedDraft
           ? null
-        : rememberedId && challenges.some((item) => item.id === rememberedId)
-          ? rememberedId
-        : selectedId && challenges.some((item) => item.id === selectedId)
-          ? selectedId
-          : (challenges[0]?.id ?? null);
+          : rememberedId && challenges.some((item) => item.id === rememberedId)
+            ? rememberedId
+            : selectedId && challenges.some((item) => item.id === selectedId)
+              ? selectedId
+              : (challenges[0]?.id ?? null);
     setSelectedId(nextSelected);
     setMessage(challenges.length ? "" : "Nenhum desafio cadastrado ainda.");
     setBusy(false);
