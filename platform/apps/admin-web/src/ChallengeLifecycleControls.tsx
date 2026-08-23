@@ -13,12 +13,20 @@ type Props = {
 };
 
 const labels: Record<ChallengeStatus, string> = {
-  DRAFT: "Rascunho",
-  SCHEDULED: "Programado",
+  DRAFT: "Em configuração",
+  SCHEDULED: "Pronto para iniciar",
   ACTIVE: "Ativo",
   FINISHED: "Encerrado",
   CANCELLED: "Cancelado",
   ARCHIVED: "Arquivado",
+};
+
+const actionLabels: Partial<Record<ChallengeStatus, string>> = {
+  SCHEDULED: "Concluir configuração",
+  ACTIVE: "Ativar desafio",
+  FINISHED: "Encerrar desafio",
+  CANCELLED: "Cancelar desafio",
+  ARCHIVED: "Arquivar desafio",
 };
 
 const transitions: Record<ChallengeStatus, ChallengeStatus[]> = {
@@ -89,7 +97,7 @@ export function ChallengeLifecycleControls({
               key={nextStatus}
               onClick={() => void moveTo(nextStatus)}
             >
-              {labels[nextStatus]}
+              {actionLabels[nextStatus] ?? labels[nextStatus]}
             </button>
           ))}
         </div>
