@@ -53,13 +53,16 @@ type Props = {
 };
 
 const statusLabel: Record<Challenge["status"], string> = {
-  DRAFT: "Rascunho",
-  SCHEDULED: "Programado",
+  DRAFT: "Em configuração",
+  SCHEDULED: "Pronto para iniciar",
   ACTIVE: "Ativo",
   FINISHED: "Encerrado",
   CANCELLED: "Cancelado",
   ARCHIVED: "Arquivado",
 };
+
+const LOCAL_DRAFT_KEY = "portal-giro:admin:challenge-unsaved-v1";
+const ACTIVE_CHALLENGE_KEY = "portal-giro:admin:challenge-active-v1";
 
 const offerStatusLabel: Record<ChallengeOffer["status"], string> = {
   DRAFT: "Rascunho",
@@ -159,8 +162,6 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
   const [daysStep, setDaysStep] = useState("15");
   const [daysEnd, setDaysEnd] = useState("90");
 
-  const [offerInternalName, setOfferInternalName] = useState("");
-  const [offerPublicName, setOfferPublicName] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
   const [offerLimit, setOfferLimit] = useState("1");
   const [offerStartsAt, setOfferStartsAt] = useState("");
@@ -168,6 +169,65 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
   const [offerGoalIds, setOfferGoalIds] = useState<string[]>([]);
 
   const selected = items.find((item) => item.id === selectedId) ?? null;
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(LOCAL_DRAFT_KEY);
+    if (!saved) return;
+    try {
+      const draft = JSON.parse(saved) as Record<string, unknown>;
+      setName(String(draft.name ?? ""));
+      setRegistrationType(
+        draft.registrationType === "REPESCAGEM" ? "REPESCAGEM" : "NORMAL",
+      );
+      setGoalMode(
+        draft.goalMode === "DURATION_DAYS"
+          ? "DURATION_DAYS"
+          : "DISTANCE_KM",
+      );
+      setFixedTargetKm(String(draft.fixedTargetKm ?? "1000"));
+      setReferenceMonth(Number(draft.referenceMonth) || now.getMonth() + 1);
+      setReferenceYear(Number(draft.referenceYear) || now.getFullYear());
+      setStartsAt(String(draft.startsAt ?? ""));
+      setEndsAt(String(draft.endsAt ?? ""));
+      setStartWindowOpen(String(draft.startWindowOpen ?? ""));
+      setStartWindowClose(String(draft.startWindowClose ?? ""));
+      setShowForm(true);
+    } catch {
+      window.localStorage.removeItem(LOCAL_DRAFT_KEY);
+    }
+  }, [now]);
+
+  useEffect(() => {
+    if (!showForm || selectedId) return;
+    window.localStorage.setItem(
+      LOCAL_DRAFT_KEY,
+      JSON.stringify({
+        name,
+        registrationType,
+        goalMode,
+        fixedTargetKm,
+        referenceMonth,
+        referenceYear,
+        startsAt,
+        endsAt,
+        startWindowOpen,
+        startWindowClose,
+      }),
+    );
+  }, [
+    showForm,
+    selectedId,
+    name,
+    registrationType,
+    goalMode,
+    fixedTargetKm,
+    referenceMonth,
+    referenceYear,
+    startsAt,
+    endsAt,
+    startWindowOpen,
+    startWindowClose,
+  ]);
 
   async function loadChallenges(preferredId?: string | null) {
     setBusy(true);
@@ -188,9 +248,15 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
 
     const challenges = (data ?? []) as Challenge[];
     setItems(challenges);
+    const rememberedId = window.localStorage.getItem(ACTIVE_CHALLENGE_KEY);
+    const hasUnsavedDraft = window.localStorage.getItem(LOCAL_DRAFT_KEY);
     const nextSelected =
       preferredId && challenges.some((item) => item.id === preferredId)
         ? preferredId
+        : hasUnsavedDraft
+          ? null
+        : rememberedId && challenges.some((item) => item.id === rememberedId)
+          ? rememberedId
         : selectedId && challenges.some((item) => item.id === selectedId)
           ? selectedId
           : (challenges[0]?.id ?? null);
@@ -222,7 +288,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     if (goalsResult.error || offersResult.error) {
       setGoals([]);
       setOffers([]);
-      setMessage("Não foi possível carregar metas e ofertas deste desafio.");
+      setMessage(
+        "Não foi possível carregar metas e condições deste desafio.",
+      );
     } else {
       setGoals((goalsResult.data ?? []) as ChallengeGoal[]);
       setOffers((offersResult.data ?? []) as ChallengeOffer[]);
@@ -243,6 +311,12 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     }
     setShowGoalForm(false);
     setShowOfferForm(false);
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (selectedId) {
+      window.localStorage.setItem(ACTIVE_CHALLENGE_KEY, selectedId);
+    }
   }, [selectedId]);
 
   async function nextChallengeCode() {
@@ -339,14 +413,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       event_resource_type: "challenge",
     });
 
-    setName("");
-    setRegistrationType("NORMAL");
-    setGoalMode("DISTANCE_KM");
-    setFixedTargetKm("1000");
-    setStartsAt("");
-    setEndsAt("");
-    setStartWindowOpen("");
-    setStartWindowClose("");
+    window.localStorage.removeItem(LOCAL_DRAFT_KEY);
     setShowForm(false);
     await loadChallenges(data.id);
     setMessage(`Desafio criado em rascunho. Código: ${generatedCode}`);
@@ -449,7 +516,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       !offerEndsAt ||
       new Date(offerEndsAt) <= new Date(offerStartsAt)
     ) {
-      setMessage("Confira o início e o fim da oferta.");
+      setMessage("Confira o início e o fim da condição de inscrição.");
       return;
     }
     const price = Number(offerPrice.replace(",", "."));
@@ -464,7 +531,9 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       return;
     }
     if (!offerGoalIds.length) {
-      setMessage("Selecione pelo menos uma meta disponível nesta oferta.");
+      setMessage(
+        "Selecione pelo menos uma meta disponível nesta condição.",
+      );
       return;
     }
 
@@ -473,8 +542,8 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       .from("challenge_offers")
       .insert({
         challenge_id: selected.id,
-        internal_name: offerInternalName.trim(),
-        public_name: offerPublicName.trim(),
+        internal_name: `${selected.code}-${offers.length + 1}`,
+        public_name: `${selected.public_name} · ${offers.length + 1}`,
         category_code: selected.registration_type,
         registration_starts_at: toIsoLocal(offerStartsAt),
         registration_ends_at: toIsoLocal(offerEndsAt),
@@ -487,7 +556,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       .single();
 
     if (error) {
-      setMessage("Não foi possível cadastrar a oferta.");
+      setMessage("Não foi possível cadastrar a condição de inscrição.");
       setBusy(false);
       return;
     }
@@ -502,14 +571,12 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     if (linkError) {
       await supabase.from("challenge_offers").delete().eq("id", data.id);
       setMessage(
-        "A oferta não foi salva porque as metas não puderam ser vinculadas.",
+        "A condição não foi salva porque as metas não puderam ser vinculadas.",
       );
       setBusy(false);
       return;
     }
 
-    setOfferInternalName("");
-    setOfferPublicName("");
     setOfferPrice("");
     setOfferLimit("1");
     setOfferStartsAt("");
@@ -517,7 +584,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     setOfferGoalIds([]);
     setShowOfferForm(false);
     await loadChallengeDetails(selected.id);
-    setMessage("Oferta adicionada em rascunho.");
+    setMessage("Condição adicionada em configuração.");
   }
 
   function toggleOfferGoal(goalId: string) {
@@ -539,7 +606,10 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
           <button
             type="button"
             className="compact"
-            onClick={() => setShowForm((value) => !value)}
+            onClick={() => {
+              setSelectedId(null);
+              setShowForm((value) => !value);
+            }}
             disabled={busy}
           >
             {showForm ? "Cancelar" : "Novo desafio"}
@@ -547,13 +617,14 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         ) : null}
       </div>
       <p className="section-description">
-        Cadastre o desafio, a foto da medalha, as metas e a oferta de inscrição.
+        Configure todos os dados do desafio em uma única sequência.
       </p>
 
       {showForm ? (
         <form className="challenge-form" onSubmit={createChallenge}>
+          <h3>1. Dados do desafio</h3>
           <label>
-            Nome público
+            Nome do desafio
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -714,50 +785,55 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         {message}
       </p>
 
-      <div className="challenge-list">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`challenge-item challenge-select ${item.id === selectedId ? "selected" : ""}`}
-            key={item.id}
-            onClick={() => setSelectedId(item.id)}
-          >
-            <div className="challenge-main">
-              <div className="challenge-title-row">
-                <strong>{item.public_name}</strong>
-                <span
-                  className={`challenge-status ${item.status.toLowerCase()}`}
-                >
-                  {statusLabel[item.status]}
+      <details className="challenge-catalog">
+        <summary>Ver desafios cadastrados</summary>
+        <div className="challenge-list">
+          {items.map((item) => (
+            <button
+              type="button"
+              className={`challenge-item challenge-select ${item.id === selectedId ? "selected" : ""}`}
+              key={item.id}
+              onClick={() => setSelectedId(item.id)}
+            >
+              <div className="challenge-main">
+                <div className="challenge-title-row">
+                  <strong>{item.public_name}</strong>
+                  <span
+                    className={`challenge-status ${item.status.toLowerCase()}`}
+                  >
+                    {statusLabel[item.status]}
+                  </span>
+                </div>
+                <span className="challenge-code">{item.code}</span>
+                <span>
+                  {item.registration_type === "NORMAL"
+                    ? "Normal"
+                    : "Repescagem"}{" "}
+                  ·{" "}
+                  {item.goal_mode === "DISTANCE_KM"
+                    ? "meta em km"
+                    : `${item.fixed_target_km ?? 0} km por prazo`}
+                </span>
+                <span>
+                  {item.goal_mode === "DURATION_DAYS" &&
+                  item.participant_start_opens_on &&
+                  item.participant_start_closes_on
+                    ? `Inícios permitidos: ${formatDate(item.participant_start_opens_on + "T12:00:00")} a ${formatDate(item.participant_start_closes_on + "T12:00:00")}`
+                    : `${formatDate(item.sports_starts_at)} a ${formatDate(item.sports_ends_at)}`}
                 </span>
               </div>
-              <span className="challenge-code">{item.code}</span>
-              <span>
-                {item.registration_type === "NORMAL" ? "Normal" : "Repescagem"}{" "}
-                ·{" "}
-                {item.goal_mode === "DISTANCE_KM"
-                  ? "meta em km"
-                  : `${item.fixed_target_km ?? 0} km por prazo`}
-              </span>
-              <span>
-                {item.goal_mode === "DURATION_DAYS" &&
-                item.participant_start_opens_on &&
-                item.participant_start_closes_on
-                  ? `Inícios permitidos: ${formatDate(item.participant_start_opens_on + "T12:00:00")} a ${formatDate(item.participant_start_closes_on + "T12:00:00")}`
-                  : `${formatDate(item.sports_starts_at)} a ${formatDate(item.sports_ends_at)}`}
-              </span>
-            </div>
-            <div className="challenge-side">
-              <span>
-                {item.reference_month
-                  ? `${String(item.reference_month).padStart(2, "0")}/${item.reference_year}`
-                  : item.reference_year}
-              </span>
-              <span>{item.is_public ? "Visível" : "Não publicado"}</span>
-            </div>
-          </button>
-        ))}
-      </div>
+              <div className="challenge-side">
+                <span>
+                  {item.reference_month
+                    ? `${String(item.reference_month).padStart(2, "0")}/${item.reference_year}`
+                    : item.reference_year}
+                </span>
+                <span>{item.is_public ? "Visível" : "Não publicado"}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </details>
 
       {selected ? (
         <div className="challenge-detail">
@@ -768,17 +844,29 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             </div>
           </div>
 
-          <ChallengeLifecycleControls
-            supabase={supabase}
-            challengeId={selected.id}
-            status={selected.status}
-            canManage={canManage}
-            onChanged={async () => {
-              await loadChallenges(selected.id);
-              await loadChallengeDetails(selected.id);
-            }}
-          />
+          <section className="config-card">
+            <h3>1. Dados do desafio</h3>
+            <div className="simple-list">
+              <div className="simple-row">
+                <strong>Nome do desafio</strong>
+                <span>{selected.public_name}</span>
+              </div>
+              <div className="simple-row">
+                <strong>Tipo e meta</strong>
+                <span>
+                  {selected.registration_type === "NORMAL"
+                    ? "Normal"
+                    : "Repescagem"}{" "}
+                  ·{" "}
+                  {selected.goal_mode === "DISTANCE_KM"
+                    ? "Distância em km"
+                    : `${selected.fixed_target_km} km por prazo`}
+                </span>
+              </div>
+            </div>
+          </section>
 
+          <h3 className="flow-step-title">2. Foto da medalha</h3>
           <ChallengeMedalImageControl
             supabase={supabase}
             challengeId={selected.id}
@@ -793,9 +881,8 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               <div className="section-heading">
                 <div>
                   <h3>
-                    {selected.goal_mode === "DURATION_DAYS"
-                      ? "Prazos"
-                      : "Metas"}
+                    3.{" "}
+                    {selected.goal_mode === "DURATION_DAYS" ? "Prazos" : "Metas"}
                   </h3>
                   <p className="mini-description">
                     {selected.goal_mode === "DURATION_DAYS"
@@ -944,7 +1031,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             <section className="config-card">
               <div className="section-heading">
                 <div>
-                  <h3>Ofertas de inscrição</h3>
+                  <h3>4. Condições de inscrição</h3>
                   <p className="mini-description">
                     Tipo{" "}
                     {selected.registration_type === "NORMAL"
@@ -960,35 +1047,13 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     onClick={() => setShowOfferForm((value) => !value)}
                     disabled={busy || !goals.length}
                   >
-                    {showOfferForm ? "Cancelar" : "Adicionar oferta"}
+                    {showOfferForm ? "Cancelar" : "Adicionar condição"}
                   </button>
                 ) : null}
               </div>
 
               {showOfferForm ? (
                 <form className="compact-form" onSubmit={createOffer}>
-                  <div className="form-grid two">
-                    <label>
-                      Nome interno
-                      <input
-                        value={offerInternalName}
-                        onChange={(e) => setOfferInternalName(e.target.value)}
-                        placeholder="Agosto 2026"
-                        required
-                        minLength={2}
-                      />
-                    </label>
-                    <label>
-                      Nome para o público
-                      <input
-                        value={offerPublicName}
-                        onChange={(e) => setOfferPublicName(e.target.value)}
-                        placeholder="Inscrição Agosto"
-                        required
-                        minLength={2}
-                      />
-                    </label>
-                  </div>
                   <label>
                     Valor (R$)
                     <input
@@ -1050,7 +1115,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   </fieldset>
                   <div className="form-actions">
                     <button type="submit" disabled={busy}>
-                      Salvar oferta em rascunho
+                      Salvar condição em configuração
                     </button>
                   </div>
                 </form>
@@ -1061,9 +1126,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   <div className="offer-row" key={offer.id}>
                     <div>
                       <strong>{offer.public_name}</strong>
-                      <span>
-                        {offer.internal_name} · {offer.category_code}
-                      </span>
+                      <span>{offer.category_code}</span>
                     </div>
                     <div className="offer-side">
                       <strong>{formatMoney(Number(offer.price))}</strong>
@@ -1087,11 +1150,33 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   </div>
                 ))}
                 {!offers.length ? (
-                  <p className="empty-note">Nenhuma oferta cadastrada.</p>
+                  <p className="empty-note">Nenhuma condição cadastrada.</p>
                 ) : null}
               </div>
             </section>
           </div>
+
+          <section className="config-card">
+            <h3>5. Estoque</h3>
+            <p className="mini-description">
+              O estoque integrado é administrado no módulo Estoque e usa as
+              metas deste desafio após a configuração.
+            </p>
+          </section>
+
+          <div className="flow-step-title">
+            <h3>6. Revisão / Concluir configuração</h3>
+          </div>
+          <ChallengeLifecycleControls
+            supabase={supabase}
+            challengeId={selected.id}
+            status={selected.status}
+            canManage={canManage}
+            onChanged={async () => {
+              await loadChallenges(selected.id);
+              await loadChallengeDetails(selected.id);
+            }}
+          />
         </div>
       ) : null}
 
