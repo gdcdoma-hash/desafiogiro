@@ -1,4 +1,4 @@
-name: Refine challenge form temp
+name: Refine challenge form temp v2
 
 on:
   push:
@@ -32,13 +32,11 @@ jobs:
           s = p.read_text()
 
           s = s.replace('type Props = {\n  supabase: SupabaseClient;\n  canManage: boolean;\n};', 'type Props = {\n  supabase: SupabaseClient;\n  canManage: boolean;\n};\n\nconst NEW_CHALLENGE_DRAFT_KEY = "portal-giro:new-challenge-draft:v1";')
-
           s = s.replace('  const [showForm, setShowForm] = useState(false);\n  const [showGoalForm, setShowGoalForm] = useState(false);', '  const [showForm, setShowForm] = useState(false);\n  const [showChallengeList, setShowChallengeList] = useState(false);\n  const [showGoalForm, setShowGoalForm] = useState(false);')
-
           s = s.replace('  const [offerInternalName, setOfferInternalName] = useState("");\n  const [offerPublicName, setOfferPublicName] = useState("");\n', '')
 
           marker = '  const selected = items.find((item) => item.id === selectedId) ?? null;\n'
-          insert = '''  const selected = items.find((item) => item.id === selectedId) ?? null;\n\n  function resetNewChallengeForm() {\n    setName("");\n    setRegistrationType("NORMAL");\n    setGoalMode("DISTANCE_KM");\n    setFixedTargetKm("1000");\n    setReferenceMonth(now.getMonth() + 1);\n    setReferenceYear(now.getFullYear());\n    setStartsAt("");\n    setEndsAt("");\n    setStartWindowOpen("");\n    setStartWindowClose("");\n    window.localStorage.removeItem(NEW_CHALLENGE_DRAFT_KEY);\n  }\n\n  function cancelNewChallenge() {\n    resetNewChallengeForm();\n    setShowForm(false);\n  }\n\n  useEffect(() => {\n    try {\n      const raw = window.localStorage.getItem(NEW_CHALLENGE_DRAFT_KEY);\n      if (!raw) return;\n      const draft = JSON.parse(raw) as Record<string, unknown>;\n      if (typeof draft.name === "string") setName(draft.name);\n      if (draft.registrationType === "NORMAL" || draft.registrationType === "REPESCAGEM") setRegistrationType(draft.registrationType);\n      if (draft.goalMode === "DISTANCE_KM" || draft.goalMode === "DURATION_DAYS") setGoalMode(draft.goalMode);\n      if (typeof draft.fixedTargetKm === "string") setFixedTargetKm(draft.fixedTargetKm);\n      if (typeof draft.referenceMonth === "number") setReferenceMonth(draft.referenceMonth);\n      if (typeof draft.referenceYear === "number") setReferenceYear(draft.referenceYear);\n      if (typeof draft.startsAt === "string") setStartsAt(draft.startsAt);\n      if (typeof draft.endsAt === "string") setEndsAt(draft.endsAt);\n      if (typeof draft.startWindowOpen === "string") setStartWindowOpen(draft.startWindowOpen);\n      if (typeof draft.startWindowClose === "string") setStartWindowClose(draft.startWindowClose);\n      setShowForm(true);\n    } catch {\n      window.localStorage.removeItem(NEW_CHALLENGE_DRAFT_KEY);\n    }\n  }, []);\n\n  useEffect(() => {\n    if (!showForm) return;\n    window.localStorage.setItem(\n      NEW_CHALLENGE_DRAFT_KEY,\n      JSON.stringify({\n        name,\n        registrationType,\n        goalMode,\n        fixedTargetKm,\n        referenceMonth,\n        referenceYear,\n        startsAt,\n        endsAt,\n        startWindowOpen,\n        startWindowClose,\n      }),\n    );\n  }, [\n    showForm,\n    name,\n    registrationType,\n    goalMode,\n    fixedTargetKm,\n    referenceMonth,\n    referenceYear,\n    startsAt,\n    endsAt,\n    startWindowOpen,\n    startWindowClose,\n  ]);\n'''
+          insert = '''  const selected = items.find((item) => item.id === selectedId) ?? null;\n\n  function resetNewChallengeForm() {\n    setName("");\n    setRegistrationType("NORMAL");\n    setGoalMode("DISTANCE_KM");\n    setFixedTargetKm("1000");\n    setReferenceMonth(now.getMonth() + 1);\n    setReferenceYear(now.getFullYear());\n    setStartsAt("");\n    setEndsAt("");\n    setStartWindowOpen("");\n    setStartWindowClose("");\n    window.localStorage.removeItem(NEW_CHALLENGE_DRAFT_KEY);\n  }\n\n  function cancelNewChallenge() {\n    resetNewChallengeForm();\n    setShowForm(false);\n  }\n\n  useEffect(() => {\n    try {\n      const raw = window.localStorage.getItem(NEW_CHALLENGE_DRAFT_KEY);\n      if (!raw) return;\n      const draft = JSON.parse(raw) as Record<string, unknown>;\n      if (typeof draft.name === "string") setName(draft.name);\n      if (draft.registrationType === "NORMAL" || draft.registrationType === "REPESCAGEM") setRegistrationType(draft.registrationType);\n      if (draft.goalMode === "DISTANCE_KM" || draft.goalMode === "DURATION_DAYS") setGoalMode(draft.goalMode);\n      if (typeof draft.fixedTargetKm === "string") setFixedTargetKm(draft.fixedTargetKm);\n      if (typeof draft.referenceMonth === "number") setReferenceMonth(draft.referenceMonth);\n      if (typeof draft.referenceYear === "number") setReferenceYear(draft.referenceYear);\n      if (typeof draft.startsAt === "string") setStartsAt(draft.startsAt);\n      if (typeof draft.endsAt === "string") setEndsAt(draft.endsAt);\n      if (typeof draft.startWindowOpen === "string") setStartWindowOpen(draft.startWindowOpen);\n      if (typeof draft.startWindowClose === "string") setStartWindowClose(draft.startWindowClose);\n      setShowForm(true);\n    } catch {\n      window.localStorage.removeItem(NEW_CHALLENGE_DRAFT_KEY);\n    }\n  }, []);\n\n  useEffect(() => {\n    if (!showForm) return;\n    window.localStorage.setItem(\n      NEW_CHALLENGE_DRAFT_KEY,\n      JSON.stringify({ name, registrationType, goalMode, fixedTargetKm, referenceMonth, referenceYear, startsAt, endsAt, startWindowOpen, startWindowClose }),\n    );\n  }, [showForm, name, registrationType, goalMode, fixedTargetKm, referenceMonth, referenceYear, startsAt, endsAt, startWindowOpen, startWindowClose]);\n'''
           if marker not in s: raise SystemExit('selected marker not found')
           s = s.replace(marker, insert)
 
@@ -49,34 +47,30 @@ jobs:
           s = s.replace('    setShowOfferForm(false);\n    await loadChallengeDetails(selected.id);\n    setMessage("Oferta adicionada em rascunho.");', '    setShowOfferForm(false);\n    await loadChallengeDetails(selected.id);\n    setMessage("Condições de inscrição salvas.");')
 
           s = s.replace('{showForm ? "Cancelar" : "Novo desafio"}', '{showForm ? "Descartar cadastro" : "Novo desafio"}')
-          s = s.replace('onClick={() => setShowForm((value) => !value)}', 'onClick={() => {\n              if (showForm) cancelNewChallenge();\n              else {\n                setShowForm(true);\n                setShowChallengeList(false);\n              }\n            }}', 1)
+          s = s.replace('onClick={() => setShowForm((value) => !value)}', 'onClick={() => {\n              if (showForm) cancelNewChallenge();\n              else { setShowForm(true); setShowChallengeList(false); }\n            }}', 1)
           s = s.replace('            Nome público\n', '            Nome do desafio\n', 1)
           s = s.replace('{busy ? "Salvando…" : "Criar rascunho"}', '{busy ? "Salvando…" : "Salvar e continuar cadastro"}')
 
-          # Wrap challenge list behind an explicit control so the selected draft/configuration stays contiguous.
-          old = '''      <div className="challenge-list">\n        {items.map((item) => ('''
-          new = '''      {items.length ? (\n        <button\n          type="button"\n          className="link-button"\n          onClick={() => setShowChallengeList((value) => !value)}\n        >\n          {showChallengeList ? "Ocultar desafios cadastrados" : "Ver desafios cadastrados"}\n        </button>\n      ) : null}\n\n      {showChallengeList ? (\n      <div className="challenge-list">\n        {items.map((item) => ('''
+          old = '      <div className="challenge-list">\n        {items.map((item) => ('
+          new = '''      {items.length ? (\n        <button type="button" className="link-button" onClick={() => setShowChallengeList((value) => !value)}>\n          {showChallengeList ? "Ocultar desafios cadastrados" : "Ver desafios cadastrados"}\n        </button>\n      ) : null}\n\n      {showChallengeList ? (\n      <div className="challenge-list">\n        {items.map((item) => ('''
           if old not in s: raise SystemExit('challenge list start not found')
           s = s.replace(old, new, 1)
-          end = '''      </div>\n\n      {selected ? ('''
-          repl = '''      </div>\n      ) : null}\n\n      {selected ? ('''
+          end = '      </div>\n\n      {selected ? ('
+          repl = '      </div>\n      ) : null}\n\n      {selected ? ('
           if end not in s: raise SystemExit('challenge list end not found')
           s = s.replace(end, repl, 1)
 
-          # Goal form remains visible while a draft is being configured.
           s = s.replace('{showGoalForm &&\n              selected.goal_mode === "DISTANCE_KM"', '{(showGoalForm || selected.status === "DRAFT") &&\n              selected.goal_mode === "DISTANCE_KM"')
           s = s.replace('{showGoalForm && selected.goal_mode === "DURATION_DAYS" ? (', '{(showGoalForm || selected.status === "DRAFT") && selected.goal_mode === "DURATION_DAYS" ? (')
           s = s.replace('    setShowGoalForm(false);\n    await loadChallengeDetails(selected.id);', '    setShowGoalForm(false);\n    setShowOfferForm(true);\n    await loadChallengeDetails(selected.id);')
 
           s = s.replace('<h3>Ofertas de inscrição</h3>', '<h3>Condições de inscrição</h3>')
           s = s.replace('{showOfferForm ? "Cancelar" : "Adicionar oferta"}', '{showOfferForm ? "Fechar" : "Configurar inscrição"}')
-
           names_block = '''                  <div className="form-grid two">\n                    <label>\n                      Nome interno\n                      <input\n                        value={offerInternalName}\n                        onChange={(e) => setOfferInternalName(e.target.value)}\n                        placeholder="Agosto 2026"\n                        required\n                        minLength={2}\n                      />\n                    </label>\n                    <label>\n                      Nome para o público\n                      <input\n                        value={offerPublicName}\n                        onChange={(e) => setOfferPublicName(e.target.value)}\n                        placeholder="Inscrição Agosto"\n                        required\n                        minLength={2}\n                      />\n                    </label>\n                  </div>\n'''
           if names_block not in s: raise SystemExit('offer names block not found')
           s = s.replace(names_block, '')
           s = s.replace('Salvar oferta em rascunho', 'Salvar condições de inscrição')
           s = s.replace('''                    <div>\n                      <strong>{offer.public_name}</strong>\n                      <span>\n                        {offer.internal_name} · {offer.category_code}\n                      </span>\n                    </div>''', '''                    <div>\n                      <strong>{selected.public_name}</strong>\n                      <span>{selected.registration_type === "NORMAL" ? "Normal" : "Repescagem"}</span>\n                    </div>''')
-
           p.write_text(s)
 
           p = Path('platform/apps/admin-web/src/ChallengeLifecycleControls.tsx')
@@ -84,12 +78,12 @@ jobs:
           s = s.replace('  DRAFT: "Rascunho",\n  SCHEDULED: "Programado",', '  DRAFT: "Em configuração",\n  SCHEDULED: "Pronto para iniciar",')
           s = s.replace('const transitions: Record<ChallengeStatus, ChallengeStatus[]> = {', 'const actionLabels: Partial<Record<ChallengeStatus, string>> = {\n  SCHEDULED: "Concluir configuração",\n  ACTIVE: "Ativar desafio",\n  FINISHED: "Encerrar desafio",\n  CANCELLED: "Cancelar desafio",\n  ARCHIVED: "Arquivar",\n};\n\nconst transitions: Record<ChallengeStatus, ChallengeStatus[]> = {')
           s = s.replace('<h3 id="challenge-lifecycle-title">Situação da edição</h3>', '<h3 id="challenge-lifecycle-title">Situação do desafio</h3>')
-          s = s.replace('''            Estado atual: <strong>{labels[status]}</strong>. As mudanças seguem\n            o fluxo operacional protegido pelo banco.''', '''            Estado atual: <strong>{labels[status]}</strong>. Conclua a configuração somente depois de conferir foto, metas e inscrição.''')
+          s = s.replace('            Estado atual: <strong>{labels[status]}</strong>. As mudanças seguem\n            o fluxo operacional protegido pelo banco.', '            Estado atual: <strong>{labels[status]}</strong>. Conclua a configuração somente depois de conferir foto, metas e inscrição.')
           s = s.replace('{labels[nextStatus]}', '{actionLabels[nextStatus] ?? labels[nextStatus]}')
           p.write_text(s)
 
           p = Path('platform/apps/admin-web/src/styles.css')
-          s = p.read_text().replace('''  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);''', '''  grid-template-columns: 1fr;''')
+          s = p.read_text().replace('  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);', '  grid-template-columns: 1fr;')
           p.write_text(s)
           PY
       - run: pnpm exec prettier --write platform/apps/admin-web/src/ChallengesPanel.tsx platform/apps/admin-web/src/ChallengeLifecycleControls.tsx platform/apps/admin-web/src/styles.css
