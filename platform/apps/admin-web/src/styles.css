@@ -358,8 +358,23 @@ dd {
 
 .challenge-config-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
+}
+
+.challenge-catalog {
+  margin: 1rem 0;
+}
+
+.challenge-catalog > summary {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.75rem 0;
+}
+
+.flow-step-title {
+  margin: 1.25rem 0 0.5rem;
 }
 
 .config-card {
