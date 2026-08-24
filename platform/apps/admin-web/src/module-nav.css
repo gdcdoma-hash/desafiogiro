@@ -40,6 +40,10 @@
   background: #dff0e4;
 }
 
+.module-nav button.active:hover {
+  background: #16733b;
+}
+
 .module-nav button:focus-visible {
   outline: 3px solid rgb(35 124 66 / 28%);
   outline-offset: 2px;

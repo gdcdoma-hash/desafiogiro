@@ -794,8 +794,13 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       </p>
 
       {!showForm && !selected ? (
-        <details className="challenge-catalog">
-          <summary>Ver desafios cadastrados</summary>
+        <section className="challenge-catalog">
+          <div className="section-heading compact-heading">
+            <div>
+              <p className="eyebrow">Consulta</p>
+              <h3>Desafios cadastrados</h3>
+            </div>
+          </div>
           <div className="challenge-list">
             {items.map((item) => (
               <button
@@ -842,7 +847,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               </button>
             ))}
           </div>
-        </details>
+        </section>
       ) : null}
 
       {selected ? (

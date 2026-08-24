@@ -86,6 +86,20 @@ const ADMIN_MODULES: AdminModule[] = [
   "audit",
 ];
 
+const ADMIN_MODULE_PERMISSION: Record<AdminModule, string> = {
+  operations: "operations.read",
+  "public-registrations": "public_registrations.read",
+  registrations: "registrations.read",
+  activities: "activities.read",
+  participants: "participants.read",
+  "challenge-summary": "challenges.read",
+  challenges: "challenges.read",
+  inventory: "inventory.read",
+  payments: "payments.read",
+  "medal-deliveries": "medal_deliveries.read",
+  audit: "audit.read",
+};
+
 function initialAdminModule(): AdminModule {
   const saved = window.localStorage.getItem(ADMIN_MODULE_KEY);
   return ADMIN_MODULES.includes(saved as AdminModule)
@@ -152,6 +166,18 @@ function App() {
 
     return () => data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!context) return;
+    if (context.permissions.includes(ADMIN_MODULE_PERMISSION[adminModule]))
+      return;
+    const fallback = ADMIN_MODULES.find((module) =>
+      context.permissions.includes(ADMIN_MODULE_PERMISSION[module]),
+    );
+    if (!fallback) return;
+    setAdminModule(fallback);
+    window.localStorage.setItem(ADMIN_MODULE_KEY, fallback);
+  }, [adminModule, context]);
 
   useEffect(() => {
     if (!session || passwordUpdateMode) return;
