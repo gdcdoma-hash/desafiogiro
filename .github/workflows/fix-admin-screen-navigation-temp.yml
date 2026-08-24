@@ -1,0 +1,144 @@
+name: Fix admin screen navigation temp
+
+on:
+  push:
+    branches:
+      - fix/admin-screen-navigation
+    paths:
+      - '.github/workflows/fix-admin-screen-navigation-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/admin-screen-navigation
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+      - name: Apply admin navigation refactor
+        shell: python
+        run: |
+          from pathlib import Path
+
+          main_path = Path('platform/apps/admin-web/src/main.tsx')
+          text = main_path.read_text()
+
+          anchor = '''type AuditEvent = {\n  id: string;\n  occurred_at: string;\n  action: string;\n  resource_type: string;\n  outcome: "success" | "failure" | "denied";\n};\n'''
+          insert = anchor + '''\ntype AdminModule =\n  | "operations"\n  | "public-registrations"\n  | "registrations"\n  | "activities"\n  | "participants"\n  | "challenge-summary"\n  | "challenges"\n  | "inventory"\n  | "payments"\n  | "medal-deliveries"\n  | "audit";\n\nconst ADMIN_MODULE_KEY = "portal-giro:admin:active-module-v1";\nconst ADMIN_MODULES: AdminModule[] = [\n  "operations",\n  "public-registrations",\n  "registrations",\n  "activities",\n  "participants",\n  "challenge-summary",\n  "challenges",\n  "inventory",\n  "payments",\n  "medal-deliveries",\n  "audit",\n];\n\nfunction initialAdminModule(): AdminModule {\n  const saved = window.localStorage.getItem(ADMIN_MODULE_KEY);\n  return ADMIN_MODULES.includes(saved as AdminModule)\n    ? (saved as AdminModule)\n    : "challenges";\n}\n'''
+          if anchor not in text:
+              raise SystemExit('AuditEvent anchor not found')
+          text = text.replace(anchor, insert, 1)
+
+          anchor = '''  const [auditMessage, setAuditMessage] = useState("");\n  const [auditBusy, setAuditBusy] = useState(false);\n'''
+          replacement = anchor + '''  const [adminModule, setAdminModule] = useState<AdminModule>(initialAdminModule);\n'''
+          if anchor not in text:
+              raise SystemExit('state anchor not found')
+          text = text.replace(anchor, replacement, 1)
+
+          anchor = '''  function formatAuditDate(value: string) {\n    return new Intl.DateTimeFormat("pt-BR", {\n      dateStyle: "short",\n      timeStyle: "short",\n    }).format(new Date(value));\n  }\n'''
+          replacement = anchor + '''\n  function selectAdminModule(module: AdminModule) {\n    setAdminModule(module);\n    window.localStorage.setItem(ADMIN_MODULE_KEY, module);\n    window.scrollTo({ top: 0, behavior: "smooth" });\n  }\n'''
+          if anchor not in text:
+              raise SystemExit('formatAuditDate anchor not found')
+          text = text.replace(anchor, replacement, 1)
+
+          nav_start = text.index('        <nav className="module-nav" aria-label="Módulos administrativos">')
+          nav_end_marker = '        </nav>'
+          nav_end = text.index(nav_end_marker, nav_start) + len(nav_end_marker)
+          new_nav = '''        <nav className="module-nav" aria-label="Módulos administrativos">\n          {context?.permissions.includes("operations.read") ? (\n            <button type="button" className={adminModule === "operations" ? "active" : ""} aria-current={adminModule === "operations" ? "page" : undefined} onClick={() => selectAdminModule("operations")}>Operação</button>\n          ) : null}\n          {context?.permissions.includes("public_registrations.read") ? (\n            <button type="button" className={adminModule === "public-registrations" ? "active" : ""} aria-current={adminModule === "public-registrations" ? "page" : undefined} onClick={() => selectAdminModule("public-registrations")}>Pré-inscrições</button>\n          ) : null}\n          {context?.permissions.includes("registrations.read") ? (\n            <button type="button" className={adminModule === "registrations" ? "active" : ""} aria-current={adminModule === "registrations" ? "page" : undefined} onClick={() => selectAdminModule("registrations")}>Inscrições</button>\n          ) : null}\n          {context?.permissions.includes("activities.read") ? (\n            <button type="button" className={adminModule === "activities" ? "active" : ""} aria-current={adminModule === "activities" ? "page" : undefined} onClick={() => selectAdminModule("activities")}>Meu Giro</button>\n          ) : null}\n          {context?.permissions.includes("participants.read") ? (\n            <button type="button" className={adminModule === "participants" ? "active" : ""} aria-current={adminModule === "participants" ? "page" : undefined} onClick={() => selectAdminModule("participants")}>Participantes</button>\n          ) : null}\n          {context?.permissions.includes("challenges.read") ? (\n            <>\n              <button type="button" className={adminModule === "challenge-summary" ? "active" : ""} aria-current={adminModule === "challenge-summary" ? "page" : undefined} onClick={() => selectAdminModule("challenge-summary")}>Resumo dos desafios</button>\n              <button type="button" className={adminModule === "challenges" ? "active" : ""} aria-current={adminModule === "challenges" ? "page" : undefined} onClick={() => selectAdminModule("challenges")}>Desafios</button>\n            </>\n          ) : null}\n          {context?.permissions.includes("inventory.read") ? (\n            <button type="button" className={adminModule === "inventory" ? "active" : ""} aria-current={adminModule === "inventory" ? "page" : undefined} onClick={() => selectAdminModule("inventory")}>Estoque</button>\n          ) : null}\n          {context?.permissions.includes("payments.read") ? (\n            <button type="button" className={adminModule === "payments" ? "active" : ""} aria-current={adminModule === "payments" ? "page" : undefined} onClick={() => selectAdminModule("payments")}>Pagamentos</button>\n          ) : null}\n          {context?.permissions.includes("medal_deliveries.read") ? (\n            <button type="button" className={adminModule === "medal-deliveries" ? "active" : ""} aria-current={adminModule === "medal-deliveries" ? "page" : undefined} onClick={() => selectAdminModule("medal-deliveries")}>Entrega de medalhas</button>\n          ) : null}\n          {context?.permissions.includes("audit.read") ? (\n            <button type="button" className={adminModule === "audit" ? "active" : ""} aria-current={adminModule === "audit" ? "page" : undefined} onClick={() => selectAdminModule("audit")}>Auditoria</button>\n          ) : null}\n        </nav>'''
+          text = text[:nav_start] + new_nav + text[nav_end:]
+
+          replacements = [
+            ('{context?.permissions.includes("public_registrations.read") ? (', '{adminModule === "public-registrations" && context?.permissions.includes("public_registrations.read") ? ('),
+            ('{context?.permissions.includes("participants.read") ? (', '{adminModule === "participants" && context?.permissions.includes("participants.read") ? ('),
+            ('{context?.permissions.includes("registrations.read") ? (', '{adminModule === "registrations" && context?.permissions.includes("registrations.read") ? ('),
+            ('{context?.permissions.includes("activities.read") ? (', '{adminModule === "activities" && context?.permissions.includes("activities.read") ? ('),
+            ('{context?.permissions.includes("medal_deliveries.read") ? (', '{adminModule === "medal-deliveries" && context?.permissions.includes("medal_deliveries.read") ? ('),
+            ('{context?.permissions.includes("inventory.read") ? (', '{adminModule === "inventory" && context?.permissions.includes("inventory.read") ? ('),
+            ('{context?.permissions.includes("payments.read") ? (', '{adminModule === "payments" && context?.permissions.includes("payments.read") ? ('),
+            ('{context?.permissions.includes("operations.read") ? (', '{adminModule === "operations" && context?.permissions.includes("operations.read") ? ('),
+            ('{context?.permissions.includes("audit.read") ? (', '{adminModule === "audit" && context?.permissions.includes("audit.read") ? ('),
+          ]
+          # Only replace occurrences after the nav, where panels are rendered.
+          panel_start = text.index('</nav>')
+          prefix, body = text[:panel_start], text[panel_start:]
+          for old, new in replacements:
+              if old not in body:
+                  raise SystemExit(f'panel condition not found: {old}')
+              body = body.replace(old, new, 1)
+          text = prefix + body
+
+          old = '''        {context?.permissions.includes("challenges.read") ? (\n          <>\n            <ChallengeOperationsSummary supabase={supabase} />\n            <ChallengesPanel\n              supabase={supabase}\n              canManage={context.permissions.includes("challenges.manage")}\n            />\n          </>\n        ) : null}\n'''
+          new = '''        {adminModule === "challenge-summary" &&\n        context?.permissions.includes("challenges.read") ? (\n          <ChallengeOperationsSummary supabase={supabase} />\n        ) : null}\n\n        {adminModule === "challenges" &&\n        context?.permissions.includes("challenges.read") ? (\n          <ChallengesPanel\n            supabase={supabase}\n            canManage={context.permissions.includes("challenges.manage")}\n          />\n        ) : null}\n'''
+          if old not in text:
+              raise SystemExit('challenges render block not found')
+          text = text.replace(old, new, 1)
+
+          main_path.write_text(text)
+
+          challenge_path = Path('platform/apps/admin-web/src/ChallengesPanel.tsx')
+          text = challenge_path.read_text()
+
+          old = '''              : selectedId && challenges.some((item) => item.id === selectedId)\n                ? selectedId\n                : (challenges[0]?.id ?? null);'''
+          new = '''              : selectedId && challenges.some((item) => item.id === selectedId)\n                ? selectedId\n                : null;'''
+          if old not in text:
+              raise SystemExit('challenge selection fallback not found')
+          text = text.replace(old, new, 1)
+
+          old = '''            onClick={() => {\n              setSelectedId(null);\n              setShowForm((value) => !value);\n            }}'''
+          new = '''            onClick={() => {\n              setSelectedId(null);\n              window.localStorage.removeItem(ACTIVE_CHALLENGE_KEY);\n              setShowForm((value) => !value);\n            }}'''
+          if old not in text:
+              raise SystemExit('new challenge button anchor not found')
+          text = text.replace(old, new, 1)
+
+          catalog_start = text.index('      <details className="challenge-catalog">')
+          catalog_end = text.index('      </details>', catalog_start) + len('      </details>')
+          catalog = text[catalog_start:catalog_end]
+          wrapped = '''      {!showForm && !selected ? (\n''' + catalog.replace('\n', '\n  ') + '''\n      ) : null}'''
+          text = text[:catalog_start] + wrapped + text[catalog_end:]
+
+          old = '''          <div className="section-heading compact-heading">\n            <div>\n              <p className="eyebrow">Configuração</p>\n              <h2>{selected.public_name}</h2>\n            </div>\n          </div>'''
+          new = '''          <div className="section-heading compact-heading">\n            <div>\n              <p className="eyebrow">Configuração</p>\n              <h2>{selected.public_name}</h2>\n            </div>\n            <button\n              type="button"\n              className="compact secondary"\n              onClick={() => {\n                window.localStorage.removeItem(ACTIVE_CHALLENGE_KEY);\n                setSelectedId(null);\n                setShowForm(false);\n              }}\n            >\n              Ver desafios cadastrados\n            </button>\n          </div>'''
+          if old not in text:
+              raise SystemExit('selected heading anchor not found')
+          text = text.replace(old, new, 1)
+
+          text = text.replace('{busy ? "Salvando…" : "Criar rascunho"}', '{busy ? "Salvando…" : "Salvar dados e continuar"}', 1)
+          challenge_path.write_text(text)
+
+          css_path = Path('platform/apps/admin-web/src/module-nav.css')
+          css = css_path.read_text()
+          css = css.replace('.module-nav a {', '.module-nav button {')
+          css = css.replace('.module-nav a:hover {', '.module-nav button:hover {')
+          css = css.replace('.module-nav a:focus-visible {', '.module-nav button:focus-visible {')
+          css = css.replace('  text-decoration: none;\n  white-space: nowrap;\n}', '  text-decoration: none;\n  white-space: nowrap;\n  border: 0;\n  cursor: pointer;\n}\n\n.module-nav button.active {\n  color: #fff;\n  background: #16733b;\n}')
+          css_path.write_text(css)
+      - name: Install dependencies
+        working-directory: platform
+        run: pnpm install --frozen-lockfile
+      - name: Format
+        working-directory: platform
+        run: pnpm exec prettier --write apps/admin-web/src/main.tsx apps/admin-web/src/ChallengesPanel.tsx apps/admin-web/src/module-nav.css
+      - name: Validate
+        working-directory: platform
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm build
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add platform/apps/admin-web/src/main.tsx platform/apps/admin-web/src/ChallengesPanel.tsx platform/apps/admin-web/src/module-nav.css
+          git commit -m "fix(admin): separar módulos em telas independentes"
+          git push
