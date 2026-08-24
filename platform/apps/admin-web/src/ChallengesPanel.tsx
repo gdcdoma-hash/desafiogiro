@@ -410,6 +410,16 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     });
 
     window.localStorage.removeItem(LOCAL_DRAFT_KEY);
+    setName("");
+    setRegistrationType("NORMAL");
+    setGoalMode("DISTANCE_KM");
+    setFixedTargetKm("1000");
+    setReferenceMonth(now.getMonth() + 1);
+    setReferenceYear(now.getFullYear());
+    setStartsAt("");
+    setEndsAt("");
+    setStartWindowOpen("");
+    setStartWindowClose("");
     setShowForm(false);
     await loadChallenges(data.id);
     setMessage(`Desafio criado em rascunho. Código: ${generatedCode}`);
@@ -536,8 +546,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       .from("challenge_offers")
       .insert({
         challenge_id: selected.id,
-        internal_name: `${selected.code}-${offers.length + 1}`,
-        public_name: `${selected.public_name} · ${offers.length + 1}`,
+        internal_name: `${selected.code}-${offers.length + 1}`.slice(0, 120),
+        public_name: `${selected.public_name} · ${offers.length + 1}`.slice(
+          0,
+          120,
+        ),
         category_code: selected.registration_type,
         registration_starts_at: toIsoLocal(offerStartsAt),
         registration_ends_at: toIsoLocal(offerEndsAt),
