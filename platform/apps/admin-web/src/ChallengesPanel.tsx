@@ -257,7 +257,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             ? rememberedId
             : selectedId && challenges.some((item) => item.id === selectedId)
               ? selectedId
-              : (challenges[0]?.id ?? null);
+              : null;
     setSelectedId(nextSelected);
     setMessage(challenges.length ? "" : "Nenhum desafio cadastrado ainda.");
     setBusy(false);
@@ -615,6 +615,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             className="compact"
             onClick={() => {
               setSelectedId(null);
+              window.localStorage.removeItem(ACTIVE_CHALLENGE_KEY);
               setShowForm((value) => !value);
             }}
             disabled={busy}
@@ -782,7 +783,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
           )}
           <div className="form-actions">
             <button type="submit" disabled={busy}>
-              {busy ? "Salvando…" : "Criar rascunho"}
+              {busy ? "Salvando…" : "Salvar dados e continuar"}
             </button>
           </div>
         </form>
@@ -792,55 +793,62 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         {message}
       </p>
 
-      <details className="challenge-catalog">
-        <summary>Ver desafios cadastrados</summary>
-        <div className="challenge-list">
-          {items.map((item) => (
-            <button
-              type="button"
-              className={`challenge-item challenge-select ${item.id === selectedId ? "selected" : ""}`}
-              key={item.id}
-              onClick={() => setSelectedId(item.id)}
-            >
-              <div className="challenge-main">
-                <div className="challenge-title-row">
-                  <strong>{item.public_name}</strong>
-                  <span
-                    className={`challenge-status ${item.status.toLowerCase()}`}
-                  >
-                    {statusLabel[item.status]}
+      {!showForm && !selected ? (
+        <section className="challenge-catalog">
+          <div className="section-heading compact-heading">
+            <div>
+              <p className="eyebrow">Consulta</p>
+              <h3>Desafios cadastrados</h3>
+            </div>
+          </div>
+          <div className="challenge-list">
+            {items.map((item) => (
+              <button
+                type="button"
+                className={`challenge-item challenge-select ${item.id === selectedId ? "selected" : ""}`}
+                key={item.id}
+                onClick={() => setSelectedId(item.id)}
+              >
+                <div className="challenge-main">
+                  <div className="challenge-title-row">
+                    <strong>{item.public_name}</strong>
+                    <span
+                      className={`challenge-status ${item.status.toLowerCase()}`}
+                    >
+                      {statusLabel[item.status]}
+                    </span>
+                  </div>
+                  <span className="challenge-code">{item.code}</span>
+                  <span>
+                    {item.registration_type === "NORMAL"
+                      ? "Normal"
+                      : "Repescagem"}{" "}
+                    ·{" "}
+                    {item.goal_mode === "DISTANCE_KM"
+                      ? "meta em km"
+                      : `${item.fixed_target_km ?? 0} km por prazo`}
+                  </span>
+                  <span>
+                    {item.goal_mode === "DURATION_DAYS" &&
+                    item.participant_start_opens_on &&
+                    item.participant_start_closes_on
+                      ? `Inícios permitidos: ${formatDate(item.participant_start_opens_on + "T12:00:00")} a ${formatDate(item.participant_start_closes_on + "T12:00:00")}`
+                      : `${formatDate(item.sports_starts_at)} a ${formatDate(item.sports_ends_at)}`}
                   </span>
                 </div>
-                <span className="challenge-code">{item.code}</span>
-                <span>
-                  {item.registration_type === "NORMAL"
-                    ? "Normal"
-                    : "Repescagem"}{" "}
-                  ·{" "}
-                  {item.goal_mode === "DISTANCE_KM"
-                    ? "meta em km"
-                    : `${item.fixed_target_km ?? 0} km por prazo`}
-                </span>
-                <span>
-                  {item.goal_mode === "DURATION_DAYS" &&
-                  item.participant_start_opens_on &&
-                  item.participant_start_closes_on
-                    ? `Inícios permitidos: ${formatDate(item.participant_start_opens_on + "T12:00:00")} a ${formatDate(item.participant_start_closes_on + "T12:00:00")}`
-                    : `${formatDate(item.sports_starts_at)} a ${formatDate(item.sports_ends_at)}`}
-                </span>
-              </div>
-              <div className="challenge-side">
-                <span>
-                  {item.reference_month
-                    ? `${String(item.reference_month).padStart(2, "0")}/${item.reference_year}`
-                    : item.reference_year}
-                </span>
-                <span>{item.is_public ? "Visível" : "Não publicado"}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </details>
+                <div className="challenge-side">
+                  <span>
+                    {item.reference_month
+                      ? `${String(item.reference_month).padStart(2, "0")}/${item.reference_year}`
+                      : item.reference_year}
+                  </span>
+                  <span>{item.is_public ? "Visível" : "Não publicado"}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {selected ? (
         <div className="challenge-detail">
@@ -849,6 +857,17 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               <p className="eyebrow">Configuração</p>
               <h2>{selected.public_name}</h2>
             </div>
+            <button
+              type="button"
+              className="compact secondary"
+              onClick={() => {
+                window.localStorage.removeItem(ACTIVE_CHALLENGE_KEY);
+                setSelectedId(null);
+                setShowForm(false);
+              }}
+            >
+              Ver desafios cadastrados
+            </button>
           </div>
 
           <section className="config-card">

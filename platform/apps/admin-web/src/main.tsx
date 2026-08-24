@@ -58,6 +58,55 @@ type AuditEvent = {
   outcome: "success" | "failure" | "denied";
 };
 
+type AdminModule =
+  | "operations"
+  | "public-registrations"
+  | "registrations"
+  | "activities"
+  | "participants"
+  | "challenge-summary"
+  | "challenges"
+  | "inventory"
+  | "payments"
+  | "medal-deliveries"
+  | "audit";
+
+const ADMIN_MODULE_KEY = "portal-giro:admin:active-module-v1";
+const ADMIN_MODULES: AdminModule[] = [
+  "operations",
+  "public-registrations",
+  "registrations",
+  "activities",
+  "participants",
+  "challenge-summary",
+  "challenges",
+  "inventory",
+  "payments",
+  "medal-deliveries",
+  "audit",
+];
+
+const ADMIN_MODULE_PERMISSION: Record<AdminModule, string> = {
+  operations: "operations.read",
+  "public-registrations": "public_registrations.read",
+  registrations: "registrations.read",
+  activities: "activities.read",
+  participants: "participants.read",
+  "challenge-summary": "challenges.read",
+  challenges: "challenges.read",
+  inventory: "inventory.read",
+  payments: "payments.read",
+  "medal-deliveries": "medal_deliveries.read",
+  audit: "audit.read",
+};
+
+function initialAdminModule(): AdminModule {
+  const saved = window.localStorage.getItem(ADMIN_MODULE_KEY);
+  return ADMIN_MODULES.includes(saved as AdminModule)
+    ? (saved as AdminModule)
+    : "challenges";
+}
+
 async function writeAudit(
   action: string,
   outcome: "success" | "failure" | "denied",
@@ -88,6 +137,8 @@ function App() {
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [auditMessage, setAuditMessage] = useState("");
   const [auditBusy, setAuditBusy] = useState(false);
+  const [adminModule, setAdminModule] =
+    useState<AdminModule>(initialAdminModule);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -115,6 +166,18 @@ function App() {
 
     return () => data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!context) return;
+    if (context.permissions.includes(ADMIN_MODULE_PERMISSION[adminModule]))
+      return;
+    const fallback = ADMIN_MODULES.find((module) =>
+      context.permissions.includes(ADMIN_MODULE_PERMISSION[module]),
+    );
+    if (!fallback) return;
+    setAdminModule(fallback);
+    window.localStorage.setItem(ADMIN_MODULE_KEY, fallback);
+  }, [adminModule, context]);
 
   useEffect(() => {
     if (!session || passwordUpdateMode) return;
@@ -287,6 +350,12 @@ function App() {
       dateStyle: "short",
       timeStyle: "short",
     }).format(new Date(value));
+  }
+
+  function selectAdminModule(module: AdminModule) {
+    setAdminModule(module);
+    window.localStorage.setItem(ADMIN_MODULE_KEY, module);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   if (view === "checking") {
@@ -512,41 +581,127 @@ function App() {
 
         <nav className="module-nav" aria-label="Módulos administrativos">
           {context?.permissions.includes("operations.read") ? (
-            <a href="#operations-title">Operação</a>
+            <button
+              type="button"
+              className={adminModule === "operations" ? "active" : ""}
+              aria-current={adminModule === "operations" ? "page" : undefined}
+              onClick={() => selectAdminModule("operations")}
+            >
+              Operação
+            </button>
           ) : null}
           {context?.permissions.includes("public_registrations.read") ? (
-            <a href="#public-registrations-title">Pré-inscrições</a>
+            <button
+              type="button"
+              className={adminModule === "public-registrations" ? "active" : ""}
+              aria-current={
+                adminModule === "public-registrations" ? "page" : undefined
+              }
+              onClick={() => selectAdminModule("public-registrations")}
+            >
+              Pré-inscrições
+            </button>
           ) : null}
           {context?.permissions.includes("registrations.read") ? (
-            <a href="#registrations-title">Inscrições</a>
+            <button
+              type="button"
+              className={adminModule === "registrations" ? "active" : ""}
+              aria-current={
+                adminModule === "registrations" ? "page" : undefined
+              }
+              onClick={() => selectAdminModule("registrations")}
+            >
+              Inscrições
+            </button>
           ) : null}
           {context?.permissions.includes("activities.read") ? (
-            <a href="#activities-admin-title">Meu Giro</a>
+            <button
+              type="button"
+              className={adminModule === "activities" ? "active" : ""}
+              aria-current={adminModule === "activities" ? "page" : undefined}
+              onClick={() => selectAdminModule("activities")}
+            >
+              Meu Giro
+            </button>
           ) : null}
           {context?.permissions.includes("participants.read") ? (
-            <a href="#participants-title">Participantes</a>
+            <button
+              type="button"
+              className={adminModule === "participants" ? "active" : ""}
+              aria-current={adminModule === "participants" ? "page" : undefined}
+              onClick={() => selectAdminModule("participants")}
+            >
+              Participantes
+            </button>
           ) : null}
           {context?.permissions.includes("challenges.read") ? (
             <>
-              <a href="#challenge-operations-title">Resumo dos desafios</a>
-              <a href="#challenges-title">Desafios</a>
+              <button
+                type="button"
+                className={adminModule === "challenge-summary" ? "active" : ""}
+                aria-current={
+                  adminModule === "challenge-summary" ? "page" : undefined
+                }
+                onClick={() => selectAdminModule("challenge-summary")}
+              >
+                Resumo dos desafios
+              </button>
+              <button
+                type="button"
+                className={adminModule === "challenges" ? "active" : ""}
+                aria-current={adminModule === "challenges" ? "page" : undefined}
+                onClick={() => selectAdminModule("challenges")}
+              >
+                Desafios
+              </button>
             </>
           ) : null}
           {context?.permissions.includes("inventory.read") ? (
-            <a href="#inventory-title">Estoque</a>
+            <button
+              type="button"
+              className={adminModule === "inventory" ? "active" : ""}
+              aria-current={adminModule === "inventory" ? "page" : undefined}
+              onClick={() => selectAdminModule("inventory")}
+            >
+              Estoque
+            </button>
           ) : null}
           {context?.permissions.includes("payments.read") ? (
-            <a href="#payments-title">Pagamentos</a>
+            <button
+              type="button"
+              className={adminModule === "payments" ? "active" : ""}
+              aria-current={adminModule === "payments" ? "page" : undefined}
+              onClick={() => selectAdminModule("payments")}
+            >
+              Pagamentos
+            </button>
           ) : null}
           {context?.permissions.includes("medal_deliveries.read") ? (
-            <a href="#medal-deliveries-title">Entrega de medalhas</a>
+            <button
+              type="button"
+              className={adminModule === "medal-deliveries" ? "active" : ""}
+              aria-current={
+                adminModule === "medal-deliveries" ? "page" : undefined
+              }
+              onClick={() => selectAdminModule("medal-deliveries")}
+            >
+              Entrega de medalhas
+            </button>
           ) : null}
           {context?.permissions.includes("audit.read") ? (
-            <a href="#audit-title">Auditoria</a>
+            <button
+              type="button"
+              className={adminModule === "audit" ? "active" : ""}
+              aria-current={adminModule === "audit" ? "page" : undefined}
+              onClick={() => selectAdminModule("audit")}
+            >
+              Auditoria
+            </button>
           ) : null}
         </nav>
 
-        {context?.permissions.includes("public_registrations.read") ? (
+        {adminModule === "public-registrations" &&
+        context?.permissions.includes("public_registrations.read") ? (
           <PublicRegistrationsPanel
             supabase={supabase}
             canManage={
@@ -557,52 +712,61 @@ function App() {
           />
         ) : null}
 
-        {context?.permissions.includes("challenges.read") ? (
-          <>
-            <ChallengeOperationsSummary supabase={supabase} />
-            <ChallengesPanel
-              supabase={supabase}
-              canManage={context.permissions.includes("challenges.manage")}
-            />
-          </>
+        {adminModule === "challenge-summary" &&
+        context?.permissions.includes("challenges.read") ? (
+          <ChallengeOperationsSummary supabase={supabase} />
         ) : null}
 
-        {context?.permissions.includes("participants.read") ? (
+        {adminModule === "challenges" &&
+        context?.permissions.includes("challenges.read") ? (
+          <ChallengesPanel
+            supabase={supabase}
+            canManage={context.permissions.includes("challenges.manage")}
+          />
+        ) : null}
+
+        {adminModule === "participants" &&
+        context?.permissions.includes("participants.read") ? (
           <ParticipantsPanel
             supabase={supabase}
             canManage={context.permissions.includes("participants.manage")}
           />
         ) : null}
 
-        {context?.permissions.includes("registrations.read") ? (
+        {adminModule === "registrations" &&
+        context?.permissions.includes("registrations.read") ? (
           <RegistrationsPanel
             supabase={supabase}
             canManage={context.permissions.includes("registrations.manage")}
           />
         ) : null}
 
-        {context?.permissions.includes("activities.read") ? (
+        {adminModule === "activities" &&
+        context?.permissions.includes("activities.read") ? (
           <ActivitiesPanel
             supabase={supabase}
             canManage={context.permissions.includes("activities.manage")}
           />
         ) : null}
 
-        {context?.permissions.includes("medal_deliveries.read") ? (
+        {adminModule === "medal-deliveries" &&
+        context?.permissions.includes("medal_deliveries.read") ? (
           <MedalDeliveriesPanel
             supabase={supabase}
             canManage={context.permissions.includes("medal_deliveries.manage")}
           />
         ) : null}
 
-        {context?.permissions.includes("inventory.read") ? (
+        {adminModule === "inventory" &&
+        context?.permissions.includes("inventory.read") ? (
           <InventoryPanel
             supabase={supabase}
             canManage={context.permissions.includes("inventory.manage")}
           />
         ) : null}
 
-        {context?.permissions.includes("payments.read") ? (
+        {adminModule === "payments" &&
+        context?.permissions.includes("payments.read") ? (
           <PaymentsPanel
             supabase={supabase}
             canManage={context.permissions.includes("payments.manage")}
@@ -612,11 +776,13 @@ function App() {
           />
         ) : null}
 
-        {context?.permissions.includes("operations.read") ? (
+        {adminModule === "operations" &&
+        context?.permissions.includes("operations.read") ? (
           <OperationsPanel supabase={supabase} />
         ) : null}
 
-        {context?.permissions.includes("audit.read") ? (
+        {adminModule === "audit" &&
+        context?.permissions.includes("audit.read") ? (
           <section className="audit-panel" aria-labelledby="audit-title">
             <div className="section-heading">
               <div>
