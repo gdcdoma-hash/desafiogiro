@@ -1,0 +1,86 @@
+name: Final admin navigation fixes temp
+
+on:
+  push:
+    branches:
+      - fix/admin-screen-navigation
+    paths:
+      - '.github/workflows/fix-admin-screen-navigation-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/admin-screen-navigation
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+      - name: Apply final fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          main_path = Path('platform/apps/admin-web/src/main.tsx')
+          text = main_path.read_text()
+
+          anchor = '''const ADMIN_MODULES: AdminModule[] = [\n  "operations",\n  "public-registrations",\n  "registrations",\n  "activities",\n  "participants",\n  "challenge-summary",\n  "challenges",\n  "inventory",\n  "payments",\n  "medal-deliveries",\n  "audit",\n];\n'''
+          permission_map = anchor + '''\nconst ADMIN_MODULE_PERMISSION: Record<AdminModule, string> = {\n  operations: "operations.read",\n  "public-registrations": "public_registrations.read",\n  registrations: "registrations.read",\n  activities: "activities.read",\n  participants: "participants.read",\n  "challenge-summary": "challenges.read",\n  challenges: "challenges.read",\n  inventory: "inventory.read",\n  payments: "payments.read",\n  "medal-deliveries": "medal_deliveries.read",\n  audit: "audit.read",\n};\n'''
+          if 'ADMIN_MODULE_PERMISSION' not in text:
+              if anchor not in text:
+                  raise SystemExit('module list anchor not found')
+              text = text.replace(anchor, permission_map, 1)
+
+          effect_anchor = '''  useEffect(() => {\n    if (!session || passwordUpdateMode) return;'''
+          permission_effect = '''  useEffect(() => {\n    if (!context) return;\n    if (context.permissions.includes(ADMIN_MODULE_PERMISSION[adminModule])) return;\n    const fallback = ADMIN_MODULES.find((module) =>\n      context.permissions.includes(ADMIN_MODULE_PERMISSION[module]),\n    );\n    if (!fallback) return;\n    setAdminModule(fallback);\n    window.localStorage.setItem(ADMIN_MODULE_KEY, fallback);\n  }, [adminModule, context]);\n\n'''
+          if 'ADMIN_MODULE_PERMISSION[adminModule]' not in text:
+              if effect_anchor not in text:
+                  raise SystemExit('permission effect anchor not found')
+              text = text.replace(effect_anchor, permission_effect + effect_anchor, 1)
+          main_path.write_text(text)
+
+          challenge_path = Path('platform/apps/admin-web/src/ChallengesPanel.tsx')
+          text = challenge_path.read_text()
+          old = '''      {!showForm && !selected ? (\n        <details className="challenge-catalog">\n          <summary>Ver desafios cadastrados</summary>\n          <div className="challenge-list">'''
+          new = '''      {!showForm && !selected ? (\n        <section className="challenge-catalog">\n          <div className="section-heading compact-heading">\n            <div>\n              <p className="eyebrow">Consulta</p>\n              <h3>Desafios cadastrados</h3>\n            </div>\n          </div>\n          <div className="challenge-list">'''
+          if old not in text:
+              raise SystemExit('catalog opening anchor not found')
+          text = text.replace(old, new, 1)
+          old = '''          </div>\n        </details>\n      ) : null}\n\n      {selected ? ('''
+          new = '''          </div>\n        </section>\n      ) : null}\n\n      {selected ? ('''
+          if old not in text:
+              raise SystemExit('catalog closing anchor not found')
+          text = text.replace(old, new, 1)
+          challenge_path.write_text(text)
+
+          css_path = Path('platform/apps/admin-web/src/module-nav.css')
+          css = css_path.read_text()
+          if '.module-nav button.active:hover' not in css:
+              css = css.replace(
+                  '.module-nav button:hover {\n  background: #dff0e4;\n}',
+                  '.module-nav button:hover {\n  background: #dff0e4;\n}\n\n.module-nav button.active:hover {\n  background: #16733b;\n}',
+                  1,
+              )
+          css_path.write_text(css)
+      - name: Install dependencies
+        working-directory: platform
+        run: pnpm install --frozen-lockfile
+      - name: Format
+        working-directory: platform
+        run: pnpm exec prettier --write apps/admin-web/src/main.tsx apps/admin-web/src/ChallengesPanel.tsx apps/admin-web/src/module-nav.css
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add platform/apps/admin-web/src/main.tsx platform/apps/admin-web/src/ChallengesPanel.tsx platform/apps/admin-web/src/module-nav.css
+          git commit -m "fix(admin): finalizar navegação por telas"
+          git push
