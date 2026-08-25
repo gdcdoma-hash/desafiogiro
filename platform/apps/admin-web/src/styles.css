@@ -385,6 +385,70 @@ dd {
   background: #fbfcfb;
 }
 
+.challenge-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.challenge-form .form-section {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.challenge-form .form-section > h3,
+.review-card > h3 {
+  margin: 0;
+}
+
+.summary-line {
+  margin: 0;
+  color: #263d2d;
+  font-weight: 750;
+}
+
+.goal-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  max-height: 9rem;
+  margin-top: 0.85rem;
+  overflow: auto;
+}
+
+.goal-chip {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #cbdacf;
+  border-radius: 999px;
+  background: #fff;
+  color: #294b34;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.lifecycle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.danger-zone {
+  margin-top: 1.25rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #eadbd6;
+}
+
+.danger-zone p {
+  margin: 0 0 0.35rem;
+  color: #7d655e;
+  font-size: 0.75rem;
+}
+
+.danger-link {
+  color: #9a3d25;
+}
+
 .mini-description,
 .empty-note {
   margin: 0.25rem 0 0;
@@ -521,6 +585,10 @@ dd {
   .simple-row,
   .offer-row {
     flex-direction: column;
+  }
+
+  .lifecycle-actions > button {
+    width: 100%;
   }
 
   .challenge-side,

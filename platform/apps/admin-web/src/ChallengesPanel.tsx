@@ -1,8 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
-import { ChallengeLifecycleControls } from "./ChallengeLifecycleControls";
 import { ChallengeMedalImageControl } from "./ChallengeMedalImageControl";
-import { OfferLifecycleControls } from "./OfferLifecycleControls";
 
 type Challenge = {
   id: string;
@@ -63,14 +61,6 @@ const statusLabel: Record<Challenge["status"], string> = {
 
 const LOCAL_DRAFT_KEY = "portal-giro:admin:challenge-unsaved-v1";
 const ACTIVE_CHALLENGE_KEY = "portal-giro:admin:challenge-active-v1";
-
-const offerStatusLabel: Record<ChallengeOffer["status"], string> = {
-  DRAFT: "Rascunho",
-  SCHEDULED: "Programada",
-  OPEN: "Aberta",
-  CLOSED: "Encerrada",
-  DISABLED: "Desativada",
-};
 
 function toIsoLocal(value: string) {
   return value ? new Date(value).toISOString() : "";
@@ -369,11 +359,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
         reference_month: referenceMonth,
         sports_starts_at:
           goalMode === "DISTANCE_KM"
-            ? toIsoLocal(startsAt)
+            ? toIsoLocal(`${startsAt}T00:00`)
             : toIsoLocal(`${startWindowOpen}T00:00`),
         sports_ends_at:
           goalMode === "DISTANCE_KM"
-            ? toIsoLocal(endsAt)
+            ? toIsoLocal(`${endsAt}T23:59`)
             : toIsoLocal(`${startWindowClose}T23:59`),
         timezone: "America/Fortaleza",
         registration_type: registrationType,
@@ -393,6 +383,27 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
       setMessage("Não foi possível salvar o desafio.");
       setBusy(false);
       return;
+    }
+
+    if (goalMode === "DISTANCE_KM" && registrationType === "NORMAL") {
+      const defaultGoals = buildRange(50, 25, 3000) ?? [];
+      const { error: goalsError } = await supabase
+        .from("challenge_goals")
+        .insert(
+          defaultGoals.map((targetKm, displayOrder) => ({
+            challenge_id: data.id,
+            target_km: targetKm,
+            duration_days: null,
+            public_label: `${targetKm} km`,
+            display_order: displayOrder,
+            is_active: true,
+          })),
+        );
+      if (goalsError) {
+        setMessage(
+          "O desafio foi salvo, mas as metas padrão não puderam ser criadas.",
+        );
+      }
     }
 
     await supabase.rpc("write_audit_event", {
@@ -552,8 +563,8 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
           120,
         ),
         category_code: selected.registration_type,
-        registration_starts_at: toIsoLocal(offerStartsAt),
-        registration_ends_at: toIsoLocal(offerEndsAt),
+        registration_starts_at: toIsoLocal(`${offerStartsAt}T00:00`),
+        registration_ends_at: toIsoLocal(`${offerEndsAt}T23:59`),
         price,
         max_per_participant: limit,
         priority: offers.length,
@@ -602,6 +613,109 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
     );
   }
 
+  async function refreshSelected() {
+    if (!selected) return;
+    await loadChallenges(selected.id);
+    await loadChallengeDetails(selected.id);
+  }
+
+  async function publishChallenge() {
+    if (!canManage || !selected || busy) return;
+    if (!goals.length || !offers.length) {
+      setMessage("Cadastre pelo menos uma meta e um preço antes de publicar.");
+      return;
+    }
+    setBusy(true);
+    setMessage("Publicando desafio…");
+    const shouldStart = new Date(selected.sports_starts_at) <= new Date();
+    const nextOfferStatus = shouldStart ? "OPEN" : "SCHEDULED";
+    const offerIds = offers
+      .filter((offer) => offer.status === "DRAFT")
+      .map((offer) => offer.id);
+    let challengeResult = await supabase
+      .from("challenges")
+      .update({ status: "SCHEDULED", is_public: true })
+      .eq("id", selected.id);
+    if (!challengeResult.error && shouldStart) {
+      challengeResult = await supabase
+        .from("challenges")
+        .update({ status: "ACTIVE" })
+        .eq("id", selected.id);
+    }
+    const offerResult =
+      !challengeResult.error && offerIds.length
+        ? await supabase
+            .from("challenge_offers")
+            .update({ status: nextOfferStatus })
+            .in("id", offerIds)
+        : { error: challengeResult.error };
+    setMessage(
+      challengeResult.error || offerResult.error
+        ? "Não foi possível publicar. Confira datas, metas e preço."
+        : "Desafio publicado com sucesso.",
+    );
+    await refreshSelected();
+    setBusy(false);
+  }
+
+  async function setRegistrationPaused(paused: boolean) {
+    if (!canManage || !selected || busy) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("challenges")
+      .update({ is_public: !paused })
+      .eq("id", selected.id);
+    setMessage(
+      error
+        ? "Não foi possível alterar as inscrições."
+        : paused
+          ? "Inscrições pausadas."
+          : "Inscrições retomadas.",
+    );
+    await refreshSelected();
+    setBusy(false);
+  }
+
+  async function finishChallenge() {
+    if (
+      !selected ||
+      !window.confirm(
+        "Encerrar este desafio agora? Esta ação antecipa o encerramento e não pode ser desfeita.",
+      )
+    )
+      return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("challenges")
+      .update({ status: "FINISHED", is_public: false })
+      .eq("id", selected.id);
+    setMessage(
+      error ? "Não foi possível encerrar o desafio." : "Desafio encerrado.",
+    );
+    await refreshSelected();
+    setBusy(false);
+  }
+
+  async function cancelChallenge() {
+    if (
+      !selected ||
+      !window.confirm(
+        "Cancelar este desafio? Cancelamento é diferente do encerramento normal e não pode ser desfeito.",
+      )
+    )
+      return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("challenges")
+      .update({ status: "CANCELLED", is_public: false })
+      .eq("id", selected.id);
+    setMessage(
+      error ? "Não foi possível cancelar o desafio." : "Desafio cancelado.",
+    );
+    await refreshSelected();
+    setBusy(false);
+  }
+
   return (
     <section className="module-panel" aria-labelledby="challenges-title">
       <div className="section-heading">
@@ -630,162 +744,205 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
 
       {showForm ? (
         <form className="challenge-form" onSubmit={createChallenge}>
-          <h3>1. Dados do desafio</h3>
-          <label>
-            Nome do desafio
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Ex.: Desafio Giro 1000 km"
-              required
-              minLength={2}
-            />
-          </label>
-          <p className="mini-description">
-            O código interno será criado automaticamente pelo sistema.
-          </p>
-          <div className="form-grid two">
+          <section className="config-card form-section">
+            <h3>Identificação</h3>
             <label>
-              Tipo do desafio
-              <select
-                value={registrationType}
-                onChange={(event) =>
-                  setRegistrationType(
-                    event.target.value as "NORMAL" | "REPESCAGEM",
-                  )
-                }
-              >
-                <option value="NORMAL">Normal</option>
-                <option value="REPESCAGEM">Repescagem</option>
-              </select>
-            </label>
-            <label>
-              Forma da meta
-              <select
-                value={goalMode}
-                onChange={(event) => {
-                  const nextMode = event.target.value as
-                    "DISTANCE_KM" | "DURATION_DAYS";
-                  setGoalMode(nextMode);
-                  if (nextMode === "DURATION_DAYS" && !startWindowOpen) {
-                    const first = `${referenceYear}-${String(referenceMonth).padStart(2, "0")}-01`;
-                    const lastDay = new Date(
-                      referenceYear,
-                      referenceMonth,
-                      0,
-                    ).getDate();
-                    setStartWindowOpen(first);
-                    setStartWindowClose(
-                      `${referenceYear}-${String(referenceMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
-                    );
-                  }
-                }}
-              >
-                <option value="DISTANCE_KM">Distância em km</option>
-                <option value="DURATION_DAYS">Prazo em dias</option>
-              </select>
-            </label>
-          </div>
-          {goalMode === "DURATION_DAYS" ? (
-            <label>
-              Distância fixa para todos (km)
+              Nome do desafio
               <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={fixedTargetKm}
-                onChange={(event) => setFixedTargetKm(event.target.value)}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Ex.: Desafio Giro 1000 km"
                 required
+                minLength={2}
               />
             </label>
-          ) : null}
-          <div className="form-grid two">
-            <label>
-              Mês de referência
-              <input
-                type="number"
-                min={1}
-                max={12}
-                value={referenceMonth}
-                onChange={(event) =>
-                  setReferenceMonth(Number(event.target.value))
-                }
-                required
-              />
-            </label>
-            <label>
-              Ano de referência
-              <input
-                type="number"
-                min={2020}
-                max={2200}
-                value={referenceYear}
-                onChange={(event) =>
-                  setReferenceYear(Number(event.target.value))
-                }
-                required
-              />
-            </label>
-          </div>
-          {goalMode === "DISTANCE_KM" ? (
+            <p className="mini-description">
+              O código interno será criado automaticamente pelo sistema.
+            </p>
             <div className="form-grid two">
               <label>
-                Início do desafio
+                Tipo do desafio
+                <select
+                  value={registrationType}
+                  onChange={(event) =>
+                    setRegistrationType(
+                      event.target.value as "NORMAL" | "REPESCAGEM",
+                    )
+                  }
+                >
+                  <option value="NORMAL">Normal</option>
+                  <option value="REPESCAGEM">Repescagem</option>
+                </select>
+              </label>
+              <label>
+                Forma da meta
+                <select
+                  value={goalMode}
+                  onChange={(event) => {
+                    const nextMode = event.target.value as
+                      "DISTANCE_KM" | "DURATION_DAYS";
+                    setGoalMode(nextMode);
+                    if (nextMode === "DURATION_DAYS" && !startWindowOpen) {
+                      const first = `${referenceYear}-${String(referenceMonth).padStart(2, "0")}-01`;
+                      const lastDay = new Date(
+                        referenceYear,
+                        referenceMonth,
+                        0,
+                      ).getDate();
+                      setStartWindowOpen(first);
+                      setStartWindowClose(
+                        `${referenceYear}-${String(referenceMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
+                      );
+                    }
+                  }}
+                >
+                  <option value="DISTANCE_KM">Distância em km</option>
+                  <option value="DURATION_DAYS">Prazo em dias</option>
+                </select>
+              </label>
+            </div>
+            {goalMode === "DURATION_DAYS" ? (
+              <label>
+                Distância fixa para todos (km)
                 <input
-                  type="datetime-local"
-                  value={startsAt}
-                  onChange={(event) => setStartsAt(event.target.value)}
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={fixedTargetKm}
+                  onChange={(event) => setFixedTargetKm(event.target.value)}
+                  required
+                />
+              </label>
+            ) : null}
+            <div className="form-grid two">
+              <label>
+                Mês de referência
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={referenceMonth}
+                  onChange={(event) =>
+                    setReferenceMonth(Number(event.target.value))
+                  }
                   required
                 />
               </label>
               <label>
-                Fim do desafio
+                Ano de referência
                 <input
-                  type="datetime-local"
-                  value={endsAt}
-                  onChange={(event) => setEndsAt(event.target.value)}
+                  type="number"
+                  min={2020}
+                  max={2200}
+                  value={referenceYear}
+                  onChange={(event) =>
+                    setReferenceYear(Number(event.target.value))
+                  }
                   required
                 />
               </label>
             </div>
-          ) : (
-            <>
+          </section>
+          <section className="config-card form-section">
+            <h3>Período do desafio</h3>
+            {goalMode === "DISTANCE_KM" ? (
               <div className="form-grid two">
                 <label>
-                  Primeiro dia permitido para iniciar
+                  Início do desafio
                   <input
                     type="date"
-                    value={startWindowOpen}
-                    onChange={(event) => setStartWindowOpen(event.target.value)}
+                    value={startsAt}
+                    onChange={(event) => setStartsAt(event.target.value)}
                     required
                   />
                 </label>
                 <label>
-                  Último dia permitido para iniciar
+                  Fim do desafio
                   <input
                     type="date"
-                    min={startWindowOpen || undefined}
-                    value={startWindowClose}
-                    onChange={(event) =>
-                      setStartWindowClose(event.target.value)
-                    }
+                    value={endsAt}
+                    onChange={(event) => setEndsAt(event.target.value)}
                     required
                   />
                 </label>
               </div>
-              <p className="mini-description">
-                Cada participante terá seu próprio período. Quem se inscrever
-                antes pode escolher uma data futura dentro desta janela; quem
-                entrar durante o mês começa, no mínimo, na data da inscrição. O
-                término será calculado pelo prazo escolhido.
-              </p>
-            </>
-          )}
-          <div className="form-actions">
-            <button type="submit" disabled={busy}>
-              {busy ? "Salvando…" : "Salvar dados e continuar"}
-            </button>
-          </div>
+            ) : (
+              <>
+                <div className="form-grid two">
+                  <label>
+                    Primeiro dia permitido para iniciar
+                    <input
+                      type="date"
+                      value={startWindowOpen}
+                      onChange={(event) =>
+                        setStartWindowOpen(event.target.value)
+                      }
+                      required
+                    />
+                  </label>
+                  <label>
+                    Último dia permitido para iniciar
+                    <input
+                      type="date"
+                      min={startWindowOpen || undefined}
+                      value={startWindowClose}
+                      onChange={(event) =>
+                        setStartWindowClose(event.target.value)
+                      }
+                      required
+                    />
+                  </label>
+                </div>
+                <p className="mini-description">
+                  Cada participante terá seu próprio período. Quem se inscrever
+                  antes pode escolher uma data futura dentro desta janela; quem
+                  entrar durante o mês começa, no mínimo, na data da inscrição.
+                  O término será calculado pelo prazo escolhido.
+                </p>
+              </>
+            )}
+          </section>
+          <section className="config-card form-section">
+            <h3>Metas</h3>
+            <p className="summary-line">
+              {goalMode === "DURATION_DAYS"
+                ? `${fixedTargetKm || "—"} km · prazos configuráveis após salvar`
+                : registrationType === "NORMAL"
+                  ? "50 a 3000 km · variação 25 km"
+                  : "Metas escolhidas manualmente após salvar"}
+            </p>
+          </section>
+          <section className="config-card form-section">
+            <h3>Inscrições e preço</h3>
+            <p className="mini-description">
+              Datas, preço e lotes serão configurados de forma simples após
+              salvar o rascunho.
+            </p>
+          </section>
+          <section className="config-card form-section">
+            <h3>Limites por participante</h3>
+            <p className="summary-line">
+              Normal: 1 <span aria-hidden="true">·</span> Repescagem: 3
+            </p>
+          </section>
+          <section className="config-card form-section">
+            <h3>Imagem do desafio</h3>
+            <p className="mini-description">
+              A imagem da medalha poderá ser enviada após salvar o rascunho.
+            </p>
+          </section>
+          <section className="config-card form-section">
+            <h3>Revisão e publicação</h3>
+            <p className="mini-description">
+              Revise a identificação e o período. O rascunho continuará
+              disponível para completar depois.
+            </p>
+            <div className="form-actions">
+              <button type="submit" disabled={busy}>
+                {busy ? "Salvando…" : "Salvar rascunho"}
+              </button>
+            </div>
+          </section>
         </form>
       ) : null}
 
@@ -871,7 +1028,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
           </div>
 
           <section className="config-card">
-            <h3>1. Dados do desafio</h3>
+            <h3>Identificação</h3>
             <div className="simple-list">
               <div className="simple-row">
                 <strong>Nome do desafio</strong>
@@ -892,7 +1049,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             </div>
           </section>
 
-          <h3 className="flow-step-title">2. Foto da medalha</h3>
+          <h3 className="flow-step-title">Imagem do desafio</h3>
           <ChallengeMedalImageControl
             supabase={supabase}
             challengeId={selected.id}
@@ -907,7 +1064,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
               <div className="section-heading">
                 <div>
                   <h3>
-                    3.{" "}
+                    {""}
                     {selected.goal_mode === "DURATION_DAYS"
                       ? "Prazos"
                       : "Metas"}
@@ -927,7 +1084,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     onClick={() => setShowGoalForm((value) => !value)}
                     disabled={busy}
                   >
-                    {showGoalForm ? "Cancelar" : "Configurar metas"}
+                    {showGoalForm ? "Fechar edição" : "Editar metas"}
                   </button>
                 ) : null}
               </div>
@@ -1043,12 +1200,11 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 </form>
               ) : null}
 
-              <div className="simple-list">
+              <div className="goal-chip-list" aria-label="Metas disponíveis">
                 {goals.map((goal) => (
-                  <div className="simple-row" key={goal.id}>
-                    <strong>{goalLabel(goal, selected)}</strong>
-                    <span>{goal.is_active ? "Ativa" : "Inativa"}</span>
-                  </div>
+                  <span className="goal-chip" key={goal.id}>
+                    {goalLabel(goal, selected)}
+                  </span>
                 ))}
                 {!goals.length ? (
                   <p className="empty-note">Nenhuma meta cadastrada.</p>
@@ -1059,23 +1215,31 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             <section className="config-card">
               <div className="section-heading">
                 <div>
-                  <h3>4. Condições de inscrição</h3>
+                  <h3>Inscrições e preço</h3>
                   <p className="mini-description">
                     Tipo{" "}
                     {selected.registration_type === "NORMAL"
                       ? "Normal"
                       : "Repescagem"}
-                    ; configure preço, período, limite e metas.
+                    ; configure datas e valor para o participante.
                   </p>
                 </div>
                 {canManage ? (
                   <button
                     type="button"
                     className="compact"
-                    onClick={() => setShowOfferForm((value) => !value)}
+                    onClick={() => {
+                      setOfferLimit(
+                        offers[0]?.max_per_participant.toString() ??
+                          (selected.registration_type === "REPESCAGEM"
+                            ? "3"
+                            : "1"),
+                      );
+                      setShowOfferForm((value) => !value);
+                    }}
                     disabled={busy || !goals.length}
                   >
-                    {showOfferForm ? "Cancelar" : "Adicionar condição"}
+                    {showOfferForm ? "Fechar edição" : "Editar preço"}
                   </button>
                 ) : null}
               </div>
@@ -1096,7 +1260,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     <label>
                       Início das inscrições
                       <input
-                        type="datetime-local"
+                        type="date"
                         value={offerStartsAt}
                         onChange={(e) => setOfferStartsAt(e.target.value)}
                         required
@@ -1105,7 +1269,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                     <label>
                       Fim das inscrições
                       <input
-                        type="datetime-local"
+                        type="date"
                         value={offerEndsAt}
                         onChange={(e) => setOfferEndsAt(e.target.value)}
                         required
@@ -1143,7 +1307,7 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                   </fieldset>
                   <div className="form-actions">
                     <button type="submit" disabled={busy}>
-                      Salvar condição em configuração
+                      Salvar preço
                     </button>
                   </div>
                 </form>
@@ -1153,27 +1317,16 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
                 {offers.map((offer) => (
                   <div className="offer-row" key={offer.id}>
                     <div>
-                      <strong>{offer.public_name}</strong>
-                      <span>{offer.category_code}</span>
-                    </div>
-                    <div className="offer-side">
                       <strong>{formatMoney(Number(offer.price))}</strong>
                       <span>
-                        {formatDate(offer.registration_starts_at)} a{" "}
-                        {formatDate(offer.registration_ends_at)}
+                        Inscrições de {formatDate(offer.registration_starts_at)}{" "}
+                        até {formatDate(offer.registration_ends_at)}
                       </span>
+                    </div>
+                    <div className="offer-side">
                       <span>
-                        {offerStatusLabel[offer.status]} · limite{" "}
-                        {offer.max_per_participant}
+                        Limite por participante: {offer.max_per_participant}
                       </span>
-                      <OfferLifecycleControls
-                        supabase={supabase}
-                        offerId={offer.id}
-                        offerStatus={offer.status}
-                        challengeStatus={selected.status}
-                        canManage={canManage}
-                        onChanged={() => loadChallengeDetails(selected.id)}
-                      />
                     </div>
                   </div>
                 ))}
@@ -1184,27 +1337,66 @@ export function ChallengesPanel({ supabase, canManage }: Props) {
             </section>
           </div>
 
-          <section className="config-card">
-            <h3>5. Estoque</h3>
-            <p className="mini-description">
-              O estoque integrado é administrado no módulo Estoque e usa as
-              metas deste desafio após a configuração.
+          <section className="config-card review-card">
+            <h3>Revisão e publicação</h3>
+            <p className="summary-line">
+              {goals.length} metas · {offers.length}{" "}
+              {offers.length === 1 ? "preço" : "preços"} ·{" "}
+              {statusLabel[selected.status]}
             </p>
+            {canManage ? (
+              <div className="lifecycle-actions">
+                {selected.status === "DRAFT" ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void publishChallenge()}
+                  >
+                    Publicar desafio
+                  </button>
+                ) : null}
+                {selected.status === "SCHEDULED" ||
+                selected.status === "ACTIVE" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={busy}
+                      onClick={() =>
+                        void setRegistrationPaused(selected.is_public)
+                      }
+                    >
+                      {selected.is_public
+                        ? "Pausar inscrições"
+                        : "Retomar inscrições"}
+                    </button>
+                    <button
+                      type="button"
+                      className="danger"
+                      disabled={busy}
+                      onClick={() => void finishChallenge()}
+                    >
+                      Encerrar desafio agora
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+            {canManage &&
+            !["FINISHED", "CANCELLED", "ARCHIVED"].includes(selected.status) ? (
+              <div className="danger-zone">
+                <p>Área secundária</p>
+                <button
+                  type="button"
+                  className="link-button danger-link"
+                  disabled={busy}
+                  onClick={() => void cancelChallenge()}
+                >
+                  Cancelar desafio
+                </button>
+              </div>
+            ) : null}
           </section>
-
-          <div className="flow-step-title">
-            <h3>6. Revisão / Concluir configuração</h3>
-          </div>
-          <ChallengeLifecycleControls
-            supabase={supabase}
-            challengeId={selected.id}
-            status={selected.status}
-            canManage={canManage}
-            onChanged={async () => {
-              await loadChallenges(selected.id);
-              await loadChallengeDetails(selected.id);
-            }}
-          />
         </div>
       ) : null}
 
