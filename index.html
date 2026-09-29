@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050505">
   <title>Desafio Giro</title>
+
   <style>
     * { box-sizing: border-box; }
     body {
@@ -18,40 +19,67 @@
       font-family: Arial, Helvetica, sans-serif;
     }
     .container {
-      width: min(88vw, 440px);
+      width: min(88vw, 420px);
       text-align: center;
     }
     .logo {
-      width: min(82vw, 340px);
+      width: min(82vw, 360px);
       height: auto;
       display: block;
       margin: 0 auto 28px;
     }
-    h1 {
-      margin: 0 0 12px;
-      font-size: 22px;
-    }
     .texto {
-      margin: 0 auto 12px;
-      max-width: 390px;
+      margin: 0 0 16px;
       font-size: 15px;
-      line-height: 1.5;
-      color: #e5e5e5;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .barra {
+      width: 100%;
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #292929;
+    }
+    .progresso {
+      width: 45%;
+      height: 100%;
+      border-radius: inherit;
+      background: #ffb400;
+      animation: carregar 0.9s ease-in-out infinite;
     }
     .apoio {
-      margin-top: 20px;
-      color: #ffb400;
-      font-size: 13px;
-      font-weight: 700;
+      margin-top: 14px;
+      color: #a7a7a7;
+      font-size: 12px;
+    }
+    @keyframes carregar {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(330%); }
     }
   </style>
+
+  <script>
+    const destino =
+      "https://script.google.com/macros/s/AKfycbx3I_pc35_LWv1SpeEJbJ_3pq9aLE1lIc6tE4BccQGdD18nyKzmw5quivht3zOEdyCP/exec";
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const parametros = window.location.search;
+
+      setTimeout(() => {
+        window.location.replace(destino + parametros);
+      }, 900);
+    });
+  </script>
 </head>
+
 <body>
   <main class="container">
     <img class="logo" src="logo-desafio-giro.png" alt="Desafio Giro">
-    <h1>Portal em atualização</h1>
-    <p class="texto">Estamos concluindo uma atualização do sistema. Durante este período, inscrições e registros ficam temporariamente indisponíveis.</p>
-    <p class="texto">Tente novamente em alguns minutos.</p>
+    <p class="texto">Acessando o portal oficial...</p>
+    <div class="barra" aria-label="Carregando">
+      <div class="progresso"></div>
+    </div>
     <p class="apoio">Paixão por pedalar</p>
   </main>
 </body>
