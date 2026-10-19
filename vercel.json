@@ -1,0 +1,1 @@
+{"rewrites":[{"source":"/desafios/:campanha","destination":"/landing/index.html?campanha=:campanha"},{"source":"/desafios/:campanha/","destination":"/landing/index.html?campanha=:campanha"}],"headers":[{"source":"/landing/(.*)","headers":[{"key":"Cache-Control","value":"public, max-age=0, must-revalidate"},{"key":"X-Content-Type-Options","value":"nosniff"}]}]}
