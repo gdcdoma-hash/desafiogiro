@@ -18,7 +18,7 @@ const start=code.indexOf('function commercial(d){'),end=code.indexOf('function r
 assert(start>=0&&end>start,'commercial function present');
 const core=code.slice(start,end);
 
-function render({status='ABERTO',id='166',vinculo='166',modalidade='CICLISMO',valor=39.9}={}){
+function render({status='ABERTO',id='166',vinculo='166',modalidade='CICLISMO',modalidadeApi=modalidade,valor=39.9}={}){
  const statusEl={textContent:''},dates={1:{textContent:''},2:{textContent:''}};
  const lotes={1:{classList:{remove(){},toggle(){}}},2:{classList:{remove(){},toggle(){}}}};
  const ctas=Array.from({length:3},()=>({dataset:{label:'Quero me inscrever'},setAttribute(k,v){this[k]=v;}}));
@@ -37,7 +37,7 @@ function render({status='ABERTO',id='166',vinculo='166',modalidade='CICLISMO',va
  const date=s=>({ '2026-11-15':'15/11/2026','2026-10-21':'21/10/2026' }[s]||'não informado');
  new Function('document','config','text','date','$','d',core+';commercial(d)')(
    document,config,text,date,get,{
-     status,desafio:{id,modalidade},loteAtual:1,
+     status,desafio:{id,modalidade:modalidadeApi},loteAtual:1,
      lotes:[{numero:1,valor,inicio:'2026-10-21',fim:'2026-11-15'}]
    });
  return {msg:statusEl.textContent,ctas,periodo:dates[1].textContent};
@@ -60,7 +60,7 @@ test('modo falha mantém CTA funcionando sem anunciar abertura não verificada',
 });
 test('ID ou modalidade divergente não libera inscrição',()=>{
  assert.doesNotMatch(render({id:'999'}).msg,/Inscrições abertas/);
- assert.doesNotMatch(render({modalidade:'CAMINHADA_CORRIDA'}).msg,/Inscrições abertas/);
+ assert.doesNotMatch(render({modalidadeApi:'CAMINHADA_CORRIDA'}).msg,/Inscrições abertas/);
 });
 test('lote com valor divergente e inscrição encerrada não liberam estado ABERTO',()=>{
  assert.doesNotMatch(render({valor:99}).msg,/Inscrições abertas/);
