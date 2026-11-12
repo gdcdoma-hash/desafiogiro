@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>O Portal Giro mudou de endereço</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #050505; color: white; font: 1rem/1.5 system-ui, sans-serif; }
+    main { max-width: 34rem; padding: 1.5rem; text-align: center; }
+    img { width: min(100%, 320px); height: auto; }
+    a { display: inline-block; padding: .75rem 1.25rem; border-radius: .5rem; background: #ffb400; color: #050505; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/logo-desafio-giro.png" alt="Desafio Giro">
+    <h1>O Portal Giro mudou de endereço</h1>
+    <p>Acesse <strong>desafiogiro.gmbd.com.br</strong> para acompanhar seus desafios. O Meu Giro continua disponível dentro do Portal.</p>
+    <p><a id="novo-endereco" href="https://desafiogiro.gmbd.com.br/">Ir para o novo Portal Giro</a></p>
+    <p>Salve o novo endereço nos seus favoritos.</p>
+  </main>
+  <script>
+    const link = document.getElementById("novo-endereco");
+    const destino = new URL(link.href);
+    destino.search = window.location.search;
+    destino.hash = window.location.hash;
+    link.href = destino.href;
+  </script>
+</body>
+</html>
