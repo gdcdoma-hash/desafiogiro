@@ -1,6 +1,16 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "desafiogiro.giromotosbikes.com.br"
+        }
+      ],
+      "destination": "/mudanca-de-endereco.html"
+    },
+    {
       "source": "/desafios/50tao",
       "destination": "/landing/50tao.html"
     },
