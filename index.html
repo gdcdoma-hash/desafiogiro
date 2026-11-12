@@ -66,6 +66,11 @@
     window.addEventListener("DOMContentLoaded", () => {
       const parametros = window.location.search;
 
+      if (window.location.hostname === "desafiogiro.giromotosbikes.com.br") {
+        window.location.replace("/mudanca-de-endereco.html" + parametros + window.location.hash);
+        return;
+      }
+
       setTimeout(() => {
         window.location.replace(destino + parametros);
       }, 900);
