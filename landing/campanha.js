@@ -10,7 +10,7 @@ function apply(c){config=c;document.title=c.nome+' | Desafio Giro';heading('#her
 const sections=[['#intro-heading','intro_titulo','intro_destaque'],['#medal-title','medalha_titulo','medalha_destaque'],['#closing-title','final_titulo','final_destaque']];sections.forEach(([sel,a,b])=>heading(sel,c.texto[a],c.texto[b]));
 text('.intro .eyebrow',c.texto.intro_chamada);text('.intro-grid>p',c.texto.intro_texto);text('.steps-section .section-heading p',c.texto.como_funciona);text('.medal-content>p',c.texto.medalha_descricao);text('.gallery-heading p',c.texto.galeria_descricao);text('.quote-kicker',c.nome.toUpperCase());text('.quote-inner>p',c.texto.frase_motivacional);text('.faq-grid>div:first-child>p',c.texto.faq_intro);text('.closing-copy>p',c.texto.final_texto);text('.footer-tagline',c.frase_marca);
 const colors={fundo:'--bg',fundo_secundario:'--bg2',destaque:'--gold',destaque_escuro:'--gold2',destaque_claro:'--gold-light',fundo_claro:'--light'};Object.entries(colors).forEach(([k,v])=>{if(/^#[0-9a-f]{6}$/i.test(c.cores[k]))document.documentElement.style.setProperty(v,c.cores[k]);});
-image('.hero-medal,.closing-image img',c.imagens.principal,c.imagens.principal_alt);image('.medal-card img',c.imagens.detalhe,c.imagens.detalhe_alt);$('.hero-landscape').style.backgroundImage='url("'+asset(c.imagens.cenario).replaceAll('"','%22')+'")';text('.hero-art-caption',c.frase_marca);
+image('.hero-medal,.closing-image img',c.imagens.principal,c.imagens.principal_alt);image('.medal-card img',c.imagens.detalhe,c.imagens.detalhe_alt);const background=asset(c.imagens.cenario);$('.hero-landscape').style.backgroundImage=background?'url("'+background.replaceAll('"','%22')+'")':'';text('.hero-art-caption',c.frase_marca);
 const open=$('#open-gallery');open.dataset.image=asset(c.imagens.detalhe);open.dataset.alt=c.imagens.detalhe_alt;
 const gallery=$('.gallery-grid');gallery.replaceChildren();c.galeria.forEach((g,i)=>{const btn=element('button','gallery-item'+(i===0?' gallery-item-primary':'')+(i===c.galeria.length-1?' gallery-item-campaign':''));btn.type='button';btn.dataset.image=asset(g.arquivo);btn.dataset.alt=g.alt;const im=element('img');im.src=asset(g.arquivo);im.alt=g.alt;im.loading='lazy';btn.append(im,element('span','',g.legenda+' ↗'));gallery.append(btn);});
 const faq=$('.faq-list');faq.replaceChildren();c.perguntas.forEach(g=>{const d=element('details'),s=element('summary','',g.pergunta),plus=element('span','','+');plus.setAttribute('aria-hidden','true');s.append(plus);const a=element('div','faq-answer');g.resposta.split(/\n\n/).forEach(p=>a.append(element('p','',p)));d.append(s,a);faq.append(d);});
@@ -91,8 +91,10 @@ try{
    load.hidden=false;load.textContent='Esta página ainda não está disponível. Acesse o Portal Giro para consultar os desafios.';
  }else{
    if(!data||data.status!=='OK'||!data.campanha||data.campanha.id!==slug)throw Error('CAMPANHA_INDISPONIVEL');
-   const next=JSON.stringify(data.campanha);
-   if(next!==revision){apply(data.campanha);revision=next;}
+   const campaign=window.dgmbNormalizarCampanha(data.campanha);
+   if(campaign.id!==slug)throw Error('CAMPANHA_ID_DIVERGENTE');
+   const next=JSON.stringify(campaign);
+   if(next!==revision){apply(campaign);revision=next;}
    commercial(data.inscricoes||{status:'INDISPONIVEL'});
    document.body.removeAttribute('data-campaign-loading');
    load.hidden=true;
