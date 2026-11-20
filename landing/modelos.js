@@ -27,7 +27,7 @@
     if(bike===walk)throw Error('MODALIDADE_INVALIDA');
     if(!pick(String(portal.id_desafio_lista||'')))throw Error('DESAFIO_SEM_VINCULO');
     const imagens=raw.imagens&&typeof raw.imagens==='object'?raw.imagens:{};
-    const principal=pick(imagens.principal,raw.imagem_medalha,raw.url_imagem_medalha);
+    const principal=automatico?pick(raw.imagem_medalha,raw.url_imagem_medalha,imagens.principal):pick(imagens.principal,raw.imagem_medalha,raw.url_imagem_medalha);
     if(!principal)throw Error('IMAGEM_OFICIAL_AUSENTE');
     const detalhe=automatico?pick(raw.imagem_detalhe_medalha,principal):pick(imagens.detalhe,principal);
     const periodo=pick(raw.periodo_desafio,raw.periodo_texto,raw.periodo);
