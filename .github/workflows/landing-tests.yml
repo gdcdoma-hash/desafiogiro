@@ -4,6 +4,8 @@ on:
     paths:
       - 'landing/**'
       - 'tests/landing-motor-unificado.test.cjs'
+      - 'tests/landing-modelos.test.cjs'
+      - 'vercel.json'
       - '.github/workflows/landing-tests.yml'
   workflow_dispatch:
 jobs:
@@ -17,6 +19,8 @@ jobs:
         with:
           node-version: '22'
       - name: Validar sintaxe do motor
-        run: node --check landing/campanha.js
+        run: |
+          node --check landing/campanha.js
+          node --check landing/modelos.js
       - name: Testar regras comerciais
-        run: node --test tests/landing-motor-unificado.test.cjs
+        run: node --test tests/landing-motor-unificado.test.cjs tests/landing-modelos.test.cjs
