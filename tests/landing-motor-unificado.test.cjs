@@ -59,7 +59,7 @@ test('sem lote válido não mantém preço antigo nem anuncia abertura',()=>{
 test('link direto só é aceito no domínio seguro do Portal',()=>{
  const valid=render({payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166'}});
  assert(valid.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
- for(const candidate of ['https://site-falso.test/','javascript:alert(1)','http://desafiogiro.gmbd.com.br/?desafio=166']){
+ for(const candidate of ['https://site-falso.test/','javascript:alert(1)','http://desafiogiro.gmbd.com.br/?desafio=166','https://desafiogiro.gmbd.com.br/?desafio=999']){
   const unsafe=render({payload:{url_inscricao:candidate}});
   assert(unsafe.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/'));
  }
