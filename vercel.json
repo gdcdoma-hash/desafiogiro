@@ -19,12 +19,20 @@
       "destination": "/landing/50tao.html"
     },
     {
+      "source": "/desafios/selim",
+      "destination": "/landing/index.html"
+    },
+    {
+      "source": "/desafios/selim/",
+      "destination": "/landing/index.html"
+    },
+    {
       "source": "/desafios/:campanha",
-      "destination": "/landing/index.html?campanha=:campanha"
+      "destination": "/landing/modelo.html?campanha=:campanha"
     },
     {
       "source": "/desafios/:campanha/",
-      "destination": "/landing/index.html?campanha=:campanha"
+      "destination": "/landing/modelo.html?campanha=:campanha"
     }
   ],
   "headers": [
