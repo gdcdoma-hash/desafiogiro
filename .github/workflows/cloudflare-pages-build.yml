@@ -3,12 +3,13 @@ on:
   pull_request:
     paths:
       - 'landing/**'
+      - 'bridge/**'
       - 'index.html'
       - 'mudanca-de-endereco.html'
       - 'logo-desafio-giro.png'
       - 'flyer-outubro-rosa-home.jpg'
       - 'scripts/build-cloudflare-pages.mjs'
-      - 'tests/cloudflare-pages-build.test.cjs'
+      - 'tests/**'
       - '.github/workflows/cloudflare-pages-build.yml'
   workflow_dispatch:
 
@@ -23,9 +24,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validar sintaxe do empacotador
-        run: node --check scripts/build-cloudflare-pages.mjs
-      - name: Testar pacote e roteamento
-        run: node --test tests/cloudflare-pages-build.test.cjs
+      - name: Validar sintaxe do empacotador e motor público
+        run: |
+          node --check scripts/build-cloudflare-pages.mjs
+          node --check landing/campanha.js
+          node --check landing/modelos.js
+      - name: Testar pacote, roteamento e regras da landing
+        run: node --test tests/*.test.cjs
       - name: Conferir tamanho da saída
         run: du -sh dist-cloudflare-pages
