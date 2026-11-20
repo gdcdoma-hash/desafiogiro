@@ -63,3 +63,33 @@ test('roteamento mantém as duas medalhas anteriores e usa modelo neutro nas nov
  assert.match(html,/id="inscricao-status"/);
  assert.doesNotMatch(html,/Selim|50tão|medalha-selim\.webp|50km-medalha\.webp/i);
 });
+
+test('modo automático não copia textos, FAQ, cenas ou imagens secundárias antigas',()=>{
+ const data=build(make({
+   modo_conteudo:'AUTOMATICO',
+   imagem_medalha:'nova-medalha.webp',
+   texto:{hero_titulo:'Pedalada Selim antiga',hero_descricao:'novembro de 2026'},
+   perguntas:[{pergunta:'Qual o valor R$ 39,90?',resposta:'Antigo'}],
+   passos:[{icone:'1',titulo:'Pedale',descricao:'Pedalada antiga'}],
+   galeria:[{arquivo:'medalha-selim.webp',legenda:'Antigo',alt:'Antigo'}],
+   imagens:{principal:'medalha-selim.webp',detalhe:'medalha-selim.webp',cenario:'cenario-pedalada.webp',compartilhamento:'medalha-selim.webp'}
+ }));
+ assert.equal(data.imagens.principal,'nova-medalha.webp');
+ assert.equal(data.imagens.detalhe,'nova-medalha.webp');
+ assert.equal(data.imagens.compartilhamento,'nova-medalha.webp');
+ assert.equal(data.imagens.cenario,'');
+ assert.equal(data.galeria.length,1);
+ assert.equal(data.galeria[0].arquivo,'nova-medalha.webp');
+ assert.equal(data.texto.hero_titulo,'Medalha Nova.');
+ assert.doesNotMatch(JSON.stringify({texto:data.texto,passos:data.passos,perguntas:data.perguntas,galeria:data.galeria}),/Pedalada Selim antiga|novembro de 2026|R\$ 39,90|medalha-selim/i);
+});
+test('modo automático aceita somente personalização intencional',()=>{
+ const data=build(make({geracao_automatica:true,texto:{hero_titulo:'Título antigo'},texto_personalizado:{hero_titulo:'Título aprovado'},botoes:{principal:'Botão antigo'},botoes_personalizados:{principal:'Quero participar'}}));
+ assert.equal(data.texto.hero_titulo,'Título aprovado');
+ assert.equal(data.botoes.principal,'Quero participar');
+});
+test('redação automática não usa artigo incorreto com Medalha',()=>{
+ const data=build(make({meta_km:75}));
+ assert.doesNotMatch(data.texto.hero_descricao,/Participe do Medalha/);
+ assert.match(data.texto.hero_descricao,/Conheça Medalha Nova/);
+});

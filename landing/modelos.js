@@ -18,6 +18,7 @@
   function normalize(raw){
     if(!raw||typeof raw!=='object')throw Error('CAMPANHA_AUSENTE');
     const id=pick(raw.id,raw.slug),nome=pick(raw.nome,raw.nome_desafio);
+    const automatico=raw.geracao_automatica===true||raw.modo_conteudo==='AUTOMATICO';
     if(!id||!nome||!/^[a-z0-9][a-z0-9-]{1,69}$/.test(id))throw Error('IDENTIFICACAO_INVALIDA');
     const portal=raw.portal&&typeof raw.portal==='object'?raw.portal:{};
     const value=pick(portal.modalidade,raw.modalidade_esportiva,raw.modalidade).toUpperCase();
@@ -26,9 +27,9 @@
     if(bike===walk)throw Error('MODALIDADE_INVALIDA');
     if(!pick(String(portal.id_desafio_lista||'')))throw Error('DESAFIO_SEM_VINCULO');
     const imagens=raw.imagens&&typeof raw.imagens==='object'?raw.imagens:{};
-    const principal=pick(imagens.principal,raw.imagem_medalha,raw.url_imagem_medalha);
+    const principal=automatico?pick(raw.imagem_medalha,raw.url_imagem_medalha,imagens.principal):pick(imagens.principal,raw.imagem_medalha,raw.url_imagem_medalha);
     if(!principal)throw Error('IMAGEM_OFICIAL_AUSENTE');
-    const detalhe=pick(imagens.detalhe,principal);
+    const detalhe=automatico?pick(raw.imagem_detalhe_medalha,principal):pick(imagens.detalhe,principal);
     const periodo=pick(raw.periodo_desafio,raw.periodo_texto,raw.periodo);
     const meta=kmValue(raw),metaStr=meta?new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1}).format(meta)+' km':'';
     const atividade=bike?'pedalada':'caminhada ou corrida';
@@ -38,7 +39,7 @@
     const periodoMsg=periodo?' em '+periodo:' no período válido do desafio';
     const metaMsg=metaStr?'Some '+metaStr+periodoMsg+'.':'Escolha uma meta disponível no Portal Giro e complete-a no período do desafio.';
     const intro=bike?'O importante é se desafiar e registrar suas pedaladas, no seu ritmo.':'Caminhe, corra ou combine as duas atividades de acordo com seu ritmo e condicionamento.';
-    const descricao='Participe do '+nome+'. '+metaMsg+' '+intro;
+    const descricao='Conheça '+nome+'. '+metaMsg+' '+intro;
     const defaults={
       hero_titulo:nome+'.',
       hero_destaque:'Sua próxima conquista começa aqui.',
@@ -58,12 +59,12 @@
       faq_intro:'As informações oficiais sobre prazos, inscrições e entrega são apresentadas no Portal Giro.',
       final_titulo:'Sua próxima conquista.',
       final_destaque:'No seu ritmo.',
-      final_texto:'Participe do '+nome+'. Consulte os critérios e a disponibilidade de inscrições no Portal Giro.'
+      final_texto:'Sua próxima conquista pode começar com '+nome+'. Consulte os critérios e a disponibilidade de inscrições no Portal Giro.'
     };
     defaults.hero_subtitulo=bike?'Para quem tem paixão por pedalar.':'Para quem encontra seu ritmo a cada passo.';
     defaults.intro_chamada=bike?'CICLISMO':'CAMINHADA E CORRIDA';
     const texto={...defaults};
-    for(const [k,v] of Object.entries(raw.texto||{}))if(typeof v==='string'&&v.trim())texto[k]=v;
+    for(const [k,v] of Object.entries((automatico?raw.texto_personalizado:raw.texto)||{}))if(typeof v==='string'&&v.trim())texto[k]=v;
     const destaques=[
       {titulo:metaStr?'Meta de '+metaStr:'Uma meta para você',descricao:metaStr?'Complete os quilômetros previstos na edição.':'Escolha entre as metas disponibilizadas no Portal Giro.'},
       {titulo:'No seu ritmo',descricao:bike?'Pedale respeitando seus limites.':'Caminhe, corra ou combine as duas atividades.'},
@@ -91,13 +92,13 @@
       seo_descricao:pick(raw.seo_descricao,descricao),
       portal:{...portal,modalidade:pick(portal.modalidade,bike?'CICLISMO':'CAMINHADA_CORRIDA')},
       texto,cores:{...coresBase,...(raw.cores||{})},
-      imagens:{...imagens,principal,detalhe,principal_alt:pick(imagens.principal_alt,'Medalha oficial '+nome),detalhe_alt:pick(imagens.detalhe_alt,'Detalhes da medalha '+nome),cenario:pick(imagens.cenario),compartilhamento:pick(imagens.compartilhamento,principal)},
-      botoes:{principal:'Quero me inscrever',secundario:'Como participar',final:'Participar do desafio',...(raw.botoes||{})},
-      destaques:list(raw.destaques,destaques),
-      passos:list(raw.passos,passos),
-      caracteristicas_medalha:list(raw.caracteristicas_medalha,[{titulo:'Medalha oficial',descricao:'Um símbolo da sua conquista.'},{titulo:'Registro da modalidade',descricao:bike?'Celebre sua dedicação ao ciclismo.':'Celebre sua dedicação à caminhada e corrida.'}]),
-      perguntas:list(raw.perguntas,perguntas),
-      galeria:list(raw.galeria,gallery)
+      imagens:{...imagens,principal,detalhe,principal_alt:pick(imagens.principal_alt,'Medalha oficial '+nome),detalhe_alt:pick(imagens.detalhe_alt,'Detalhes da medalha '+nome),cenario:automatico?pick(raw.imagem_cenario):pick(imagens.cenario),compartilhamento:automatico?pick(raw.imagem_compartilhamento,principal):pick(imagens.compartilhamento,principal)},
+      botoes:{principal:'Quero me inscrever',secundario:'Como participar',final:'Participar do desafio',...((automatico?raw.botoes_personalizados:raw.botoes)||{})},
+      destaques:list(automatico?raw.destaques_personalizados:raw.destaques,destaques),
+      passos:list(automatico?raw.passos_personalizados:raw.passos,passos),
+      caracteristicas_medalha:list(automatico?raw.caracteristicas_personalizadas:raw.caracteristicas_medalha,[{titulo:'Medalha oficial',descricao:'Um símbolo da sua conquista.'},{titulo:'Registro da modalidade',descricao:bike?'Celebre sua dedicação ao ciclismo.':'Celebre sua dedicação à caminhada e corrida.'}]),
+      perguntas:list(automatico?raw.perguntas_personalizadas:raw.perguntas,perguntas),
+      galeria:list(automatico?raw.galeria_personalizada:raw.galeria,gallery)
     };
   }
   return normalize;
