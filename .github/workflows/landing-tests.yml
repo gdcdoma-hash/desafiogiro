@@ -1,0 +1,22 @@
+name: Verificar landing pages
+on:
+  pull_request:
+    paths:
+      - 'landing/**'
+      - 'tests/landing-motor-unificado.test.cjs'
+      - '.github/workflows/landing-tests.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe do motor
+        run: node --check landing/campanha.js
+      - name: Testar regras comerciais
+        run: node --test tests/landing-motor-unificado.test.cjs
