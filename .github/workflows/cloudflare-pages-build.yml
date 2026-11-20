@@ -31,5 +31,7 @@ jobs:
           node --check landing/modelos.js
       - name: Testar pacote, roteamento e regras da landing
         run: node --test tests/*.test.cjs
+      - name: Diagnóstico somente-leitura da API pública (não bloqueante)
+        run: node scripts/probe-landing-api.mjs
       - name: Conferir tamanho da saída
         run: du -sh dist-cloudflare-pages
