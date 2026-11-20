@@ -48,3 +48,18 @@ test('vínculo de desafio e modalidade são obrigatórios para publicar',()=>{
  assert.throws(()=>build(make({portal:{id_desafio_lista:'188',modalidade:'NATACAO'}})),/MODALIDADE_INVALIDA/);
  assert.throws(()=>build(make({id:'../segredo'})),/IDENTIFICACAO_INVALIDA/);
 });
+
+test('roteamento mantém as duas medalhas anteriores e usa modelo neutro nas novas',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const root=path.join(__dirname,'..');
+ const config=JSON.parse(fs.readFileSync(path.join(root,'vercel.json'),'utf8'));
+ const routes=Object.fromEntries(config.rewrites.map(r=>[r.source,r.destination]));
+ assert.equal(routes['/desafios/selim/'],'/landing/index.html');
+ assert.equal(routes['/desafios/50tao/'],'/landing/50tao.html');
+ assert.equal(routes['/desafios/:campanha/'],'/landing/modelo.html?campanha=:campanha');
+ const html=fs.readFileSync(path.join(root,'landing/modelo.html'),'utf8');
+ assert.match(html,/modelos\.js\?v=20261120-modelos1/);
+ assert.match(html,/id="campaign-load"/);
+ assert.match(html,/id="inscricao-status"/);
+ assert.doesNotMatch(html,/Selim|50tão|medalha-selim\.webp|50km-medalha\.webp/i);
+});
