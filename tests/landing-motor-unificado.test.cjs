@@ -14,7 +14,7 @@ test('todas as campanhas usam um único motor atualizado',()=>{
  assert.doesNotMatch(code,/desafiogiro\.giromotosbikes\.com\.br/);
  assert.doesNotThrow(()=>new Function(code));
 });
-const start=code.indexOf('function portalUrl(candidate){'),end=code.indexOf('function request(){');
+const start=code.indexOf('function portalUrl(candidate,expectedId){'),end=code.indexOf('function request(){');
 assert(start>=0&&end>start,'motor comercial presente');
 const core=code.slice(start,end);
 function node(tag,cls,value){
