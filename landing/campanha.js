@@ -18,34 +18,55 @@ const highlights=$('.highlights-grid');highlights.replaceChildren();c.destaques.
 const steps=$('.steps-grid');steps.replaceChildren();c.passos.forEach((x,i)=>{const li=element('li');li.append(element('span','step-num',String(i+1).padStart(2,'0')),element('span','step-symbol',x.icone),element('h3','',x.titulo),element('p','',x.descricao));steps.append(li);});
 const features=$('.medal-features');features.replaceChildren();c.caracteristicas_medalha.forEach(x=>{const li=element('li'),copy=element('div');copy.append(element('strong','',x.titulo),element('span','',x.descricao));li.append(element('span','feature-mark','◇'),copy);features.append(li);});
 document.querySelectorAll('[data-cta]').forEach(a=>{a.dataset.label=a.dataset.cta==='final'?c.botoes.final:a.dataset.cta==='passos'?c.botoes.secundario:c.botoes.principal;});
-const canonical=$('link[rel=canonical]');canonical.href='https://desafiogiro.giromotosbikes.com.br/desafios/'+slug+'/';document.querySelector('meta[name=description]').content=c.seo_descricao;document.querySelector('meta[property="og:title"]').content=c.nome+' | Desafio Giro';document.querySelector('meta[property="og:url"]').content=canonical.href;document.querySelector('meta[property="og:image"]').content=new URL(asset(c.imagens.compartilhamento),location.origin).href;document.querySelector('meta[property="og:description"]').content=c.seo_descricao;
+const canonical=$('link[rel=canonical]');canonical.href='https://desafiogiro.gmbd.com.br/desafios/'+slug+'/';document.querySelector('meta[name=description]').content=c.seo_descricao;document.querySelector('meta[property="og:title"]').content=c.nome+' | Desafio Giro';document.querySelector('meta[property="og:url"]').content=canonical.href;document.querySelector('meta[property="og:image"]').content=new URL(asset(c.imagens.compartilhamento),location.origin).href;document.querySelector('meta[property="og:description"]').content=c.seo_descricao;
 }
 function date(v){return /^\d{4}-\d{2}-\d{2}$/.test(v||'')?v.split('-').reverse().join('/'):'não informado';}
-function commercial(d){
-const state=$('#inscricao-status'),lots=Array.isArray(d.lotes)?d.lotes:[],portal=config&&config.portal||{};
-const active=lots.find(l=>Number(l.numero)===Number(d.loteAtual));
-let open=d.status==='ABERTO'&&!!portal.id_desafio_lista&&String(d.desafio?.id||'')===String(portal.id_desafio_lista)&&d.desafio?.modalidade===portal.modalidade&&!!active;
-document.querySelectorAll('[data-periodo]').forEach(e=>e.textContent='Datas dos lotes disponíveis no Portal Giro');
-document.querySelectorAll('[data-lote]').forEach(e=>e.classList.remove('is-current'));
-for(const l of lots){
- if(![1,2].includes(Number(l.numero)))continue;
- if(!Number.isFinite(Number(l.valor))||Math.abs(Number(l.valor)-(Number(l.numero)===1?39.9:44.9))>.001){open=false;continue;}
- text('[data-periodo="'+l.numero+'"]','De '+date(l.inicio)+' a '+date(l.fim));
- document.querySelector('[data-lote="'+l.numero+'"]')?.classList.toggle('is-current',open&&Number(l.numero)===Number(d.loteAtual));
+function portalUrl(candidate){
+ const fallback='https://desafiogiro.gmbd.com.br/';
+ if(typeof candidate!=='string'||!candidate.trim())return fallback;
+ try{
+  const url=new URL(candidate,fallback);
+  return url.protocol==='https:'&&url.hostname==='desafiogiro.gmbd.com.br'&&url.username===''&&url.password===''?url.href:fallback;
+ }catch(error){return fallback;}
 }
-const statuses={
- NAO_CADASTRADO:'Confira no Portal Giro se as inscrições já estão disponíveis.',
- EM_BREVE:'Inscrições previstas a partir de '+date(d.desafio?.inicio)+'.',
- ENCERRADO:'Inscrições encerradas.',
- INDISPONIVEL:'Não foi possível confirmar a disponibilidade. Consulte diretamente o Portal Giro.'
-};
-state.textContent=open?'Inscrições abertas · '+active.numero+'º lote · até '+date(active.fim)+'.':(statuses[d.status]||'Consulte a disponibilidade das inscrições no Portal Giro.');
-document.querySelectorAll('[data-cta]').forEach(link=>{
- // Mesmo com a API temporariamente fora do ar, há um caminho válido para o Portal.
- link.href='https://desafiogiro.giromotosbikes.com.br/';
- link.setAttribute('aria-disabled','false');
- link.textContent=open?(link.dataset.label||'Quero me inscrever'):'Consultar inscrições no Portal Giro';
-});
+function commercial(d){
+ d=d||{};
+ const state=$('#inscricao-status'),portal=config&&config.portal||{};
+ const challenge=d.desafio||{},status=String(d.status||'INDISPONIVEL').toUpperCase();
+ const all=Array.isArray(d.lotes)?d.lotes:[];
+ const lots=all.filter(l=>l&&Number.isInteger(Number(l.numero))&&Number(l.numero)>0&&Number.isFinite(Number(l.valor))&&Number(l.valor)>0).sort((a,b)=>Number(a.numero)-Number(b.numero));
+ const active=lots.find(l=>Number(l.numero)===Number(d.loteAtual));
+ const linked=!!portal.id_desafio_lista&&String(challenge.id||'')===String(portal.id_desafio_lista)&&String(challenge.modalidade||'').trim().toUpperCase()===String(portal.modalidade||'').trim().toUpperCase();
+ const rawVagas=d.vagasDisponiveis??d.vagas_disponiveis??(d.vagas&&d.vagas.disponiveis);
+ const hasVagas=rawVagas!==undefined&&rawVagas!==null&&rawVagas!=='';
+ const soldOut=(hasVagas&&Number.isFinite(Number(rawVagas))&&Number(rawVagas)<=0)||status==='ESGOTADO';
+ const open=status==='ABERTO'&&linked&&!!active&&!soldOut;
+ const container=$('.pricing-lots');
+ if(container){
+  const cards=lots.map(l=>{
+   const card=element('div');card.dataset.lote=String(l.numero);
+   if(open&&Number(l.numero)===Number(d.loteAtual))card.classList.add('is-current');
+   card.append(element('span','',String(l.numero)+'º lote'),element('strong','',new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(l.valor))),element('small','',l.inicio&&l.fim?'De '+date(l.inicio)+' a '+date(l.fim):'Datas informadas no Portal Giro'));
+   return card;
+  });
+  if(!cards.length){const placeholder=element('div','lot-placeholder');placeholder.append(element('strong','','Consulte os valores no Portal Giro'));cards.push(placeholder);}
+  container.replaceChildren(...cards);
+ }
+ const statuses={
+  NAO_CADASTRADO:'Este desafio ainda não está disponível para inscrições.',
+  EM_BREVE:'Inscrições previstas a partir de '+date(challenge.inicio)+'.',
+  ENCERRADO:'Inscrições encerradas.',
+  PAUSADO:'Inscrições temporariamente suspensas.',
+  ESGOTADO:'Vagas esgotadas.',
+  INDISPONIVEL:'Não foi possível confirmar a disponibilidade. Consulte o Portal Giro.'
+ };
+ state.textContent=open?'Inscrições abertas · '+active.numero+'º lote'+(active.fim?' · até '+date(active.fim):'')+'.':soldOut?'Vagas esgotadas.':statuses[status]||'Consulte a disponibilidade das inscrições no Portal Giro.';
+ const link=portalUrl(d.url_inscricao||d.urlInscricao||d.link_inscricao||portal.url_inscricao);
+ document.querySelectorAll('[data-cta]').forEach(a=>{
+  a.href=open?link:portalUrl();
+  a.setAttribute('aria-disabled','false');
+  a.textContent=open?(a.dataset.label||'Quero me inscrever'):'Consultar inscrições no Portal Giro';
+ });
 }
 function request(){return new Promise((resolve,reject)=>{
 const name='dgmbLanding_'+Date.now()+'_'+(++seq),script=document.createElement('script'),url=new URL(endpoint);let timeout,done=false;
