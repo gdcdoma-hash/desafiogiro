@@ -4,65 +4,63 @@ const root=path.join(__dirname,'..','landing');
 const code=fs.readFileSync(path.join(root,'campanha.js'),'utf8');
 const selim=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const tao=fs.readFileSync(path.join(root,'50tao.html'),'utf8');
-const shared='src="/landing/campanha.js?v=20261022-unificado1"';
-
-test('duas campanhas executam exatamente o mesmo motor',()=>{
- assert(selim.includes(shared));assert(tao.includes(shared));
- assert(!tao.includes('src="/landing/50tao.js"'));
- for(const html of [selim,tao])for(const id of ['campaign-load','inscricao-status'])
-   assert(html.includes('id="'+id+'"'));
+test('todas as campanhas usam um único motor atualizado',()=>{
+ for(const html of [selim,tao]){
+  assert.match(html,/campanha\.js\?v=20261120-sync2/);
+  assert.match(html,/desafiogiro\.gmbd\.com\.br/);
+  assert.doesNotMatch(html,/desafiogiro\.giromotosbikes\.com\.br/);
+  assert.doesNotMatch(html,/R\$ 39,90|R\$ 44,90/);
+ }
+ assert.doesNotMatch(code,/desafiogiro\.giromotosbikes\.com\.br/);
  assert.doesNotThrow(()=>new Function(code));
 });
-
-const start=code.indexOf('function commercial(d){'),end=code.indexOf('function request(){');
-assert(start>=0&&end>start,'commercial function present');
+const start=code.indexOf('function portalUrl(candidate){'),end=code.indexOf('function request(){');
+assert(start>=0&&end>start,'motor comercial presente');
 const core=code.slice(start,end);
-
-function render({status='ABERTO',id='166',vinculo='166',modalidade='CICLISMO',modalidadeApi=modalidade,valor=39.9}={}){
- const statusEl={textContent:''},dates={1:{textContent:''},2:{textContent:''}};
- const lotes={1:{classList:{remove(){},toggle(){}}},2:{classList:{remove(){},toggle(){}}}};
- const ctas=Array.from({length:3},()=>({dataset:{label:'Quero me inscrever'},setAttribute(k,v){this[k]=v;}}));
- const get=sel=>{
-   if(sel==='#inscricao-status')return statusEl;
-   const p=sel.match(/^\[data-periodo="(\d)"\]$/);
-   const l=sel.match(/^\[data-lote="(\d)"\]$/);
-   return p?dates[p[1]]:l?lotes[l[1]]:null;
- };
- const document={
-   querySelector:get,
-   querySelectorAll(sel){return sel==='[data-cta]'?ctas:sel==='[data-periodo]'?Object.values(dates):sel==='[data-lote]'?Object.values(lotes):[];}
- };
- const config={portal:{id_desafio_lista:vinculo,modalidade}};
- const text=(sel,v)=>{const el=get(sel);if(el)el.textContent=v;};
- const date=s=>({ '2026-11-15':'15/11/2026','2026-10-21':'21/10/2026' }[s]||'não informado');
- new Function('document','config','text','date','$','d',core+';commercial(d)')(
-   document,config,text,date,get,{
-     status,desafio:{id,modalidade:modalidadeApi},loteAtual:1,
-     lotes:[{numero:1,valor,inicio:'2026-10-21',fim:'2026-11-15'}]
-   });
- return {msg:statusEl.textContent,ctas,periodo:dates[1].textContent};
+function node(tag,cls,value){
+ return {tag,cls,textContent:value||'',dataset:{},children:[],classList:{added:[],add(v){this.added.push(v)}},append(...v){this.children.push(...v)},replaceChildren(...v){this.children=v},setAttribute(k,v){this[k]=v}};
 }
-
-test('Selim abre com vínculo e lote correto',()=>{
- const out=render();assert.match(out.msg,/Inscrições abertas/);
- assert.match(out.periodo,/21\/10\/2026/);
- assert(out.ctas.every(x=>x.textContent==='Quero me inscrever'));
+function render(opts={}){
+ const config={portal:{id_desafio_lista:opts.vinculo||'166',modalidade:opts.modalidade||'CICLISMO'}};
+ const state=node('p'),pricing=node('div');
+ const ctas=Array.from({length:3},()=>Object.assign(node('a'),{dataset:{label:'Quero me inscrever'}}));
+ const document={querySelector(s){return s==='#inscricao-status'?state:s==='.pricing-lots'?pricing:null},querySelectorAll(s){return s==='[data-cta]'?ctas:[]}};
+ const $=s=>document.querySelector(s),element=node;
+ const date=s=>({'2026-11-15':'15/11/2026','2026-10-21':'21/10/2026'}[s]||'não informado');
+ const d={status:'ABERTO',desafio:{id:opts.id||'166',modalidade:opts.modalidadeApi||opts.modalidade||'CICLISMO',inicio:'2026-10-21'},loteAtual:1,lotes:[{numero:1,valor:opts.valor??65,inicio:'2026-10-21',fim:'2026-11-15'},{numero:2,valor:75,inicio:'2026-11-16',fim:'2026-11-30'}],...opts.payload};
+ new Function('config','document','$','element','date','d',core+';commercial(d)')(config,document,$,element,date,d);
+ return {state:state.textContent,cards:pricing.children,ctas};
+}
+test('preços e datas são exibidos conforme API, sem valores fixos',()=>{
+ const a=render(),b=render({valor:89.5});
+ assert.match(a.state,/Inscrições abertas/);assert.equal(a.cards.length,2);
+ assert.equal(a.cards[0].children[1].textContent,new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(65));
+ assert.equal(b.cards[0].children[1].textContent,new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(89.5));
+ assert.match(a.cards[0].children[2].textContent,/21\/10\/2026/);
+ assert(a.cards[0].classList.added.includes('is-current'));
 });
-test('50tão abre com vínculo e modalidade correta',()=>{
- const out=render({id:'167',vinculo:'167',modalidade:'CAMINHADA_CORRIDA'});
- assert.match(out.msg,/Inscrições abertas/);
+test('modalidade Caminhada/Corrida só abre com ID e modalidade corretos',()=>{
+ assert.match(render({vinculo:'167',id:'167',modalidade:'CAMINHADA_CORRIDA'}).state,/Inscrições abertas/);
+ assert.doesNotMatch(render({id:'999'}).state,/Inscrições abertas/);
+ assert.doesNotMatch(render({modalidadeApi:'CAMINHADA_CORRIDA'}).state,/Inscrições abertas/);
 });
-test('modo falha mantém CTA funcionando sem anunciar abertura não verificada',()=>{
- const out=render({status:'INDISPONIVEL'});
- assert.doesNotMatch(out.msg,/Inscrições abertas/);
- assert(out.ctas.every(x=>x.href==='https://desafiogiro.giromotosbikes.com.br/'&&x['aria-disabled']==='false'));
- assert(out.ctas.every(x=>/Consultar inscrições/.test(x.textContent)));
+test('esgotado, encerrado ou API indisponível impedem propaganda de abertura',()=>{
+ for(const payload of [{vagasDisponiveis:0},{status:'ESGOTADO'},{status:'ENCERRADO'},{status:'INDISPONIVEL'}]){
+  const r=render({payload});
+  assert.doesNotMatch(r.state,/Inscrições abertas/);
+  assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/'&&/Consultar inscrições/.test(a.textContent)));
+ }
 });
-test('ID ou modalidade divergente não libera inscrição',()=>{
- assert.doesNotMatch(render({id:'999'}).msg,/Inscrições abertas/);
- assert.doesNotMatch(render({modalidadeApi:'CAMINHADA_CORRIDA'}).msg,/Inscrições abertas/);
+test('sem lote válido não mantém preço antigo nem anuncia abertura',()=>{
+ const r=render({payload:{lotes:[{numero:1,valor:null}]}});
+ assert.doesNotMatch(r.state,/Inscrições abertas/);
+ assert.equal(r.cards[0].children[0].textContent,'Consulte os valores no Portal Giro');
 });
-test('lote com valor divergente e inscrição encerrada não liberam estado ABERTO',()=>{
- assert.doesNotMatch(render({valor:99}).msg,/Inscrições abertas/);
- assert.doesNotMatch(render({status:'ENCERRADO'}).msg,/Inscrições abertas/);
+test('link direto só é aceito no domínio seguro do Portal',()=>{
+ const valid=render({payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166'}});
+ assert(valid.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
+ for(const candidate of ['https://site-falso.test/','javascript:alert(1)','http://desafiogiro.gmbd.com.br/?desafio=166']){
+  const unsafe=render({payload:{url_inscricao:candidate}});
+  assert(unsafe.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/'));
+ }
 });
