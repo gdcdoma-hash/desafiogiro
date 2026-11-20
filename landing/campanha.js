@@ -21,12 +21,16 @@ document.querySelectorAll('[data-cta]').forEach(a=>{a.dataset.label=a.dataset.ct
 const canonical=$('link[rel=canonical]');canonical.href='https://desafiogiro.gmbd.com.br/desafios/'+slug+'/';document.querySelector('meta[name=description]').content=c.seo_descricao;document.querySelector('meta[property="og:title"]').content=c.nome+' | Desafio Giro';document.querySelector('meta[property="og:url"]').content=canonical.href;document.querySelector('meta[property="og:image"]').content=new URL(asset(c.imagens.compartilhamento),location.origin).href;document.querySelector('meta[property="og:description"]').content=c.seo_descricao;
 }
 function date(v){return /^\d{4}-\d{2}-\d{2}$/.test(v||'')?v.split('-').reverse().join('/'):'não informado';}
-function portalUrl(candidate){
+function portalUrl(candidate,expectedId){
  const fallback='https://desafiogiro.gmbd.com.br/';
  if(typeof candidate!=='string'||!candidate.trim())return fallback;
  try{
   const url=new URL(candidate,fallback);
-  return url.protocol==='https:'&&url.hostname==='desafiogiro.gmbd.com.br'&&url.username===''&&url.password===''?url.href:fallback;
+  if(url.protocol!=='https:'||url.hostname!=='desafiogiro.gmbd.com.br'||url.username!==''||url.password!=='')return fallback;
+  for(const key of ['desafio','id_desafio','idDesafio']){
+   if(url.searchParams.has(key)&&String(url.searchParams.get(key))!==String(expectedId||''))return fallback;
+  }
+  return url.href;
  }catch(error){return fallback;}
 }
 function commercial(d){
@@ -61,7 +65,7 @@ function commercial(d){
   INDISPONIVEL:'Não foi possível confirmar a disponibilidade. Consulte o Portal Giro.'
  };
  state.textContent=open?'Inscrições abertas · '+active.numero+'º lote'+(active.fim?' · até '+date(active.fim):'')+'.':soldOut?'Vagas esgotadas.':statuses[status]||'Consulte a disponibilidade das inscrições no Portal Giro.';
- const link=portalUrl(d.url_inscricao||d.urlInscricao||d.link_inscricao||portal.url_inscricao);
+ const link=portalUrl(d.url_inscricao||d.urlInscricao||d.link_inscricao||portal.url_inscricao,portal.id_desafio_lista);
  document.querySelectorAll('[data-cta]').forEach(a=>{
   a.href=open?link:portalUrl();
   a.setAttribute('aria-disabled','false');
