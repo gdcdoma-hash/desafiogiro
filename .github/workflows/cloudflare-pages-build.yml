@@ -9,6 +9,7 @@ on:
       - 'logo-desafio-giro.png'
       - 'flyer-outubro-rosa-home.jpg'
       - 'scripts/build-cloudflare-pages.mjs'
+      - 'scripts/probe-landing-api.mjs'
       - 'tests/**'
       - '.github/workflows/cloudflare-pages-build.yml'
   workflow_dispatch:
@@ -27,6 +28,7 @@ jobs:
       - name: Validar sintaxe do empacotador e motor público
         run: |
           node --check scripts/build-cloudflare-pages.mjs
+          node --check scripts/probe-landing-api.mjs
           node --check landing/campanha.js
           node --check landing/modelos.js
       - name: Testar pacote, roteamento e regras da landing
