@@ -6,9 +6,45 @@ function text(s,v){const e=$(s);if(e)e.textContent=v||'';}function element(tag,c
 function asset(v){if(/^https:\/\//.test(v))return v;if(/^[A-Za-z0-9][A-Za-z0-9._-]*\.(webp|png|jpe?g|mp4|webm)$/i.test(v))return '/landing/assets/'+v;return '';}
 function heading(s,a,b){const e=$(s);if(e){e.replaceChildren(document.createTextNode(a+' '),element('em','',b));}}
 function image(s,src,alt){document.querySelectorAll(s).forEach(e=>{e.src=asset(src);e.alt=alt||'';});}
+// As etapas da conquista sao distintas dos quatro passos de inscricao.
+// Campanhas antigas sem etapas permanecem visualmente intactas.
+function renderStages(c){
+ const previous=$('#campaign-stages');
+ if(previous)previous.remove();
+ const steps=$('.steps-section');
+ if(!steps||!Array.isArray(c.etapas)||!c.etapas.length)return;
+ const section=element('section','section campaign-stages');
+ section.id='campaign-stages';
+ section.setAttribute('aria-labelledby','campaign-stages-title');
+ const shell=element('div','shell');
+ const label=element('div','eyebrow dark-eye','A SUA JORNADA');
+ const heading=element('h2','section-title','Etapas da conquista');
+ heading.id='campaign-stages-title';
+ const grid=element('div','campaign-stage-grid');
+ if(c.etapas.length===1)grid.classList.add('single');
+ c.etapas.forEach((stage,i)=>{
+  const article=element('article','campaign-stage');
+  const media=asset(stage.imagem);
+  if(media){
+   const img=element('img');
+   img.src=media;
+   img.alt=stage.imagem_alt||stage.titulo;
+   img.loading='lazy';
+   article.append(img);
+  }
+  const body=element('div','campaign-stage-copy');
+  body.append(element('span','campaign-stage-index','Etapa '+(i+1)+' de '+c.etapas.length));
+  body.append(element('h3','',stage.titulo),element('p','',stage.descricao));
+  article.append(body);
+  grid.append(article);
+ });
+ shell.append(label,heading,grid);
+ section.append(shell);
+ steps.parentNode.insertBefore(section,steps);
+}
 function apply(c){config=c;document.title=c.nome+' | Desafio Giro';heading('#hero-title',c.texto.hero_titulo,c.texto.hero_destaque);text('.hero-lead',c.texto.hero_subtitulo);text('.hero-description',c.texto.hero_descricao);text('.hero-footnote',c.texto.nota_portal);text('.closing-copy small',c.texto.nota_portal);text('.hero-copy .eyebrow','DESAFIO GIRO · '+c.modalidade.toUpperCase());
 const sections=[['#intro-heading','intro_titulo','intro_destaque'],['#medal-title','medalha_titulo','medalha_destaque'],['#closing-title','final_titulo','final_destaque']];sections.forEach(([sel,a,b])=>heading(sel,c.texto[a],c.texto[b]));
-text('.intro .eyebrow',c.texto.intro_chamada);text('.intro-grid>p',c.texto.intro_texto);text('.steps-section .section-heading p',c.texto.como_funciona);text('.medal-content>p',c.texto.medalha_descricao);text('.gallery-heading p',c.texto.galeria_descricao);text('.quote-kicker',c.nome.toUpperCase());text('.quote-inner>p',c.texto.frase_motivacional);text('.faq-grid>div:first-child>p',c.texto.faq_intro);text('.closing-copy>p',c.texto.final_texto);text('.footer-tagline',c.frase_marca);
+text('.intro .eyebrow',c.texto.intro_chamada);text('.intro-grid>p',c.texto.intro_texto);text('.steps-section .section-heading p',c.texto.como_funciona);text('.medal-content>p',c.texto.medalha_descricao);text('.gallery-heading p',c.texto.galeria_descricao);text('.quote-kicker',c.nome.toUpperCase());text('.quote-inner>p',c.texto.frase_motivacional);text('.faq-grid>div:first-child>p',c.texto.faq_intro);text('.closing-copy>p',c.texto.final_texto);text('.footer-tagline',c.frase_marca);renderStages(c);
 const colors={fundo:'--bg',fundo_secundario:'--bg2',destaque:'--gold',destaque_escuro:'--gold2',destaque_claro:'--gold-light',fundo_claro:'--light'};Object.entries(colors).forEach(([k,v])=>{if(/^#[0-9a-f]{6}$/i.test(c.cores[k]))document.documentElement.style.setProperty(v,c.cores[k]);});
 image('.hero-medal,.closing-image img',c.imagens.principal,c.imagens.principal_alt);image('.medal-card img',c.imagens.detalhe,c.imagens.detalhe_alt);const background=asset(c.imagens.cenario);$('.hero-landscape').style.backgroundImage=background?'url("'+background.replaceAll('"','%22')+'")':'';text('.hero-art-caption',c.frase_marca);
 const open=$('#open-gallery');open.dataset.image=asset(c.imagens.detalhe);open.dataset.alt=c.imagens.detalhe_alt;

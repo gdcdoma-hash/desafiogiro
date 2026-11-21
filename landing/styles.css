@@ -30,3 +30,16 @@
 .pricing{margin:26px 0 22px;padding:22px;border:1px solid #79602b;border-radius:12px;background:#151310;max-width:560px;scroll-margin-top:90px}.pricing h2{font-size:18px;margin:0 0 16px;color:#fff;letter-spacing:0}.pricing-lots{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pricing-lots>div{border:1px solid #595043;border-radius:8px;padding:14px}.pricing-lots span,.pricing-lots small{display:block;color:#e3dbcf;font-size:13px;line-height:1.6}.pricing-lots strong{display:block;font-size:27px;line-height:1.7;color:#ffe084}.pricing-lots .is-current{border:2px solid #f9bf3c;background:#31260f}.pricing>p{font-size:15px;line-height:1.6;color:#fff;margin:16px 0 6px}.pricing>small{font-size:13px;color:#d5cec2;line-height:1.7}.pricing-lots .lot-label{color:#ffe084;font-weight:bold}.btn[aria-disabled=true],.sticky-mobile-cta[aria-disabled=true]{opacity:.75;cursor:default}.portal-retry{font:inherit;color:#ffe084;background:none;border:0;text-decoration:underline;cursor:pointer}.pricing-lots strong{white-space:nowrap}@media(max-width:390px){.pricing{padding:15px}.pricing-lots{gap:8px}.pricing-lots>div{padding:10px}.pricing-lots strong{font-size:24px}}
 
 .campaign-video{padding:38px 0 8px;max-width:820px;margin:auto;text-align:center}.campaign-video h3{margin:0 0 16px;font-size:23px}.campaign-video video{display:block;width:100%;max-height:540px;background:#000;border-radius:12px}
+
+/* Etapas opcionais da conquista — independentes dos passos de inscricao. */
+.campaign-stages{background:var(--light,#f6f4f0);color:#28241e}
+.campaign-stages .section-title{color:#28241e}
+.campaign-stage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:22px;margin-top:30px}
+.campaign-stage-grid.single{grid-template-columns:minmax(0,760px);justify-content:center}
+.campaign-stage{background:#fff;border:1px solid #ded7ce;border-radius:16px;overflow:hidden;box-shadow:0 5px 18px #0000000d}
+.campaign-stage img{display:block;width:100%;height:250px;object-fit:contain;background:#f3f0eb}
+.campaign-stage-copy{padding:26px}
+.campaign-stage-index{display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#8e682a}
+.campaign-stage-copy h3{margin:8px 0 12px;font-size:24px;line-height:1.2}
+.campaign-stage-copy p{margin:0;font-size:16px;line-height:1.7;white-space:pre-line}
+@media(max-width:700px){.campaign-stage-grid{grid-template-columns:1fr;gap:16px}.campaign-stage img{height:210px}.campaign-stage-copy{padding:20px}.campaign-stage-copy h3{font-size:22px}}

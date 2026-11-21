@@ -58,7 +58,7 @@ test('roteamento mantém as duas medalhas anteriores e usa modelo neutro nas nov
  assert.equal(routes['/desafios/50tao/'],'/landing/50tao.html');
  assert.equal(routes['/desafios/:campanha/'],'/landing/modelo.html?campanha=:campanha');
  const html=fs.readFileSync(path.join(root,'landing/modelo.html'),'utf8');
- assert.match(html,/modelos\.js\?v=20261120-modelos1/);
+ assert.match(html,/modelos\.js\?v=20261121-etapas1/);
  assert.match(html,/id="campaign-load"/);
  assert.match(html,/id="inscricao-status"/);
  assert.doesNotMatch(html,/Selim|50tão|medalha-selim\.webp|50km-medalha\.webp/i);
@@ -92,4 +92,32 @@ test('redação automática não usa artigo incorreto com Medalha',()=>{
  const data=build(make({meta_km:75}));
  assert.doesNotMatch(data.texto.hero_descricao,/Participe do Medalha/);
  assert.match(data.texto.hero_descricao,/Conheça Medalha Nova/);
+});
+
+test('conquista de uma etapa funciona sem atrelar a um nome especifico',()=>{
+ const data=build(make({etapas:[{titulo:'Uma etapa',descricao:'Uma conquista',imagem:'',imagem_alt:''}]}));
+ assert.equal(data.etapas.length,1);
+ assert.equal(data.etapas[0].titulo,'Uma etapa');
+});
+test('duas etapas independentes funcionam em qualquer modalidade',()=>{
+ const data=build(make({
+  modalidade:'Caminhada/Corrida',
+  portal:{id_desafio_lista:'189',modalidade:'CAMINHADA_CORRIDA'},
+  etapas:[
+   {titulo:'Etapa inicial',descricao:'Primeira conquista',imagem:'https://example.org/um.webp',imagem_alt:'Primeira etapa'},
+   {titulo:'Etapa seguinte',descricao:'Segunda conquista',imagem:'',imagem_alt:''}
+  ]
+ }));
+ assert.equal(data.etapas.length,2);
+ assert.equal(data.etapas[0].imagem_alt,'Primeira etapa');
+ assert.equal(data.etapas[1].imagem_alt,'Etapa seguinte');
+});
+test('campanha antiga sem etapas permanece sem secao extra',()=>{
+ const data=build(make());
+ assert.deepEqual(data.etapas,[]);
+});
+test('dados malformados nao criam etapa vazia',()=>{
+ const data=build(make({etapas:[null,{}, {titulo:'Sem descricao'}, {titulo:'Valida',descricao:'Conquista valida'}]}));
+ assert.equal(data.etapas.length,1);
+ assert.equal(data.etapas[0].titulo,'Valida');
 });
