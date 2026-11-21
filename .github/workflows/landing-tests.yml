@@ -22,5 +22,5 @@ jobs:
         run: |
           node --check landing/campanha.js
           node --check landing/modelos.js
-      - name: Testar regras comerciais
+      - name: Testar regras comerciais e integracao publica
         run: node --test tests/landing-motor-unificado.test.cjs tests/landing-modelos.test.cjs

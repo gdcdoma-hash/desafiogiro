@@ -1,6 +1,14 @@
 # Landing Pages 2.0 — Integração Admin/Portal Giro
 
-Status em 20/11/2026: motor público atualizado nesta branch; integração no backend administrativo **ainda precisa ser implementada no projeto Apps Script que hospeda o módulo de Landing Pages**. Não publicar campanhas novas sem homologar o backend e o vínculo real do desafio.
+Status em 20/11/2026: o Admin real ja tem `landing-campanha-v1` na branch `lab/admin-homologacao` do repositorio `dgmb-inscricoes-repescagem`. As correcoes de saldo oficial e DTO publico foram incorporadas no PR #485, commit `a862bff`. **Nao instalar ponte paralela.** O workflow de sincronizacao para Apps Script LAB falhou antes de executar etapas; nao ha comprovacao de deploy LAB nem PRODUCAO. As landing pages estaticas no Vercel seguem independentes desse deploy.
+
+## Fonte canonica e proxima implantacao
+- **Admin Apps Script (unico backend):** https://github.com/gdcdoma-hash/dgmb-inscricoes-repescagem/tree/lab/admin-homologacao
+- **Alteracao incorporada:** https://github.com/gdcdoma-hash/dgmb-inscricoes-repescagem/pull/485
+- **Workflow LAB com falha de inicializacao (nao houve push):** https://github.com/gdcdoma-hash/dgmb-inscricoes-repescagem/actions/runs/44802022047
+- **Pagina publica:** o motor no Vercel le a API que estiver efetivamente implantada, nao executa arquivos `.gs` do repositorio estatico.
+- O backend reutiliza `LandingCampanhas` (`publicado_json`), `ListaDesafios`, `PixLotes` e o catalogo de inscricoes; capacidade por desafio Normal e definida pelas propriedades `DGMB_CAPACIDADE_MEDALHAS_<id>` e vagas resultam das inscricoes comprometidas.
+- Publicacao so deve ser considerada concluida apos confirmar a versao Apps Script, consulta real do endpoint, periodo, modalidade, lotes, capacidade e teste de inscricao.
 
 ## Objetivo
 O cadastro de desafio no Admin deve ser a fonte única de verdade para **modalidade, meta, datas, lote, preço, inscrições e disponibilidade**. As páginas públicas reutilizam o template responsivo e a configuração editorial da campanha. Nunca copiar preços e prazos para HTML ou JavaScript.
@@ -64,7 +72,7 @@ O endereço de inscrição acima é **ilustrativo**: só publicar o deep link se
 - O renderer continua a usar os campos editoriais da API no template compartilhado.
 
 ## Limitações a resolver antes da publicação
-- O projeto Apps Script do Admin que contém o cadastro/gerador de Landing Page não está espelhado nos repositórios GitHub examinados; é preciso conectar o backend real ou importar seu código para terminar a integração.
+- O backend correto está no repositório `gdcdoma-hash/dgmb-inscricoes-repescagem`, branch `lab/admin-homologacao`, arquivos `LandingPublicaService.gs`, `AdminLandingCampanhasService.gs`, `InscricaoCatalogoV2Service.gs` e `AdminControleInscricoesService.gs`. O `doGet` já despacha `landing-campanha-v1`. Falta **confirmar implantação real no Apps Script**: o `sync-gas-lab.yml` falhou antes do primeiro passo em 20/11/2026 e a versão PROD não foi validada. Não confundir commit no GitHub com código publicado no Apps Script.
 - Prévia social (Open Graph) gerada pelo JavaScript não é suficiente para robôs de WhatsApp e redes sociais. Para imagem/título específicos por campanha, implementar metadados HTML servidos ao rastreador, por rota, sem depender da execução do navegador.
 - Não há prova de que o link direto com ?desafio=ID seja reconhecido; confirmar o handoff com o Portal antes de ativar links profundos.
 - O endpoint da API existente não pôde ser validado em ambiente de produção por ferramentas de inspeção da sessão. A integração total **não está homologada**.
