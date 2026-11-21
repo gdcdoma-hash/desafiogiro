@@ -48,6 +48,8 @@ async function checkCampaign(slug,expectedId,expectedMode){
    if(value&&typeof value==='object')walk(value);
   }
  };
+ console.log(JSON.stringify({campanha:slug,api:'OK',situacao:i.status,desafio:d.id,modalidade:d.modalidade,
+  vagasConfirmadas:Number.isInteger(Number(i.vagasDisponiveis))&&i.vagasDisponiveis!==null&&i.vagasDisponiveis!==''}));
  walk(data);
  if(i.status==='ABERTO'){
   assert(Number.isInteger(Number(i.vagasDisponiveis))&&Number(i.vagasDisponiveis)>0,'ABERTO_SEM_VAGAS_CONFIRMADAS');
@@ -55,8 +57,7 @@ async function checkCampaign(slug,expectedId,expectedMode){
   const active=list.find(l=>Number(l.numero)===Number(i.loteAtual));
   assert(active&&Number.isFinite(Number(active.valor))&&Number(active.valor)>0,'ABERTO_SEM_LOTE');
  }
- console.log(JSON.stringify({campanha:slug,api:'OK',situacao:i.status,desafio:d.id,modalidade:d.modalidade,
-  vagasConfirmadas:Number.isInteger(Number(i.vagasDisponiveis))&&i.vagasDisponiveis!==null&&i.vagasDisponiveis!==''}));
+ 
 }
 (async()=>{
  let failed=false;
