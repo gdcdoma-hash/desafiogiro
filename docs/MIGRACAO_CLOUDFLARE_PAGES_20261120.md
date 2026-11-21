@@ -38,3 +38,20 @@ Manter o domínio e o deploy Vercel atuais até que todos os testes acima termin
 
 ## Limitações desta entrega
 O CI apenas valida arquivos/rotas por testes locais; não equivale a teste real da rede Cloudflare. Sem conexão à conta Cloudflare, não é possível comprovar cota ou criar preview Pages nesta etapa. A criação do projeto e o cutover de DNS ficam separados desta proposta.
+
+## Auditoria operacional em 21/11/2026 — bloqueio comercial confirmado
+- Auditoria somente leitura pelo GitHub Actions, sem gravar payload da API, executada contra o endpoint Apps Script público usado pelas landing pages.
+- As campanhas `selim` e `50tao` responderam `OK`, com `inscricoes.status=ABERTO`, mas **sem saldo de vagas verificável em `inscricoes.vagasDisponiveis`**. Vínculo e lote válido foram confirmados pelo diagnóstico.
+- O frontend recebeu correção na produção via PR #186 (`gdcdoma-hash/desafiogiro`) para **nunca anunciar abertura sem saldo inteiro e positivo**. Confirmar que esta proteção permaneça na versão Cloudflare.
+- A API correta do Admin encontra-se na branch `lab/admin-homologacao` de `gdcdoma-hash/dgmb-inscricoes-repescagem`. A sincronização LAB do workflow `sync-gas-lab.yml` falhou **antes de executar etapas**, portanto o deploy do backend não está comprovado.
+- Sem evidência de saldo oficial correto e sem teste Cloudflare `*.pages.dev`, a migração do domínio **não deve ser liberada**. O build CI pode estar verde enquanto a homologação comercial está pendente.
+- Não cadastrar recursos na conta Cloudflare do NOMA ou Loja GMB por conveniência. Selecionar uma conta apropriada somente depois de identificar proprietário, plano, limites e impactos cruzados.
+
+## Critérios de saída para liberação
+- [ ] Consulta pública de cada campanha retorna ID e modalidade coerentes.
+- [ ] Em `ABERTO`, existe lote válido, saldo inteiro positivo e botão seguro. Em `ESGOTADO`, não anuncia abertura.
+- [ ] Fluxo de inscrição é validado no Portal com modalidade certa, sem gerar inscrição de teste em produção.
+- [ ] Teste de uma campanha nova no modelo neutro, sem imagens ou preços de medalhas antigas.
+- [ ] Prévia Cloudflare com rotas e SSL válidos, em conta auditada, sem alteração de DNS.
+- [ ] Metadados de compartilhamento e indexação homologados para campanha real.
+- [ ] Reversão de DNS e hospedagem documentada com valores anteriores.
