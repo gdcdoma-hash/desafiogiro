@@ -85,6 +85,12 @@
     ];
     const gallery=[{arquivo:principal,legenda:'Medalha oficial '+nome,alt:pick(imagens.principal_alt,'Medalha oficial '+nome)}];
     if(detalhe!==principal)gallery.push({arquivo:detalhe,legenda:'Detalhes da medalha',alt:pick(imagens.detalhe_alt,'Detalhes da medalha '+nome)});
+    const etapas=Array.isArray(raw.etapas)?raw.etapas.slice(0,8).filter(e=>
+      e&&typeof e==='object'&&txt(e.titulo)&&txt(e.descricao)
+    ).map(e=>({
+      titulo:txt(e.titulo),descricao:txt(e.descricao),
+      imagem:txt(e.imagem),imagem_alt:pick(e.imagem_alt,e.titulo)
+    })):[];
     const coresBase=bike?{fundo:'#0b0b0d',fundo_secundario:'#151316',destaque:'#f9bf3c',destaque_escuro:'#da9e22',destaque_claro:'#ffe084',fundo_claro:'#f6f4f0'}:{fundo:'#0b0b0d',fundo_secundario:'#171319',destaque:'#fa8754',destaque_escuro:'#de683c',destaque_claro:'#ffb58a',fundo_claro:'#f6f4f0'};
     return {
       ...raw,id,nome,modalidade:pick(raw.modalidade,bike?'Ciclismo':'Caminhada/Corrida'),
@@ -98,7 +104,8 @@
       passos:list(automatico?raw.passos_personalizados:raw.passos,passos),
       caracteristicas_medalha:list(automatico?raw.caracteristicas_personalizadas:raw.caracteristicas_medalha,[{titulo:'Medalha oficial',descricao:'Um símbolo da sua conquista.'},{titulo:'Registro da modalidade',descricao:bike?'Celebre sua dedicação ao ciclismo.':'Celebre sua dedicação à caminhada e corrida.'}]),
       perguntas:list(automatico?raw.perguntas_personalizadas:raw.perguntas,perguntas),
-      galeria:list(automatico?raw.galeria_personalizada:raw.galeria,gallery)
+      galeria:list(automatico?raw.galeria_personalizada:raw.galeria,gallery),
+      etapas
     };
   }
   return normalize;
