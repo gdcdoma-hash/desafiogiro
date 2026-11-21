@@ -67,8 +67,10 @@ for (const [i, expected] of campaigns.entries()) {
             Number(l?.numero) === Number(comm.loteAtual) &&
             Number.isFinite(Number(l?.valor)) && Number(l.valor) > 0
           );
+          const saldoInformado = comm.vagasDisponiveis !== undefined &&
+            comm.vagasDisponiveis !== null && comm.vagasDisponiveis !== '';
           const available = Number(comm.vagasDisponiveis);
-          const validAvailability = Number.isInteger(available) && available >= 0;
+          const validAvailability = saldoInformado && Number.isInteger(available) && available >= 0;
           const openValid = commState !== 'ABERTO' ||
             (linked && Boolean(priceLot) && validAvailability && available > 0);
           const publicData = JSON.stringify(response);
@@ -88,6 +90,9 @@ for (const [i, expected] of campaigns.entries()) {
               mode === expected.modalidade ? '' : 'MODALIDADE_DIVERGENTE',
               linked ? '' : 'VINCULO_NAO_CONFIRMADO',
               commercialStates.has(commState) ? '' : 'STATUS_INSCRICAO_INVALIDO',
+              commState !== 'ABERTO' || Boolean(priceLot) ? '' : 'ABERTO_SEM_LOTE_ATIVO',
+              commState !== 'ABERTO' || validAvailability ? '' : 'ABERTO_SEM_SALDO_CONFIRMADO',
+              commState !== 'ABERTO' || (validAvailability && available > 0) ? '' : 'ABERTO_SEM_SALDO_POSITIVO',
               openValid ? '' : 'ABERTURA_SEM_GARANTIAS',
               noSecrets ? '' : 'CAMPO_SENSIVEL_NO_PUBLICO',
             ].filter(Boolean);
