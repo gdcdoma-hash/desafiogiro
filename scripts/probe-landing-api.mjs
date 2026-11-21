@@ -1,6 +1,7 @@
-/** Diagnóstico somente-leitura da API pública de campanha.
- * Não exibe dados da API, apenas resultado da acessibilidade e status resumido.
- * Um erro da rede não altera a produção nem autoriza publicar uma campanha.
+/** Diagnóstico somente-leitura da API canônica de campanhas no Apps Script.
+ * Nunca registra a resposta integral, dados pessoais ou segredos da API.
+ * Não publica, não altera inscrições, não faz mutações de dados.
+ * O retorno OK é apenas sinal de consulta: exige verificações adicionais.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -8,39 +9,99 @@ import { resolve } from 'node:path';
 const source = readFileSync(resolve('landing/campanha.js'), 'utf8');
 const match = source.match(/const endpoint=['"]([^'"]+)['"]/);
 if (!match) throw Error('Endpoint de campanha não encontrado no motor da landing.');
-const base = match[1];
+const endpoint = match[1];
 
-for (const [i, slug] of ['selim', '50tao'].entries()) {
+const campaigns = [
+  { slug: 'selim', modalidade: 'CICLISMO' },
+  { slug: '50tao', modalidade: 'CAMINHADA_CORRIDA' },
+];
+
+const states = new Set(['OK', 'NAO_PUBLICADO', 'INDISPONIVEL', 'NAO_CADASTRADO']);
+const commercialStates = new Set(['ABERTO', 'EM_BREVE', 'PAUSADO', 'ESGOTADO', 'ENCERRADO', 'INDISPONIVEL', 'NAO_CADASTRADO']);
+let fullMatches = 0;
+
+for (const [i, expected] of campaigns.entries()) {
   const cb = 'dgmbLanding_' + Date.now() + '_' + (i + 1);
-  const url = new URL(base);
+  const url = new URL(endpoint);
   url.searchParams.set('api', 'landing-campanha-v1');
-  url.searchParams.set('campanha', slug);
+  url.searchParams.set('campanha', expected.slug);
   url.searchParams.set('callback', cb);
-  let verdict = 'NAO_HOMOLOGADO', detail = 'INDETERMINADO';
+  let result = 'NAO_HOMOLOGADO';
+  let detail = 'INDETERMINADO';
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { Accept: 'application/javascript,text/javascript,*/*' } });
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(15000),
+      headers: { Accept: 'application/javascript,text/javascript,*/*' },
+    });
     if (!res.ok) {
       detail = 'HTTP_' + res.status;
     } else {
-      const body = await res.text();
+      const rawText = await res.text();
       const prefix = cb + '(';
-      const tail = body.match(/\)\s*;?\s*$/);
-      if (!body.startsWith(prefix) || !tail) {
-        detail = 'RESPOSTA_NAO_JSONP';
+      const suffix = rawText.match(/\)\s*;?\s*$/);
+      if (rawText.length > 250000 || !rawText.startsWith(prefix) || !suffix) {
+        detail = 'FORMATO_JSONP_INESPERADO';
       } else {
-        const raw = body.slice(prefix.length, tail.index);
-        const payload = JSON.parse(raw);
-        const state = String(payload?.status || '').toUpperCase();
-        const validStates = ['OK','NAO_PUBLICADO','INDISPONIVEL','NAO_CADASTRADO'];
-        if (validStates.includes(state)) {
-          verdict = state === 'OK' ? 'RESPONDE' : 'RESPONDE_SEM_PUBLICACAO';
-          detail = state;
-        } else detail = 'ESTADO_DESCONHECIDO';
+        // JSON.parse, nunca eval: conteúdo remoto é tratado somente como dado.
+        const response = JSON.parse(rawText.slice(prefix.length, suffix.index));
+        const apiState = String(response?.status || '').toUpperCase();
+        if (!states.has(apiState)) {
+          detail = 'STATUS_API_DESCONHECIDO';
+        } else if (apiState !== 'OK') {
+          result = 'API_ACESSIVEL';
+          detail = apiState;
+        } else {
+          const campaign = response.campanha || {};
+          const portal = campaign.portal || {};
+          const comm = response.inscricoes || {};
+          const challenge = comm.desafio || {};
+          const commState = String(comm.status || '').toUpperCase();
+          const lotes = Array.isArray(comm.lotes) ? comm.lotes : [];
+          const id = String(portal.id_desafio_lista || '');
+          const mode = String(portal.modalidade || '').toUpperCase();
+          const linked = Boolean(
+            id && String(challenge.id || '') === id &&
+            String(challenge.modalidade || '').toUpperCase() === mode
+          );
+          const priceLot = lotes.find(l =>
+            Number(l?.numero) === Number(comm.loteAtual) &&
+            Number.isFinite(Number(l?.valor)) && Number(l.valor) > 0
+          );
+          const available = Number(comm.vagasDisponiveis);
+          const validAvailability = Number.isInteger(available) && available >= 0;
+          const openValid = commState !== 'ABERTO' ||
+            (linked && Boolean(priceLot) && validAvailability && available > 0);
+          const publicData = JSON.stringify(response);
+          const noSecrets = !/"(cpf|chave_pix|secret|token|telefone|whatsapp|email)"\s*:/i.test(publicData);
+          const valid = campaign.id === expected.slug &&
+            mode === expected.modalidade &&
+            linked && commercialStates.has(commState) &&
+            openValid && noSecrets;
+
+          if (valid) {
+            result = 'CONTRATO_VALIDADO';
+            detail = commState;
+            fullMatches++;
+          } else {
+            const reasons = [
+              campaign.id === expected.slug ? '' : 'CAMPANHA_DIVERGENTE',
+              mode === expected.modalidade ? '' : 'MODALIDADE_DIVERGENTE',
+              linked ? '' : 'VINCULO_NAO_CONFIRMADO',
+              commercialStates.has(commState) ? '' : 'STATUS_INSCRICAO_INVALIDO',
+              openValid ? '' : 'ABERTURA_SEM_GARANTIAS',
+              noSecrets ? '' : 'CAMPO_SENSIVEL_NO_PUBLICO',
+            ].filter(Boolean);
+            detail = reasons.join(',') || 'DADOS_INCOMPLETOS';
+            result = 'REPROVADO';
+          }
+        }
       }
     }
-  } catch(e) {
-    detail = e?.name === 'TimeoutError' ? 'TIMEOUT' : 'ERRO_DE_REDE_OU_FORMATO';
+  } catch (error) {
+    detail = error?.name === 'TimeoutError' ? 'TIMEOUT' : 'FALHA_REDE_OU_FORMATO';
   }
-  console.log('API_PUBLICA ' + slug + ': ' + verdict + ' (' + detail + ')');
-  if (verdict !== 'RESPONDE') console.log('ATENCAO ' + slug + ': homologacao completa ainda pendente.');
+  console.log('API_PUBLICA ' + expected.slug + ': ' + result + ' (' + detail + ')');
 }
+console.log('RESUMO_API_CANONICA: ' + fullMatches + '/' + campaigns.length + ' contratos comerciais validados.');
+// Diagnóstico propositalmente não bloqueante: a indisponibilidade da API não
+// transforma um PR de hospedagem estática em autorização para publicar vendas.
