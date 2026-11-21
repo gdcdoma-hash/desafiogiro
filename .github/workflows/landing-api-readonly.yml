@@ -1,10 +1,7 @@
 name: Verificar API publica Portal Giro (somente leitura)
+# Consulta a producao apenas quando acionado por um operador autorizado.
+# Mantida fora da CI obrigatoria porque o backend PROD ainda nao atende ao contrato.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/landing-api-smoke-readonly.cjs'
-      - '.github/workflows/landing-api-readonly.yml'
   workflow_dispatch:
 permissions:
   contents: read
