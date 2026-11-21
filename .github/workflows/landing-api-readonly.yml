@@ -1,0 +1,25 @@
+name: Verificar API publica Portal Giro (somente leitura)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/landing-api-smoke-readonly.cjs'
+      - '.github/workflows/landing-api-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verificar-api-publica:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe do script de diagnostico
+        run: node --check scripts/landing-api-smoke-readonly.cjs
+      - name: Conferir API Apps Script PROD sem alterar inscricoes
+        run: node scripts/landing-api-smoke-readonly.cjs
