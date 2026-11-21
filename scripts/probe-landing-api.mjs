@@ -108,5 +108,8 @@ for (const [i, expected] of campaigns.entries()) {
   console.log('API_PUBLICA ' + expected.slug + ': ' + result + ' (' + detail + ')');
 }
 console.log('RESUMO_API_CANONICA: ' + fullMatches + '/' + campaigns.length + ' contratos comerciais validados.');
+if (fullMatches !== campaigns.length && process.env.GITHUB_ACTIONS === 'true') {
+  console.log('::warning::Bloqueio comercial: API canônica não validou todos os desafios. Não liberar migração do domínio.');
+}
 // Diagnóstico propositalmente não bloqueante: a indisponibilidade da API não
 // transforma um PR de hospedagem estática em autorização para publicar vendas.
