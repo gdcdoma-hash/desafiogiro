@@ -42,9 +42,13 @@ function commercial(d){
  const active=lots.find(l=>Number(l.numero)===Number(d.loteAtual));
  const linked=!!portal.id_desafio_lista&&String(challenge.id||'')===String(portal.id_desafio_lista)&&String(challenge.modalidade||'').trim().toUpperCase()===String(portal.modalidade||'').trim().toUpperCase();
  const rawVagas=d.vagasDisponiveis??d.vagas_disponiveis??(d.vagas&&d.vagas.disponiveis);
- const hasVagas=rawVagas!==undefined&&rawVagas!==null&&rawVagas!=='';
- const soldOut=(hasVagas&&Number.isFinite(Number(rawVagas))&&Number(rawVagas)<=0)||status==='ESGOTADO';
- const open=status==='ABERTO'&&linked&&!!active&&!soldOut;
+ const vagasValidas=rawVagas!==undefined&&rawVagas!==null&&rawVagas!==''&&
+  Number.isInteger(Number(rawVagas))&&Number(rawVagas)>=0;
+ const vagas=vagasValidas?Number(rawVagas):null;
+ // O endpoint instalado pode estar desatualizado. Status ABERTO sozinho
+ // nao comprova estoque; sem numero oficial de vagas, o botao segue ao Portal.
+ const soldOut=status==='ESGOTADO'||vagas===0;
+ const open=status==='ABERTO'&&linked&&!!active&&vagas!==null&&vagas>0;
  const container=$('.pricing-lots');
  if(container){
   const cards=lots.map(l=>{

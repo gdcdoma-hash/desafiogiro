@@ -28,7 +28,7 @@ function render(opts={}){
  const document={querySelector(s){return s==='#inscricao-status'?state:s==='.pricing-lots'?pricing:null},querySelectorAll(s){return s==='[data-cta]'?ctas:[]}};
  const $=s=>document.querySelector(s),element=node;
  const date=s=>({'2026-11-15':'15/11/2026','2026-10-21':'21/10/2026'}[s]||'não informado');
- const d={status:'ABERTO',desafio:{id:opts.id||'166',modalidade:opts.modalidadeApi||opts.modalidade||'CICLISMO',inicio:'2026-10-21'},loteAtual:1,lotes:[{numero:1,valor:opts.valor??65,inicio:'2026-10-21',fim:'2026-11-15'},{numero:2,valor:75,inicio:'2026-11-16',fim:'2026-11-30'}],...opts.payload};
+ const d={status:'ABERTO',vagasDisponiveis:12,desafio:{id:opts.id||'166',modalidade:opts.modalidadeApi||opts.modalidade||'CICLISMO',inicio:'2026-10-21'},loteAtual:1,lotes:[{numero:1,valor:opts.valor??65,inicio:'2026-10-21',fim:'2026-11-15'},{numero:2,valor:75,inicio:'2026-11-16',fim:'2026-11-30'}],...opts.payload};
  new Function('config','document','$','element','date','d',core+';commercial(d)')(config,document,$,element,date,d);
  return {state:state.textContent,cards:pricing.children,ctas};
 }
@@ -51,6 +51,22 @@ test('esgotado, encerrado ou API indisponível impedem propaganda de abertura',(
   assert.doesNotMatch(r.state,/Inscrições abertas/);
   assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/'&&/Consultar inscrições/.test(a.textContent)));
  }
+});
+test('API antiga ou parcial sem vagas confirmadas nao anuncia inscricao aberta',()=>{
+ for(const payload of [
+  {vagasDisponiveis:null},
+  {vagasDisponiveis:undefined},
+  {vagasDisponiveis:''},
+  {vagasDisponiveis:'invalido'},
+  {vagasDisponiveis:-1},
+  {vagasDisponiveis:1.5}
+ ]){
+  const r=render({payload});
+  assert.doesNotMatch(r.state,/Inscrições abertas/,JSON.stringify(payload));
+  assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/'),JSON.stringify(payload));
+ }
+ const r=render({payload:{vagasDisponiveis:'3'}});
+ assert.match(r.state,/Inscrições abertas/);
 });
 test('sem lote válido não mantém preço antigo nem anuncia abertura',()=>{
  const r=render({payload:{lotes:[{numero:1,valor:null}]}});
