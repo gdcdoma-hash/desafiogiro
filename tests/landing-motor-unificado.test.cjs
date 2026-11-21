@@ -6,8 +6,8 @@ const selim=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const tao=fs.readFileSync(path.join(root,'50tao.html'),'utf8');
 test('todas as campanhas usam um único motor atualizado',()=>{
  for(const html of [selim,tao]){
-  assert.match(html,/campanha\.js\?v=20261120-modelos1/);
-  assert.match(html,/modelos\.js\?v=20261120-modelos1/);
+  assert.match(html,/campanha\.js\?v=20261121-etapas1/);
+  assert.match(html,/modelos\.js\?v=20261121-etapas1/);
   assert.match(html,/desafiogiro\.gmbd\.com\.br/);
   assert.doesNotMatch(html,/desafiogiro\.giromotosbikes\.com\.br/);
   assert.doesNotMatch(html,/R\$ 39,90|R\$ 44,90/);
