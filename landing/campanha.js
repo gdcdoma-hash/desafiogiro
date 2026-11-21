@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const endpoint='https://script.google.com/macros/s/AKfycbx3I_pc35_LWv1SpeEJbJ_3pq9aLE1lIc6tE4BccQGdD18nyKzmw5quivht3zOEdyCP/exec';
 const slug=(location.pathname.match(/^\/desafios\/([a-z0-9-]+)\/?$/)||[])[1]||new URLSearchParams(location.search).get('campanha');
-const $=s=>document.querySelector(s),load=$('#campaign-load');let revision='',config,seq=0,timer;
+const $=s=>document.querySelector(s),load=$('#campaign-load');let revision='',config,seq=0,timer,inFlight=false;
 function text(s,v){const e=$(s);if(e)e.textContent=v||'';}function element(tag,cls,value){const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=value;return e;}
 function asset(v){if(/^https:\/\//.test(v))return v;if(/^[A-Za-z0-9][A-Za-z0-9._-]*\.(webp|png|jpe?g|mp4|webm)$/i.test(v))return '/landing/assets/'+v;return '';}
 function heading(s,a,b){const e=$(s);if(e){e.replaceChildren(document.createTextNode(a+' '),element('em','',b));}}
@@ -88,6 +88,11 @@ script.src=url.href;document.head.append(script);
 });}
 async function refresh(){
 clearTimeout(timer);
+// Evita consumir chamadas ao Apps Script quando a aba nao esta visivel.
+if(document.hidden){timer=setTimeout(refresh,60000);return;}
+// Evita duas consultas simultaneas durante eventos rapidos de foco.
+if(inFlight)return;
+inFlight=true;
 try{
  const data=await request();
  if(data&&data.status==='NAO_PUBLICADO'){
@@ -115,6 +120,7 @@ try{
    load.hidden=false;
  }
 }
+inFlight=false;
 timer=setTimeout(refresh,60000);
 }
 if(!slug||!/^[a-z0-9][a-z0-9-]{1,69}$/.test(slug)){load.textContent='Página não encontrada.';return;}refresh();document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
