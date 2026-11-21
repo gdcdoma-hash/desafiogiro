@@ -58,7 +58,7 @@ test('roteamento mantém as duas medalhas anteriores e usa modelo neutro nas nov
  assert.equal(routes['/desafios/50tao/'],'/landing/50tao.html');
  assert.equal(routes['/desafios/:campanha/'],'/landing/modelo.html?campanha=:campanha');
  const html=fs.readFileSync(path.join(root,'landing/modelo.html'),'utf8');
- assert.match(html,/modelos\.js\?v=20261120-modelos1/);
+ assert.match(html,/modelos\.js\?v=20261121-etapas1/);
  assert.match(html,/id="campaign-load"/);
  assert.match(html,/id="inscricao-status"/);
  assert.doesNotMatch(html,/Selim|50tão|medalha-selim\.webp|50km-medalha\.webp/i);
