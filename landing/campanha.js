@@ -62,7 +62,7 @@ function refLanding(){
  // Nunca usa nome, telefone, cookies ou REF de outro contato.
  const query=typeof location!=='undefined'?location.search:'';
  const ref=new URLSearchParams(query).get('ref');
- const codigo=String(ref||'').trim();
+ const codigo=String(ref||'');
  return /^[A-Za-z0-9_-]{1,100}$/.test(codigo)?codigo:'';
 }
 function portalUrl(candidate,expectedId){
