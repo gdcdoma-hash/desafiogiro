@@ -102,3 +102,20 @@ test('REF invalida nao pode injetar URL nem codigo excessivo',()=>{
   assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
  }
 });
+
+test('REF de outra campanha dentro do link remoto não atribui visitante sem indicação',()=>{
+ const semRef=render({payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166&ref=OUTRO'}});
+ assert(semRef.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
+ const correto=render({search:'?ref=ATUAL',payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166&ref=ANTERIOR'}});
+ assert(correto.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166&ref=ATUAL'));
+});
+test('REF duplicada na visita é ambígua e nunca gera atribuição',()=>{
+ for(const pesquisa of ['?ref=A&ref=B','?ref=A&ref=A','?ref=&ref=CODE']){
+  const r=render({search:pesquisa,payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166&ref=ANTIGA'}});
+  assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
+ }
+});
+test('CTA remoto deve apontar à origem HTTPS exata do Portal, sem porta paralela',()=>{
+ const r=render({search:'?ref=1145',payload:{url_inscricao:'https://desafiogiro.gmbd.com.br:8443/?desafio=166&ref=ANTIGA'}});
+ assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?ref=1145'));
+});
