@@ -61,8 +61,11 @@ function refLanding(){
  // Preserva somente o código explícito no link de chegada à landing.
  // Nunca usa nome, telefone, cookies ou REF de outro contato.
  const query=typeof location!=='undefined'?location.search:'';
- const ref=new URLSearchParams(query).get('ref');
- const codigo=String(ref||'');
+ const parametros=new URLSearchParams(query);
+ // Duas REF no mesmo link não fornecem uma atribuição inequívoca.
+ const refs=parametros.getAll('ref');
+ if(refs.length!==1)return '';
+ const codigo=String(refs[0]||'');
  return /^[A-Za-z0-9_-]{1,100}$/.test(codigo)?codigo:'';
 }
 function portalUrl(candidate,expectedId){
@@ -71,17 +74,19 @@ function portalUrl(candidate,expectedId){
  if(typeof candidate==='string'&&candidate.trim()){
   try{
    const url=new URL(candidate,fallback);
-   const hostValido=url.protocol==='https:'&&url.hostname==='desafiogiro.gmbd.com.br'&&
+   const hostValido=url.origin==='https://desafiogiro.gmbd.com.br'&&
      url.username===''&&url.password==='';
    const desafioValido=['desafio','id_desafio','idDesafio'].every(key=>
      !url.searchParams.has(key)||String(url.searchParams.get(key))===String(expectedId||''));
    if(hostValido&&desafioValido)target=url.href;
   }catch(error){/* destino inválido: usar Portal oficial */}
  }
- const ref=refLanding();
- if(!ref)return target;
  const destino=new URL(target);
- destino.searchParams.set('ref',ref);
+ // Nunca herdar uma REF da configuração remota do CTA: somente o
+ // parâmetro recebido na URL da visita pode creditar um divulgador.
+ destino.searchParams.delete('ref');
+ const ref=refLanding();
+ if(ref)destino.searchParams.set('ref',ref);
  return destino.href;
 }
 function commercial(d){
