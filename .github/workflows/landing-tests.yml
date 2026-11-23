@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'landing/**'
+      - 'index.html'
+      - 'tests/portal-ref-redirect.test.cjs'
       - 'tests/landing-motor-unificado.test.cjs'
       - 'tests/landing-modelos.test.cjs'
       - 'tests/landing-etapas-render.test.cjs'
@@ -25,4 +27,4 @@ jobs:
           node --check landing/campanha.js
           node --check landing/modelos.js
       - name: Testar regras comerciais e integracao publica
-        run: node --test tests/landing-motor-unificado.test.cjs tests/landing-modelos.test.cjs tests/landing-pausar-aba-oculta.test.cjs tests/landing-etapas-render.test.cjs
+        run: node --test tests/landing-motor-unificado.test.cjs tests/landing-modelos.test.cjs tests/landing-pausar-aba-oculta.test.cjs tests/landing-etapas-render.test.cjs tests/portal-ref-redirect.test.cjs

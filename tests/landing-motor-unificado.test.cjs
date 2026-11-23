@@ -15,7 +15,7 @@ test('todas as campanhas usam um único motor atualizado',()=>{
  assert.doesNotMatch(code,/desafiogiro\.giromotosbikes\.com\.br/);
  assert.doesNotThrow(()=>new Function(code));
 });
-const start=code.indexOf('function portalUrl(candidate,expectedId){'),end=code.indexOf('function request(){');
+const start=code.indexOf('function refLanding(){'),end=code.indexOf('function request(){');
 assert(start>=0&&end>start,'motor comercial presente');
 const core=code.slice(start,end);
 function node(tag,cls,value){
@@ -29,7 +29,7 @@ function render(opts={}){
  const $=s=>document.querySelector(s),element=node;
  const date=s=>({'2026-11-15':'15/11/2026','2026-10-21':'21/10/2026'}[s]||'não informado');
  const d={status:'ABERTO',vagasDisponiveis:12,desafio:{id:opts.id||'166',modalidade:opts.modalidadeApi||opts.modalidade||'CICLISMO',inicio:'2026-10-21'},loteAtual:1,lotes:[{numero:1,valor:opts.valor??65,inicio:'2026-10-21',fim:'2026-11-15'},{numero:2,valor:75,inicio:'2026-11-16',fim:'2026-11-30'}],...opts.payload};
- new Function('config','document','$','element','date','d',core+';commercial(d)')(config,document,$,element,date,d);
+ new Function('config','document','$','element','date','d','location',core+';commercial(d)')(config,document,$,element,date,d,{search:opts.search||''});
  return {state:state.textContent,cards:pricing.children,ctas};
 }
 test('preços e datas são exibidos conforme API, sem valores fixos',()=>{
@@ -80,4 +80,42 @@ test('link direto só é aceito no domínio seguro do Portal',()=>{
   const unsafe=render({payload:{url_inscricao:candidate}});
   assert(unsafe.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/'));
  }
+});
+
+test('REF da landing sobrevive a inscricao aberta e consulta de inscricoes',()=>{
+ const campanha=render({search:'?ref=1145',payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166'}});
+ assert(campanha.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166&ref=1145'));
+ const semVaga=render({search:'?ref=1145',payload:{vagasDisponiveis:0}});
+ assert(semVaga.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?ref=1145'));
+});
+test('REF preserva dominio seguro e validacao do desafio',()=>{
+ const seguro=render({search:'?ref=CODIGO_DIVULGADOR',payload:{url_inscricao:'https://site-falso.test/?desafio=166'}});
+ assert(seguro.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?ref=CODIGO_DIVULGADOR'));
+ const idErrado=render({search:'?ref=1145',payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=999'}});
+ assert(idErrado.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?ref=1145'));
+ const semRef=render({search:'?utm_campaign=teste',payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166'}});
+ assert(semRef.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
+});
+test('REF invalida nao pode injetar URL nem codigo excessivo',()=>{
+ for(const ref of ['%0D%0Afoo','%3Fdesafio%3D999','%3Cscript%3E','A'.repeat(101)]){
+  const r=render({search:'?ref='+ref,payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166'}});
+  assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
+ }
+});
+
+test('REF de outra campanha dentro do link remoto não atribui visitante sem indicação',()=>{
+ const semRef=render({payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166&ref=OUTRO'}});
+ assert(semRef.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
+ const correto=render({search:'?ref=ATUAL',payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166&ref=ANTERIOR'}});
+ assert(correto.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166&ref=ATUAL'));
+});
+test('REF duplicada na visita é ambígua e nunca gera atribuição',()=>{
+ for(const pesquisa of ['?ref=A&ref=B','?ref=A&ref=A','?ref=&ref=CODE']){
+  const r=render({search:pesquisa,payload:{url_inscricao:'https://desafiogiro.gmbd.com.br/?desafio=166&ref=ANTIGA'}});
+  assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?desafio=166'));
+ }
+});
+test('CTA remoto deve apontar à origem HTTPS exata do Portal, sem porta paralela',()=>{
+ const r=render({search:'?ref=1145',payload:{url_inscricao:'https://desafiogiro.gmbd.com.br:8443/?desafio=166&ref=ANTIGA'}});
+ assert(r.ctas.every(a=>a.href==='https://desafiogiro.gmbd.com.br/?ref=1145'));
 });

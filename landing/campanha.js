@@ -57,17 +57,37 @@ document.querySelectorAll('[data-cta]').forEach(a=>{a.dataset.label=a.dataset.ct
 const canonical=$('link[rel=canonical]');canonical.href='https://desafiogiro.gmbd.com.br/desafios/'+slug+'/';document.querySelector('meta[name=description]').content=c.seo_descricao;document.querySelector('meta[property="og:title"]').content=c.nome+' | Desafio Giro';document.querySelector('meta[property="og:url"]').content=canonical.href;document.querySelector('meta[property="og:image"]').content=new URL(asset(c.imagens.compartilhamento),location.origin).href;document.querySelector('meta[property="og:description"]').content=c.seo_descricao;
 }
 function date(v){return /^\d{4}-\d{2}-\d{2}$/.test(v||'')?v.split('-').reverse().join('/'):'não informado';}
+function refLanding(){
+ // Preserva somente o código explícito no link de chegada à landing.
+ // Nunca usa nome, telefone, cookies ou REF de outro contato.
+ const query=typeof location!=='undefined'?location.search:'';
+ const parametros=new URLSearchParams(query);
+ // Duas REF no mesmo link não fornecem uma atribuição inequívoca.
+ const refs=parametros.getAll('ref');
+ if(refs.length!==1)return '';
+ const codigo=String(refs[0]||'');
+ return /^[A-Za-z0-9_-]{1,100}$/.test(codigo)?codigo:'';
+}
 function portalUrl(candidate,expectedId){
  const fallback='https://desafiogiro.gmbd.com.br/';
- if(typeof candidate!=='string'||!candidate.trim())return fallback;
- try{
-  const url=new URL(candidate,fallback);
-  if(url.protocol!=='https:'||url.hostname!=='desafiogiro.gmbd.com.br'||url.username!==''||url.password!=='')return fallback;
-  for(const key of ['desafio','id_desafio','idDesafio']){
-   if(url.searchParams.has(key)&&String(url.searchParams.get(key))!==String(expectedId||''))return fallback;
-  }
-  return url.href;
- }catch(error){return fallback;}
+ let target=fallback;
+ if(typeof candidate==='string'&&candidate.trim()){
+  try{
+   const url=new URL(candidate,fallback);
+   const hostValido=url.origin==='https://desafiogiro.gmbd.com.br'&&
+     url.username===''&&url.password==='';
+   const desafioValido=['desafio','id_desafio','idDesafio'].every(key=>
+     !url.searchParams.has(key)||String(url.searchParams.get(key))===String(expectedId||''));
+   if(hostValido&&desafioValido)target=url.href;
+  }catch(error){/* destino inválido: usar Portal oficial */}
+ }
+ const destino=new URL(target);
+ // Nunca herdar uma REF da configuração remota do CTA: somente o
+ // parâmetro recebido na URL da visita pode creditar um divulgador.
+ destino.searchParams.delete('ref');
+ const ref=refLanding();
+ if(ref)destino.searchParams.set('ref',ref);
+ return destino.href;
 }
 function commercial(d){
  d=d||{};
